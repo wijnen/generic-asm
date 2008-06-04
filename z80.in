@@ -1,4 +1,4 @@
-enum: rr
+enum: $rr
 name: bc
 value: 0x00
 name: de
@@ -8,13 +8,13 @@ value: 0x20
 name: sp
 value: 0x30
 
-enum: rr2
+enum: $rr2
 name: bc
 value: 0x00
 name: de
 value: 0x10
 
-enum: rrp
+enum: $rrp
 name: bc
 value: 0x00
 name: de
@@ -24,7 +24,7 @@ value: 0x20
 name: af
 value: 0x30
 
-enum: r
+enum: $r
 name: b
 value: 0
 name: c
@@ -42,7 +42,7 @@ value: 6
 name: a
 value: 7
 
-enum: r7
+enum: $r7
 name: b
 value: 0
 name: c
@@ -58,13 +58,13 @@ value: 5
 name: a
 value: 7
 
-enum: ir
+enum: $ir
 name: i
 value: 0
 name: r
 value: 8
 
-enum: cc
+enum: $cc
 name: nz
 value: 0x00
 name: z
@@ -100,21 +100,26 @@ value: 0x30
 name: $38
 value: 0x38
 
-num: nn
+num: $nn
 lowest: -0x8000
 highest: 0xffff
 
-num: n
+num: $n
 lowest: -0x80
 highest: 0xff
 
-num: addr
+num: $addr
 lowest: 0
 highest: 0xffff
 
-num: port
+num: $port
 lowest: 0
 highest: 0xff
+
+num: $b
+lowest: 0
+highest: 7
+
 
 # 00xxx000
 
@@ -153,8 +158,8 @@ target: $addr - $$
 
 source: ld $rr , $nn
 target: 1 + $rr
-target: low($nn)
-target: high($nn)
+target: $nn & 0xff
+target: $nn >> 8
 
 source: add hl , $rr
 target: 9 + $rr
@@ -170,23 +175,23 @@ target: 0xa + $rr2
 
 source: ld ( $addr ) , hl
 target: 0x22
-target: low($addr)
-target: high($addr)
+target: $addr & 0xff
+target: $addr >> 8
 
 source: ld hl , ( $addr )
 target: 0x2a
-target: low($addr)
-target: high($addr)
+target: $addr & 0xff
+target: $addr >> 8
 
 source: ld ( $addr ) , a
 target: 0x32
-target: low($addr)
-target: high($addr)
+target: $addr & 0xff
+target: $addr >> 8
 
 source: ld a , ( $addr )
 target: 0x3a
-target: low($addr)
-target: high($addr)
+target: $addr & 0xff
+target: $addr >> 8
 
 
 # 00xxx011
@@ -321,26 +326,26 @@ target: 0x4a + $rr
 source: ld ( $addr ) , $rr2
 target: 0xed
 target: 0x43 + $rr2
-target: low($addr)
-target: high($addr)
+target: $addr & 0xff
+target: $addr >> 8
 
 source: ld $rr2 , ( $addr )
 target: 0xed
 target: 0x4b + $rr2
-target: low($addr)
-target: high($addr)
+target: $addr & 0xff
+target: $addr >> 8
 
 source: ld ( $addr ) , sp
 target: 0xed
 target: 0x43 + 0x30
-target: low($addr)
-target: high($addr)
+target: $addr & 0xff
+target: $addr >> 8
 
 source: ld sp , ( $addr )
 target: 0xed
 target: 0x4b + 0x30
-target: low($addr)
-target: high($addr)
+target: $addr & 0xff
+target: $addr >> 8
 
 
 # ed 01xxxxxx
@@ -496,13 +501,13 @@ target: 0xc0 + $cc
 
 source: jp $cc , $addr
 target: 0xc2 + $cc
-target: low($addr)
-target: high($addr)
+target: $addr & 0xff
+target: $addr >> 8
 
 source: call $cc , $addr
 target: 0xc4 + $cc
-target: low($addr)
-target: high($addr)
+target: $addr & 0xff
+target: $addr >> 8
 
 
 # 11xx0x01
@@ -568,8 +573,8 @@ target: 0xf9
 
 source: jp $addr
 target: 0xc3
-target: low($addr)
-target: high($addr)
+target: $addr & 0xff
+target: $addr >> 8
 
 source: out ( $port ) , a
 target: 0xd3
@@ -596,8 +601,8 @@ target: 0xfb
 
 source: call $addr
 target: 0xcd
-target: low($addr)
-target: high($addr)
+target: $addr & 0xff
+target: $addr >> 8
 
 
 # 11xxx111
