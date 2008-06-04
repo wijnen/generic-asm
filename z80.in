@@ -1,0 +1,614 @@
+enum: rr
+name: bc
+value: 0x00
+name: de
+value: 0x10
+name: hl
+value: 0x20
+name: sp
+value: 0x30
+
+enum: rr2
+name: bc
+value: 0x00
+name: de
+value: 0x10
+
+enum: rrp
+name: bc
+value: 0x00
+name: de
+value: 0x10
+name: hl
+value: 0x20
+name: af
+value: 0x30
+
+enum: r
+name: b
+value: 0
+name: c
+value: 1
+name: d
+value: 2
+name: e
+value: 3
+name: h
+value: 4
+name: l
+value: 5
+name: ( hl )
+value: 6
+name: a
+value: 7
+
+enum: r7
+name: b
+value: 0
+name: c
+value: 1
+name: d
+value: 2
+name: e
+value: 3
+name: h
+value: 4
+name: l
+value: 5
+name: a
+value: 7
+
+enum: ir
+name: i
+value: 0
+name: r
+value: 8
+
+enum: cc
+name: nz
+value: 0x00
+name: z
+value: 0x08
+name: nc
+value: 0x10
+name: c
+value: 0x18
+name: po
+value: 0x20
+name: pe
+value: 0x28
+name: p
+value: 0x30
+name: m
+value: 0x38
+
+enum: $rst
+name: $0
+value: 0x00
+name: $8
+value: 0x08
+name: $10
+value: 0x10
+name: $18
+value: 0x18
+name: $20
+value: 0x20
+name: $28
+value: 0x28
+name: $30
+value: 0x30
+name: $38
+value: 0x38
+
+num: nn
+lowest: -0x8000
+highest: 0xffff
+
+num: n
+lowest: -0x80
+highest: 0xff
+
+num: addr
+lowest: 0
+highest: 0xffff
+
+num: port
+lowest: 0
+highest: 0xff
+
+# 00xxx000
+
+source: nop
+target: 0
+
+source: ex af , af'
+target: 0x8
+
+source: djnz $addr
+target: 0x10
+target: $addr - $$
+
+source: jr $addr
+target: 0x18
+target: $addr - $$
+
+source: jr nz , $addr
+target: 0x20
+target: $addr - $$
+
+source: jr z , $addr
+target: 0x28
+target: $addr - $$
+
+source: jr nc , $addr
+target: 0x30
+target: $addr - $$
+
+source: jr c , $addr
+target: 0x38
+target: $addr - $$
+
+
+# 00xxx001
+
+source: ld $rr , $nn
+target: 1 + $rr
+target: low($nn)
+target: high($nn)
+
+source: add hl , $rr
+target: 9 + $rr
+
+
+# 00xxx010
+
+source: ld ( $rr2 ) , a
+target: 2 + $rr2
+
+source: ld a , ( $rr2 )
+target: 0xa + $rr2
+
+source: ld ( $addr ) , hl
+target: 0x22
+target: low($addr)
+target: high($addr)
+
+source: ld hl , ( $addr )
+target: 0x2a
+target: low($addr)
+target: high($addr)
+
+source: ld ( $addr ) , a
+target: 0x32
+target: low($addr)
+target: high($addr)
+
+source: ld a , ( $addr )
+target: 0x3a
+target: low($addr)
+target: high($addr)
+
+
+# 00xxx011
+
+source: inc $rr
+target: 3 + $rr
+
+source: dec $rr
+target: 0xb + $rr
+
+
+# 00xxx100
+
+source: inc $r
+target: 4 + 8 * $r
+
+# 00xxx101
+
+source: dec $r
+target: 5 + 8 * $r
+
+
+# 00xxx110
+
+source: ld $r , $n
+target: 6 + 8 * $r
+target: $n
+
+
+# 00xxx111
+
+source: rlca
+target: 0x7
+
+source: rrca
+target: 0xf
+
+source: rla
+target: 0x17
+
+source: rra
+target: 0x1f
+
+source: daa
+target: 0x27
+
+source: cpl
+target: 0x2f
+
+source: scf
+target: 0x37
+
+source: ccf
+target: 0x3f
+
+
+# cb 00xxxxxx
+
+source: rlc $r
+target: 0xcb
+target: 0x00 + $r
+
+source: rrc $r
+target: 0xcb
+target: 0x08 + $r
+
+source: rl $r
+target: 0xcb
+target: 0x10 + $r
+
+source: rr $r
+target: 0xcb
+target: 0x18 + $r
+
+source: sla $r
+target: 0xcb
+target: 0x20 + $r
+
+source: sra $r
+target: 0xcb
+target: 0x28 + $r
+
+source: srl $r
+target: 0xcb
+target: 0x38 + $r
+
+
+
+# 01xxxxxx
+
+source: ld $r , $r7
+target: 0x40 + 8 * $r + $r7
+
+source: ld $r7 , ( hl )
+target: 0x40 + 8 * $r7 + 6
+
+source: halt
+target: 0x76
+
+
+# cb 01xxxxxx
+
+source: bit $b , $r
+target: 0xcb
+target: 0x40 + $b * 8 + $r
+
+
+# ed 01xxx00x
+
+source: in $r7 , ( c )
+target: 0xed
+target: 0x40 + 8 * $r7
+
+source: out ( c ) , $r7
+target: 0xed
+target: 0x41 + 8 * $r7
+
+
+# ed 01xxx010
+
+source: sbc hl , $rr
+target: 0xed
+target: 0x42 + $rr
+
+source: adc hl , $rr
+target: 0xed
+target: 0x4a + $rr
+
+
+# ed 01xxx011
+
+source: ld ( $addr ) , $rr2
+target: 0xed
+target: 0x43 + $rr2
+target: low($addr)
+target: high($addr)
+
+source: ld $rr2 , ( $addr )
+target: 0xed
+target: 0x4b + $rr2
+target: low($addr)
+target: high($addr)
+
+source: ld ( $addr ) , sp
+target: 0xed
+target: 0x43 + 0x30
+target: low($addr)
+target: high($addr)
+
+source: ld sp , ( $addr )
+target: 0xed
+target: 0x4b + 0x30
+target: low($addr)
+target: high($addr)
+
+
+# ed 01xxxxxx
+
+source: neg
+target: 0xed
+target: 0x44
+
+source: retn
+target: 0xed
+target: 0x45
+
+source: reti
+target: 0xed
+target: 0x4d
+
+source: im $0
+target: 0xed
+target: 0x46
+
+source: im $1
+target: 0xed
+target: 0x56
+
+source: im $2
+target: 0xed
+target: 0x5e
+
+source: ld $ir , a
+target: 0xed
+target: 0x47 + $ir
+
+source: ld a , $ir
+target: 0xed
+target: 0x57 + $ir
+
+source: rrd
+target: 0xed
+target: 0x67
+
+source: rld
+target: 0xed
+target: 0x6f
+
+
+
+# 10xxxxxx
+
+source: add a , $r
+target: 0x80 + $r
+
+source: adc a , $r
+target: 0x88 + $r
+
+source: sub $r
+target: 0x90 + $r
+
+source: sbc a , $r
+target: 0x98 + $r
+
+source: and $r
+target: 0xa0 + $r
+
+source: xor $r
+target: 0xa8 + $r
+
+source: or $r
+target: 0xb0 + $r
+
+source: cp $r
+target: 0xb8 + $r
+
+
+# cb 10xxxxxx
+
+source: res $b , $r
+target: 0xcb
+target: 0x80 + 8 * $b + $r
+
+
+# ed 10xxxxxx
+
+source: ldi
+target: 0xed
+target: 0xa0
+
+source: cpi
+target: 0xed
+target: 0xa0
+
+source: ini
+target: 0xed
+target: 0xa0
+
+source: outi
+target: 0xed
+target: 0xa0
+
+source: ldd
+target: 0xed
+target: 0xa0
+
+source: cpd
+target: 0xed
+target: 0xa0
+
+source: ind
+target: 0xed
+target: 0xa0
+
+source: outd
+target: 0xed
+target: 0xa0
+
+source: ldir
+target: 0xed
+target: 0xa0
+
+source: cpir
+target: 0xed
+target: 0xa0
+
+source: inir
+target: 0xed
+target: 0xa0
+
+source: otir
+target: 0xed
+target: 0xa0
+
+source: lddr
+target: 0xed
+target: 0xa0
+
+source: cpdr
+target: 0xed
+target: 0xa0
+
+source: indr
+target: 0xed
+target: 0xa0
+
+source: otdr
+target: 0xed
+target: 0xa0
+
+
+
+# 11xxx000, 11xxx010, 11xxx100
+
+source: ret $cc
+target: 0xc0 + $cc
+
+source: jp $cc , $addr
+target: 0xc2 + $cc
+target: low($addr)
+target: high($addr)
+
+source: call $cc , $addr
+target: 0xc4 + $cc
+target: low($addr)
+target: high($addr)
+
+
+# 11xx0x01
+
+source: pop $rrp
+target: 0xc1 + $rrp
+
+source: push $rrp
+target: 0xc5 + $rrp
+
+
+# 11xxx110
+
+source: add a , $n
+target: 0x80 + 0x46
+target: $n
+
+source: adc a , $n
+target: 0x88 + 0x46
+target: $n
+
+source: sub $n
+target: 0x90 + 0x46
+target: $n
+
+source: sbc a , $n
+target: 0x98 + 0x46
+target: $n
+
+source: and $n
+target: 0xa0 + 0x46
+target: $n
+
+source: xor $n
+target: 0xa8 + 0x46
+target: $n
+
+source: or $n
+target: 0xb0 + 0x46
+target: $n
+
+source: cp $n
+target: 0xb8 + 0x46
+target: $n
+
+
+# 11xx1001
+
+source: ret
+target: 0xc9
+
+source: exx
+target: 0xd9
+
+source: jp ( hl )
+target: 0xe9
+
+source: ld sp , hl
+target: 0xf9
+
+
+# 11xxx011
+
+source: jp $addr
+target: 0xc3
+target: low($addr)
+target: high($addr)
+
+source: out ( $port ) , a
+target: 0xd3
+target: $port
+
+source: in a , ( $port )
+target: 0xdb
+target: $port
+
+source: ex ( sp ) , hl
+target: 0xe3
+
+source: ex de , hl
+target: 0xeb
+
+source: di
+target: 0xf3
+
+source: ei
+target: 0xfb
+
+
+# 11xx1101
+
+source: call $addr
+target: 0xcd
+target: low($addr)
+target: high($addr)
+
+
+# 11xxx111
+
+source: rst $rst
+target: 0xc7 + $rst
+
+
+
+# cb 11xxxxxx
+
+source: set $b , $r
+target: 0xcb
+target: 0xc0 + 8 * $b + $r
