@@ -2,17 +2,20 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <stack>
 #include <list>
 #include <map>
 #include <shevek/iostring.hh>
 #include <shevek/args.hh>
+
+struct Expr;
 
 struct Param
 {
 	std::string name;
 	bool is_enum;
 	std::map <std::string, unsigned> enum_values;
-	int num_lowest, num_highest;
+	std::list <Expr> constraints;
 
 	bool is_active;
 	int value;
@@ -22,6 +25,230 @@ struct Param
 };
 
 std::list <Param> params;
+
+struct ExprElem
+{
+	enum { NUM, OPER, PARAM, LABEL } type;
+	int value;
+	std::string label;
+	Param *param;
+};
+
+struct Expr
+{
+	std::list <ExprElem> list;
+	int compute (bool &valid);
+};
+
+int Expr::compute (bool &valid)
+{
+	std::stack <int> stack;
+	for (std::list <ExprElem>::const_iterator
+			i = list.begin (); i != list.end (); ++i)
+	{
+		switch (i->type)
+		{
+			int a, b, c;
+		case NUM:
+			stack.push (i->value);
+			break;
+		case OPER:
+			switch (i->value)
+			{
+			case '!':
+				a = stack.top ();
+				stack.pop ();
+				stack.push (!a);
+				break;
+			case '_':
+				a = stack.top ();
+				stack.pop ();
+				stack.push (-a);
+				break;
+			case '~':
+				a = stack.top ();
+				stack.pop ();
+				stack.push (~a);
+				break;
+			case '*':
+				a = stack.top ();
+				stack.pop ();
+				b = stack.top ();
+				stack.pop ();
+				stack.push (b * a);
+				break;
+			case '/':
+				a = stack.top ();
+				stack.pop ();
+				b = stack.top ();
+				stack.pop ();
+				stack.push (b / a);
+				break;
+			case '%':
+				a = stack.top ();
+				stack.pop ();
+				b = stack.top ();
+				stack.pop ();
+				stack.push (b % a);
+				break;
+			case '+':
+				a = stack.top ();
+				stack.pop ();
+				b = stack.top ();
+				stack.pop ();
+				stack.push (b + a);
+				break;
+			case '-':
+				a = stack.top ();
+				stack.pop ();
+				b = stack.top ();
+				stack.pop ();
+				stack.push (b - a);
+				break;
+			case '{':
+				a = stack.top ();
+				stack.pop ();
+				b = stack.top ();
+				stack.pop ();
+				stack.push (b << a);
+				break;
+			case '}':
+				a = stack.top ();
+				stack.pop ();
+				b = stack.top ();
+				stack.pop ();
+				stack.push (b >> a);
+				break;
+			case '<':
+				a = stack.top ();
+				stack.pop ();
+				b = stack.top ();
+				stack.pop ();
+				stack.push (b < a);
+				break;
+			case '>':
+				a = stack.top ();
+				stack.pop ();
+				b = stack.top ();
+				stack.pop ();
+				stack.push (b > a);
+				break;
+			case '[':
+				a = stack.top ();
+				stack.pop ();
+				b = stack.top ();
+				stack.pop ();
+				stack.push (b <= a);
+				break;
+			case ']':
+				a = stack.top ();
+				stack.pop ();
+				b = stack.top ();
+				stack.pop ();
+				stack.push (b >= a);
+				break;
+			case '=':
+				a = stack.top ();
+				stack.pop ();
+				b = stack.top ();
+				stack.pop ();
+				stack.push (b == a);
+				break;
+			case '1':
+				a = stack.top ();
+				stack.pop ();
+				b = stack.top ();
+				stack.pop ();
+				stack.push (b != a);
+				break;
+			case '&':
+				a = stack.top ();
+				stack.pop ();
+				b = stack.top ();
+				stack.pop ();
+				stack.push (b & a);
+				break;
+			case '^':
+				a = stack.top ();
+				stack.pop ();
+				b = stack.top ();
+				stack.pop ();
+				stack.push (b ^ a);
+				break;
+			case '|':
+				a = stack.top ();
+				stack.pop ();
+				b = stack.top ();
+				stack.pop ();
+				stack.push (b | a);
+				break;
+			case '7':
+				a = stack.top ();
+				stack.pop ();
+				b = stack.top ();
+				stack.pop ();
+				stack.push (b && a);
+				break;
+			case '6':
+				a = stack.top ();
+				stack.pop ();
+				b = stack.top ();
+				stack.pop ();
+				stack.push (!!b ^ !!a);
+				break;
+			case '\\':
+				a = stack.top ();
+				stack.pop ();
+				b = stack.top ();
+				stack.pop ();
+				stack.push (b || a);
+				break;
+			case '?':
+				a = stack.top ();
+				stack.pop ();
+				b = stack.top ();
+				stack.pop ();
+				c = stack.top ();
+				stack.pop ();
+				stack.push (c ? b : a);
+				break;
+			default:
+				error (shevek::ostring ("bug in assembler: "
+							"unknown operator `%c'"
+							"encountered",
+							i->value));
+			}
+			break;
+		case PARAM:
+			if (!i->param->is_valid)
+			{
+				valid = false;
+				stack.push (0);
+			}
+			else
+				stack.push (i->param->value);
+			break;
+		case LABEL:
+			Label *l;
+			l = find_label (i->label);
+			if (!l)
+			{
+				valid = false;
+				stack.push (0);
+			}
+			else
+				stack.push (l->value);
+			break;
+		}
+	}
+	if (stack.size () != 1)
+	{
+		error ("bug in assembler: not 1 value returned by expression");
+		valid = false;
+		return 0;
+	}
+	return stack.top ();
+}
 
 void Param::reset ()
 {
