@@ -7,6 +7,18 @@
 #include <map>
 #include <shevek/iostring.hh>
 #include <shevek/args.hh>
+#include <shevek/error.hh>
+
+unsigned ln;
+unsigned addr;
+unsigned errors;
+std::string source;
+
+void error (std::string const &message)
+{
+	std::cerr << source << ':' << ln << ": " << message << std::endl;
+	++errors;
+}
 
 struct Expr;
 
@@ -40,6 +52,26 @@ struct Expr
 	int compute (bool &valid);
 };
 
+struct Label
+{
+	std::string name;
+	int value;
+	bool valid;
+};
+
+std::list <Label> labels;
+
+Label *find_label (std::string name)
+{
+	for (std::list <Label>::iterator
+		i = labels.begin (); i != labels.end (); ++i)
+	{
+		if (i->name == name)
+			return &*i;
+	}
+	return NULL;
+}
+
 int Expr::compute (bool &valid)
 {
 	std::stack <int> stack;
@@ -49,10 +81,10 @@ int Expr::compute (bool &valid)
 		switch (i->type)
 		{
 			int a, b, c;
-		case NUM:
+		case ExprElem::NUM:
 			stack.push (i->value);
 			break;
-		case OPER:
+		case ExprElem::OPER:
 			switch (i->value)
 			{
 			case '!':
@@ -219,8 +251,8 @@ int Expr::compute (bool &valid)
 							i->value));
 			}
 			break;
-		case PARAM:
-			if (!i->param->is_valid)
+		case ExprElem::PARAM:
+			if (!i->param->is_active)
 			{
 				valid = false;
 				stack.push (0);
@@ -228,10 +260,10 @@ int Expr::compute (bool &valid)
 			else
 				stack.push (i->param->value);
 			break;
-		case LABEL:
+		case ExprElem::LABEL:
 			Label *l;
 			l = find_label (i->label);
-			if (!l)
+			if (!l || !l->valid)
 			{
 				valid = false;
 				stack.push (0);
@@ -249,6 +281,9 @@ int Expr::compute (bool &valid)
 	}
 	return stack.top ();
 }
+
+int read_expr (std::string const &expr);
+int read_expr (std::string const &expr, std::string::size_type &pos);
 
 void Param::reset ()
 {
@@ -275,9 +310,6 @@ struct Source
 
 std::list <Source> sources;
 
-unsigned ln;
-unsigned addr;
-
 std::string escape (std::string const &in)
 {
 	std::string out;
@@ -294,9 +326,10 @@ std::string escape (std::string const &in)
 void read_input (std::istream &file)
 {
 	bool is_enum = false, is_num = false, is_source = false;
-	std::map <std::string, int>::iterator current_enum;
+	std::map <std::string, unsigned>::iterator current_enum;
 	int current_value;
 	ln = 0;
+	std::string line;
 	while (std::getline (file, line))
 	{
 		++ln;
@@ -366,30 +399,17 @@ void read_input (std::istream &file)
 			params.push_back (Param ());
 			params.back ().name = d;
 			params.back ().is_enum = false;
-			params.back ().lowest = 0;
-			params.back ().highest = 0;
 		}
-		else if (l ("lowest: %l", d))
+		else if (l ("constraint: %l", d))
 		{
 			is_enum = false;
 			is_source = false;
 			if (!is_num)
 			{
-				error ("lowest without num");
+				error ("constraint without num");
 				continue;
 			}
-			params.back ().lowest = read_expr (d);
-		}
-		else if (l ("highest: %l", d))
-		{
-			is_enum = false;
-			is_source = false;
-			if (!is_num)
-			{
-				error ("highest without num");
-				continue;
-			}
-			params.back ().highest = read_expr (d);
+			//params.back ().lowest = read_expr (d);
 		}
 		else if (l ("source: %l", d))
 		{
@@ -436,10 +456,10 @@ void read_input (std::istream &file)
 	}
 }
 
-void write_out (Source *s)
+void write_out (Source const &s)
 {
-	for (std::list <std::string>::iterator
-			i = s->targets.begin (); i != s->targets.end (); ++i)
+	for (std::list <std::string>::const_iterator
+			i = s.targets.begin (); i != s.targets.end (); ++i)
 	{
 		unsigned byte = read_expr (*i);
 		if (byte < -0x80 || byte >= 0x100)
@@ -532,7 +552,7 @@ int main (int argc, char **argv)
 		pre.clear ();
 	}
 	if (!pre.empty ())
-		input.push_back (pre);
+		input.push_back (std::make_pair (ln, pre));
 	// Determine labels
 	addr = 0;
 	for (unsigned t = 0; t < input.size (); ++t)
