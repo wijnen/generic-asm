@@ -50,11 +50,11 @@ struct ExprElem
 struct Expr
 {
 	std::list <ExprElem> list;
-	int compute (bool &valid);
+	int compute (bool *valid);
 	static Expr read (std::string const &input, bool allow_params,
 			std::string::size_type &pos);
 private:
-	void handle_oper (std::stack <Oper *> stack, Oper *oper);
+	void handle_oper (std::stack <Oper *> &stack, Oper *oper);
 };
 
 struct Label

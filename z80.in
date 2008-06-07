@@ -136,6 +136,18 @@ target: 0x38
 target: .addr - ..
 
 
+# 01xxxxxx
+
+source: ld .r , .r7
+target: 0x40 + 8 * .r + .r7
+
+source: ld .r7 , ( hl )
+target: 0x40 + 8 * .r7 + 6
+
+source: halt
+target: 0x76
+
+
 # 00xxx001
 
 source: ld .rr , .nn
@@ -260,18 +272,6 @@ source: srl .r
 target: 0xcb
 target: 0x38 + .r
 
-
-
-# 01xxxxxx
-
-source: ld .r , .r7
-target: 0x40 + 8 * .r + .r7
-
-source: ld .r7 , ( hl )
-target: 0x40 + 8 * .r7 + 6
-
-source: halt
-target: 0x76
 
 
 # cb 01xxxxxx

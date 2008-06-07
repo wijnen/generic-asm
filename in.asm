@@ -1,4 +1,4 @@
+	jp z, lab
 	ld a,3
-	ld b,e
+lab:	ld b,e
 	halt
-	jp z, 1234

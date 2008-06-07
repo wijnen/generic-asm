@@ -44,8 +44,10 @@ Label *find_label (std::string name)
 	return NULL;
 }
 
-int Expr::compute (bool &valid)
+int Expr::compute (bool *valid)
 {
+	if (valid)
+		*valid = true;
 	std::stack <int> stack;
 	for (std::list <ExprElem>::const_iterator
 			i = list.begin (); i != list.end (); ++i)
@@ -65,7 +67,10 @@ int Expr::compute (bool &valid)
 				error (shevek::ostring
 						("inactive param %s used",
 						 i->param->first));
-				valid = false;
+				if (valid)
+					*valid = false;
+				else
+					error ("invalid expression");
 				stack.push (0);
 			}
 			else
@@ -76,7 +81,10 @@ int Expr::compute (bool &valid)
 			l = find_label (i->label);
 			if (!l || !l->valid)
 			{
-				valid = false;
+				if (valid)
+					*valid = false;
+				else
+					error ("invalid expression");
 				stack.push (0);
 			}
 			else
@@ -87,7 +95,10 @@ int Expr::compute (bool &valid)
 	if (stack.size () != 1)
 	{
 		error ("bug in assembler: not 1 value returned by expression");
-		valid = false;
+		if (valid)
+			*valid = false;
+		else
+			error ("invalid expression");
 		return 0;
 	}
 	return stack.top ();
@@ -95,7 +106,7 @@ int Expr::compute (bool &valid)
 
 template <typename T, unsigned n> unsigned num_elem (T (&arr)[n]) { return n; }
 
-void Expr::handle_oper (std::stack <Oper *> stack, Oper *oper)
+void Expr::handle_oper (std::stack <Oper *> &stack, Oper *oper)
 {
 	while (!stack.empty () && stack.top ()->priority >= oper->priority)
 	{
@@ -114,20 +125,24 @@ Expr Expr::read (std::string const &input, bool allow_params,
 	std::stack <Oper *> opers;
 	Oper open ('(', "(", -1, NULL), close (')', ")", -1, NULL);
 	Oper tri_start ('?', "?", 0, NULL);
+	int correction = 0;
 	while (true)
 	{
 		l (" ");
 		if (expect_number)
 		{
 			// Check prefix operators first
-			for (unsigned i = 0; i < num_elem (operators1); ++i)
+			unsigned i;
+			for (i = 0; i < num_elem (operators1); ++i)
 			{
 				if (l (escape (operators1[i].name)))
 				{
 					opers.push (&operators1[i]);
-					continue;
+					break;
 				}
 			}
+			if (i < num_elem (operators1))
+				continue;
 			// Parentheses
 			if (l ("("))
 			{
@@ -159,9 +174,9 @@ Expr Expr::read (std::string const &input, bool allow_params,
 						continue;
 				}
 				// Label
-				for (std::list <Label>::const_iterator
-						i = labels.begin ();
-						i != labels.end (); ++i)
+				std::list <Label>::const_iterator i;
+				for (i = labels.begin (); i != labels.end ();
+						++i)
 				{
 					if (word != i->name)
 						continue;
@@ -169,11 +184,16 @@ Expr Expr::read (std::string const &input, bool allow_params,
 							(ExprElem::LABEL,
 							 0, NULL, i->name));
 					expect_number = false;
-					continue;
+					dbg ("found label");
+					break;
 				}
-				dbg ("not done");
-				pos = std::string::npos;
-				return Expr ();
+				if (i != labels.end ())
+					continue;
+				// Label which will be defined later
+				ret.list.push_back (ExprElem (ExprElem::LABEL,
+							0, NULL, word));
+				expect_number = false;
+				continue;
 			}
 			// The special number "$"
 			if (l ("$"))
@@ -197,15 +217,18 @@ Expr Expr::read (std::string const &input, bool allow_params,
 		else
 		{
 			// Operator or closing parentheses.
-			for (unsigned i = 0; i < num_elem (operators2); ++i)
+			unsigned i;
+			for (i = 0; i < num_elem (operators2); ++i)
 			{
 				if (l (escape (operators2[i].name)))
 				{
 					ret.handle_oper (opers, &operators2[i]);
 					expect_number = true;
-					continue;
+					break;
 				}
 			}
+			if (i != num_elem (operators2))
+				continue;
 			if (l (escape (operators3[0].name)))
 			{
 				ret.handle_oper (opers, &operators3[0]);
@@ -226,21 +249,16 @@ Expr Expr::read (std::string const &input, bool allow_params,
 			if (l (")"))
 			{
 				ret.handle_oper (opers, &close);
+				opers.pop ();
 				if (ret.list.empty ()
 						|| ret.list.back ().type
 						!= ExprElem::OPER
 						|| ret.list.back ().oper->code
 						!= '(')
 				{
-					if (opers.empty ())
-					{
-						// End of expression.
-						pos = input.size () - l.rest ().size ();
-						return ret;
-					}
-					dbg ("not done");
-					pos = std::string::npos;
-					return Expr ();
+					// End of expression.
+					correction = 1;
+					break;
 				}
 				ret.list.pop_back ();
 				continue;
@@ -264,17 +282,19 @@ Expr Expr::read (std::string const &input, bool allow_params,
 			return Expr ();
 		}
 		ret.list.push_back (ExprElem (ExprElem::OPER, 0, opers.top ()));
+		opers.pop ();
 	}
 	dbg ("done");
-	pos = input.size () - l.rest ().size ();
+	pos = input.size () - l.rest ().size () - correction;
 	return ret;
 }
 
-int read_expr (std::string const &expr, bool allow_params, std::string::size_type &pos)
+int read_expr (std::string const &expr, bool allow_params, std::string::size_type &pos, bool *valid)
 {
 	Expr e = Expr::read (expr, allow_params, pos);
 	if (pos != std::string::npos)
 	{
+#if 1
 		std::cerr << "Expression successfully read:";
 		for (std::list <ExprElem>::iterator i = e.list.begin ();
 				i != e.list.end (); ++i)
@@ -300,11 +320,9 @@ int read_expr (std::string const &expr, bool allow_params, std::string::size_typ
 			}
 		}
 		std::cerr << std::endl;
+#endif
 
-		bool valid = true;
 		int ret = e.compute (valid);
-		if (!valid)
-			pos = std::string::npos;
 		return ret;
 	}
 	return 0;
@@ -313,7 +331,7 @@ int read_expr (std::string const &expr, bool allow_params, std::string::size_typ
 int read_expr (std::string const &expr)
 {
 	std::string::size_type pos = 0;
-	read_expr (expr, true, pos);
+	read_expr (expr, true, pos, NULL);
 	if (pos == std::string::npos)
 		error (shevek::ostring ("invalid expression: %s", expr));
 }
@@ -551,9 +569,12 @@ unsigned parse (std::string line, bool output, bool first_pass)
 			{
 				dbg ("num");
 				std::string::size_type pos = 0;
-				p->second->second.value = read_expr (l.rest (), false, pos);
+				bool valid;
+				p->second->second.value = read_expr (l.rest (), false, pos, &valid);
 				if (pos == std::string::npos)
 					break;
+				if (!valid)
+					++undef;
 				l.skip (pos);
 			}
 		}

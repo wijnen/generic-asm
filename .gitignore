@@ -13,3 +13,6 @@ configure
 depcomp
 install-sh
 missing
+asm
+asm-asm.o
+asm-operators.o
