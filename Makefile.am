@@ -2,7 +2,7 @@ AUTOMAKE_OPTIONS = foreign
 
 bin_PROGRAMS = asm
 
-asm_SOURCES = asm.cc
+asm_SOURCES = asm.cc operators.hh operators.cc
 asm_CPPFLAGS = $(SHEVEK_CFLAGS)
 asm_LDADD = $(SHEVEK_LIBS)
 

@@ -1,18 +1,18 @@
 #include <iostream>
 #include <fstream>
-#include <string>
 #include <vector>
-#include <stack>
-#include <list>
-#include <map>
-#include <shevek/iostring.hh>
 #include <shevek/args.hh>
 #include <shevek/error.hh>
+#include "asm.hh"
 
 unsigned ln;
 unsigned addr;
 unsigned errors;
 std::string source;
+
+std::map <std::string, Param> params;
+std::list <Label> labels;
+std::list <Source> sources;
 
 void error (std::string const &message)
 {
@@ -20,46 +20,18 @@ void error (std::string const &message)
 	++errors;
 }
 
-struct Expr;
-
-struct Param
+std::string escape (std::string const &in)
 {
-	std::string name;
-	bool is_enum;
-	std::map <std::string, unsigned> enum_values;
-	std::list <Expr> constraints;
-
-	bool is_active;
-	int value;
-
-	static void reset ();
-	static Param *find (std::string const &name);
-};
-
-std::list <Param> params;
-
-struct ExprElem
-{
-	enum { NUM, OPER, PARAM, LABEL } type;
-	int value;
-	std::string label;
-	Param *param;
-};
-
-struct Expr
-{
-	std::list <ExprElem> list;
-	int compute (bool &valid);
-};
-
-struct Label
-{
-	std::string name;
-	int value;
-	bool valid;
-};
-
-std::list <Label> labels;
+	std::string out;
+	for (unsigned i = 0; i < in.size (); ++i)
+	{
+		if (in[i] == '%')
+			out += "%%";
+		else
+			out += in[i];
+	}
+	return out;
+}
 
 Label *find_label (std::string name)
 {
@@ -85,180 +57,19 @@ int Expr::compute (bool &valid)
 			stack.push (i->value);
 			break;
 		case ExprElem::OPER:
-			switch (i->value)
-			{
-			case '!':
-				a = stack.top ();
-				stack.pop ();
-				stack.push (!a);
-				break;
-			case '_':
-				a = stack.top ();
-				stack.pop ();
-				stack.push (-a);
-				break;
-			case '~':
-				a = stack.top ();
-				stack.pop ();
-				stack.push (~a);
-				break;
-			case '*':
-				a = stack.top ();
-				stack.pop ();
-				b = stack.top ();
-				stack.pop ();
-				stack.push (b * a);
-				break;
-			case '/':
-				a = stack.top ();
-				stack.pop ();
-				b = stack.top ();
-				stack.pop ();
-				stack.push (b / a);
-				break;
-			case '%':
-				a = stack.top ();
-				stack.pop ();
-				b = stack.top ();
-				stack.pop ();
-				stack.push (b % a);
-				break;
-			case '+':
-				a = stack.top ();
-				stack.pop ();
-				b = stack.top ();
-				stack.pop ();
-				stack.push (b + a);
-				break;
-			case '-':
-				a = stack.top ();
-				stack.pop ();
-				b = stack.top ();
-				stack.pop ();
-				stack.push (b - a);
-				break;
-			case '{':
-				a = stack.top ();
-				stack.pop ();
-				b = stack.top ();
-				stack.pop ();
-				stack.push (b << a);
-				break;
-			case '}':
-				a = stack.top ();
-				stack.pop ();
-				b = stack.top ();
-				stack.pop ();
-				stack.push (b >> a);
-				break;
-			case '<':
-				a = stack.top ();
-				stack.pop ();
-				b = stack.top ();
-				stack.pop ();
-				stack.push (b < a);
-				break;
-			case '>':
-				a = stack.top ();
-				stack.pop ();
-				b = stack.top ();
-				stack.pop ();
-				stack.push (b > a);
-				break;
-			case '[':
-				a = stack.top ();
-				stack.pop ();
-				b = stack.top ();
-				stack.pop ();
-				stack.push (b <= a);
-				break;
-			case ']':
-				a = stack.top ();
-				stack.pop ();
-				b = stack.top ();
-				stack.pop ();
-				stack.push (b >= a);
-				break;
-			case '=':
-				a = stack.top ();
-				stack.pop ();
-				b = stack.top ();
-				stack.pop ();
-				stack.push (b == a);
-				break;
-			case '1':
-				a = stack.top ();
-				stack.pop ();
-				b = stack.top ();
-				stack.pop ();
-				stack.push (b != a);
-				break;
-			case '&':
-				a = stack.top ();
-				stack.pop ();
-				b = stack.top ();
-				stack.pop ();
-				stack.push (b & a);
-				break;
-			case '^':
-				a = stack.top ();
-				stack.pop ();
-				b = stack.top ();
-				stack.pop ();
-				stack.push (b ^ a);
-				break;
-			case '|':
-				a = stack.top ();
-				stack.pop ();
-				b = stack.top ();
-				stack.pop ();
-				stack.push (b | a);
-				break;
-			case '7':
-				a = stack.top ();
-				stack.pop ();
-				b = stack.top ();
-				stack.pop ();
-				stack.push (b && a);
-				break;
-			case '6':
-				a = stack.top ();
-				stack.pop ();
-				b = stack.top ();
-				stack.pop ();
-				stack.push (!!b ^ !!a);
-				break;
-			case '\\':
-				a = stack.top ();
-				stack.pop ();
-				b = stack.top ();
-				stack.pop ();
-				stack.push (b || a);
-				break;
-			case '?':
-				a = stack.top ();
-				stack.pop ();
-				b = stack.top ();
-				stack.pop ();
-				c = stack.top ();
-				stack.pop ();
-				stack.push (c ? b : a);
-				break;
-			default:
-				error (shevek::ostring ("bug in assembler: "
-							"unknown operator `%c'"
-							"encountered",
-							i->value));
-			}
+			i->oper->run (stack);
 			break;
 		case ExprElem::PARAM:
-			if (!i->param->is_active)
+			if (!i->param->second.is_active)
 			{
+				error (shevek::ostring
+						("inactive param %s used",
+						 i->param->first));
 				valid = false;
 				stack.push (0);
 			}
 			else
-				stack.push (i->param->value);
+				stack.push (i->param->second.value);
 			break;
 		case ExprElem::LABEL:
 			Label *l;
@@ -282,52 +93,254 @@ int Expr::compute (bool &valid)
 	return stack.top ();
 }
 
-int read_expr (std::string const &expr);
-int read_expr (std::string const &expr, std::string::size_type &pos);
+template <typename T, unsigned n> unsigned num_elem (T (&arr)[n]) { return n; }
+
+void Expr::handle_oper (std::stack <Oper *> stack, Oper *oper)
+{
+	while (!stack.empty () && stack.top ()->priority >= oper->priority)
+	{
+		list.push_back (ExprElem (ExprElem::OPER, 0, stack.top ()));
+		stack.pop ();
+	}
+	stack.push (oper);
+}
+
+Expr Expr::read (std::string const &input, bool allow_params,
+		std::string::size_type &pos)
+{
+	Expr ret;
+	shevek::istring l (input.substr (pos));
+	bool expect_number = true;
+	std::stack <Oper *> opers;
+	Oper open ('(', "(", -1, NULL), close (')', ")", -1, NULL);
+	Oper tri_start ('?', "?", 0, NULL);
+	while (true)
+	{
+		l (" ");
+		if (expect_number)
+		{
+			// Check prefix operators first
+			for (unsigned i = 0; i < num_elem (operators1); ++i)
+			{
+				if (l (escape (operators1[i].name)))
+				{
+					opers.push (&operators1[i]);
+					continue;
+				}
+			}
+			// Parentheses
+			if (l ("("))
+			{
+				opers.push (&open);
+				continue;
+			}
+			std::string word;
+			if (l ("%r/[A-Za-z_.][A-Za-z_.0-9]*/", word))
+			{
+				dbg ("checking word " << word);
+				// Param
+				if (allow_params)
+				{
+					std::map <std::string, Param>::reverse_iterator i;
+					for (i = params.rbegin ();
+							i != params.rend ();
+							++i)
+					{
+						dbg (i->second.is_active << ' ' << i->second.is_enum << ' ' << i->first);
+						if (!i->second.is_active)
+							continue;
+						if (word != i->first)
+							continue;
+						ret.list.push_back (ExprElem (ExprElem::PARAM, 0, NULL, std::string (), i));
+						expect_number = false;
+						break;
+					}
+					if (i != params.rend ())
+						continue;
+				}
+				// Label
+				for (std::list <Label>::const_iterator
+						i = labels.begin ();
+						i != labels.end (); ++i)
+				{
+					if (word != i->name)
+						continue;
+					ret.list.push_back (ExprElem
+							(ExprElem::LABEL,
+							 0, NULL, i->name));
+					expect_number = false;
+					continue;
+				}
+				dbg ("not done");
+				pos = std::string::npos;
+				return Expr ();
+			}
+			// The special number "$"
+			if (l ("$"))
+			{
+				ret.list.push_back
+					(ExprElem (ExprElem::NUM, addr));
+				expect_number = false;
+				continue;
+			}
+			// Number
+			int n;
+			if (!l ("%i", n))
+			{
+				dbg ("not done");
+				pos = std::string::npos;
+				return Expr ();
+			}
+			ret.list.push_back (ExprElem (ExprElem::NUM, n));
+			expect_number = false;
+		}
+		else
+		{
+			// Operator or closing parentheses.
+			for (unsigned i = 0; i < num_elem (operators2); ++i)
+			{
+				if (l (escape (operators2[i].name)))
+				{
+					ret.handle_oper (opers, &operators2[i]);
+					expect_number = true;
+					continue;
+				}
+			}
+			if (l (escape (operators3[0].name)))
+			{
+				ret.handle_oper (opers, &operators3[0]);
+				if (ret.list.empty ()
+						|| ret.list.back ().type
+						!= ExprElem::OPER
+						|| ret.list.back ().oper->code
+						!= '?')
+				{
+					dbg ("not done");
+					pos = std::string::npos;
+					return Expr ();
+				}
+				ret.list.pop_back ();
+				expect_number = true;
+				continue;
+			}
+			if (l (")"))
+			{
+				ret.handle_oper (opers, &close);
+				if (ret.list.empty ()
+						|| ret.list.back ().type
+						!= ExprElem::OPER
+						|| ret.list.back ().oper->code
+						!= '(')
+				{
+					if (opers.empty ())
+					{
+						// End of expression.
+						pos = input.size () - l.rest ().size ();
+						return ret;
+					}
+					dbg ("not done");
+					pos = std::string::npos;
+					return Expr ();
+				}
+				ret.list.pop_back ();
+				continue;
+			}
+			// Unknown character: end of expression.
+			break;
+		}
+	}
+	while (!opers.empty ())
+	{
+		if (opers.top () == &open)
+		{
+			dbg ("not done");
+			pos = std::string::npos;
+			return Expr ();
+		}
+		if (opers.top () == &tri_start)
+		{
+			dbg ("not done");
+			pos = std::string::npos;
+			return Expr ();
+		}
+		ret.list.push_back (ExprElem (ExprElem::OPER, 0, opers.top ()));
+	}
+	dbg ("done");
+	pos = input.size () - l.rest ().size ();
+	return ret;
+}
+
+int read_expr (std::string const &expr, bool allow_params, std::string::size_type &pos)
+{
+	Expr e = Expr::read (expr, allow_params, pos);
+	if (pos != std::string::npos)
+	{
+		std::cerr << "Expression successfully read:";
+		for (std::list <ExprElem>::iterator i = e.list.begin ();
+				i != e.list.end (); ++i)
+		{
+			std::cerr << " ";
+			switch (i->type)
+			{
+			case ExprElem::NUM:
+				std::cerr << i->value;
+				break;
+			case ExprElem::OPER:
+				std::cerr << i->oper->name;
+				break;
+			case ExprElem::PARAM:
+				std::cerr << i->param->first << '=' << i->param->second.value;
+				break;
+			case ExprElem::LABEL:
+				std::cerr << i->label;
+				break;
+			default:
+				std::cerr << "huh!";
+				break;
+			}
+		}
+		std::cerr << std::endl;
+
+		bool valid = true;
+		int ret = e.compute (valid);
+		if (!valid)
+			pos = std::string::npos;
+		return ret;
+	}
+	return 0;
+}
+
+int read_expr (std::string const &expr)
+{
+	std::string::size_type pos = 0;
+	read_expr (expr, true, pos);
+	if (pos == std::string::npos)
+		error (shevek::ostring ("invalid expression: %s", expr));
+}
 
 void Param::reset ()
 {
-	for (std::list <Param>::iterator
-			i = params.begin (); i != params.end (); ++i)
-		i->is_active = false;
+	for (std::map <std::string, Param>::reverse_iterator
+			i = params.rbegin (); i != params.rend (); ++i)
+		i->second.is_active = false;
 }
 
-Param *Param::find (std::string const &name)
+std::map <std::string, Param>::reverse_iterator
+	Param::find (std::string const &name)
 {
-	for (std::list <Param>::iterator
-			i = params.begin (); i != params.end (); ++i)
-		if (i->name == name)
-			return &*i;
-	return NULL;
+	for (std::map <std::string, Param>::reverse_iterator
+			i = params.rbegin (); i != params.rend (); ++i)
+		if (i->first == name)
+			return i;
+	return params.rend ();
 }
 
-struct Source
-{
-	std::list <std::pair <std::string, Param *> > parts;
-	std::string post;
-	std::list <std::string> targets;
-};
-
-std::list <Source> sources;
-
-std::string escape (std::string const &in)
-{
-	std::string out;
-	for (unsigned i = 0; i < in.size (); ++i)
-	{
-		if (in[i] == '%')
-			out += "%%";
-		else
-			out += in[i];
-	}
-	return out;
-}
-
-void read_input (std::istream &file)
+void read_definitions (std::istream &file)
 {
 	bool is_enum = false, is_num = false, is_source = false;
 	std::map <std::string, unsigned>::iterator current_enum;
 	int current_value;
+	std::map <std::string, Param>::iterator current_param;
 	ln = 0;
 	std::string line;
 	while (std::getline (file, line))
@@ -335,7 +348,7 @@ void read_input (std::istream &file)
 		++ln;
 		shevek::istring l (line);
 		l (" ");
-		if (l ("#"))
+		if (l.rest ().empty () || l ("#"))
 			continue;
 		std::string d;
 		if (l ("enum: %s %", d))
@@ -343,17 +356,17 @@ void read_input (std::istream &file)
 			is_num = false;
 			is_enum = false;
 			is_source = false;
-			if (Param::find (d))
+			if (Param::find (d) != params.rend ())
 			{
 				error (shevek::ostring ("duplicate definition "
 							"of param %s", d));
 				continue;
 			}
 			is_enum = true;
-			params.push_back (Param ());
-			params.back ().name = d;
-			params.back ().is_enum = true;
-			current_enum = params.back ().enum_values.end ();
+			current_param = params.insert (std::make_pair (d, Param ())).first;
+			current_param->second.is_enum = true;
+			current_param->second.is_active = false;
+			current_enum = current_param->second.enum_values.end ();
 			current_value = 0;
 		}
 		else if (l ("name: %l", d))
@@ -365,40 +378,40 @@ void read_input (std::istream &file)
 				error ("name without enum");
 				continue;
 			}
-			if (Param::find (escape (d)))
+			if (Param::find (d) != params.rend ())
 			{
 				error (shevek::ostring ("duplicate name in param: %s", d));
 				continue;
 			}
-			current_enum = params.back ().enum_values.insert (std::make_pair (escape (d), current_value++)).first;
+			current_enum = current_param->second.enum_values.insert (std::make_pair (d, current_value++)).first;
 		}
 		else if (l ("value: %l", d))
 		{
 			is_num = false;
 			is_source = false;
-			if (!is_enum || current_enum == params.back ().enum_values.end ())
+			if (!is_enum || current_enum == current_param->second.enum_values.end ())
 			{
 				error ("value without enum");
 				continue;
 			}
 			current_enum->second = read_expr (d);
-			current_enum = params.back ().enum_values.end ();
+			current_enum = current_param->second.enum_values.end ();
 		}
 		else if (l ("num: %l", d))
 		{
 			is_num = false;
 			is_enum = false;
 			is_source = false;
-			if (Param::find (d))
+			if (Param::find (d) != params.rend ())
 			{
 				error (shevek::ostring ("duplicate definition "
 							"of param %s", d));
 				continue;
 			}
 			is_num = true;
-			params.push_back (Param ());
-			params.back ().name = d;
-			params.back ().is_enum = false;
+			current_param = params.insert (std::make_pair (d, Param ())).first;
+			current_param->second.is_enum = false;
+			current_param->second.is_active = false;
 		}
 		else if (l ("constraint: %l", d))
 		{
@@ -409,7 +422,7 @@ void read_input (std::istream &file)
 				error ("constraint without num");
 				continue;
 			}
-			//params.back ().lowest = read_expr (d);
+			//current_params->second.constraint = read_expr (d);
 		}
 		else if (l ("source: %l", d))
 		{
@@ -422,22 +435,22 @@ void read_input (std::istream &file)
 			{
 				// find next param
 				std::string::size_type first = d.size ();
-				Param *firstp;
-				for (std::list <Param>::iterator i = params.begin (); i != params.end (); ++i)
+				std::map <std::string, Param>::reverse_iterator firstp;
+				for (std::map <std::string, Param>::reverse_iterator i = params.rbegin (); i != params.rend (); ++i)
 				{
-					std::string::size_type p = d.find (i->name, pos);
+					std::string::size_type p = d.find (i->first, pos);
 					if (p < first)
 					{
 						first = p;
-						firstp = &*i;
+						firstp = i;
 					}
 				}
 				if (first >= d.size ())
 					break;
-				sources.back ().parts.push_back (std::make_pair (escape (d.substr (pos, first - pos)), firstp));
-				pos = first + firstp->name.size ();
+				sources.back ().parts.push_back (std::make_pair (d.substr (pos, first - pos), firstp));
+				pos = first + firstp->first.size ();
 			}
-			sources.back ().post = escape (d.substr (pos));
+			sources.back ().post = d.substr (pos);
 		}
 		else if (l ("target: %l", d))
 		{
@@ -461,52 +474,110 @@ void write_out (Source const &s)
 	for (std::list <std::string>::const_iterator
 			i = s.targets.begin (); i != s.targets.end (); ++i)
 	{
-		unsigned byte = read_expr (*i);
-		if (byte < -0x80 || byte >= 0x100)
-			error ("byte out of range");
+		int byte = read_expr (*i);
+		if ((byte < -0x80) || (byte >= 0x100))
+			error (shevek::ostring ("byte %x out of range", byte));
 		std::cout << (char)byte;
 	}
 }
 
-void parse (std::string line, bool output)
+unsigned parse (std::string line, bool output, bool first_pass)
 {
+	unsigned undef = 0;
+	bool make_label = false;
+	std::string label;
+	Label *new_label;
+	int old_label_value = 0;
+	bool old_label_valid = false;
 	shevek::istring l (line);
+	if (l (" %r/[a-zA-Z_.][a-zA-Z_.0-9]*/:", label))
+	{
+		make_label = true;
+		new_label = find_label (label);
+		if (first_pass && new_label)
+		{
+			error (shevek::ostring ("Duplicate definition "
+						"of label %s", label));
+		}
+		if (!new_label)
+		{
+			labels.push_back (Label ());
+			new_label = &labels.back ();
+			new_label->name = label;
+			new_label->value = addr;
+			new_label->valid = true;
+		}
+		else
+		{
+			old_label_valid = true;
+			old_label_value = new_label->value;
+		}
+	}
+	l (" ");
+	l.push ();
 	for (std::list <Source>::iterator
 			s = sources.begin (); s != sources.end (); ++s)
 	{
-		l.reset ();
-		l (" ");
-		std::list <std::pair <std::string, Param *> >::iterator p;
+		// Restore start of line (after label).
+		l.pop ();
+		l.push ();
+		// Set all params to unused.
+		Param::reset ();
+		std::list <std::pair <std::string, std::map <std::string, Param>::reverse_iterator> >::iterator p;
 		for (p = s->parts.begin (); p != s->parts.end (); ++p)
 		{
-			if (!l (p->first))
+			p->second->second.is_active = true;
+			if (!l (escape (p->first)))
 				break;
-			if (p->second->is_enum)
+			dbg ("checked " << p->first);
+			if (p->second->second.is_enum)
 			{
-				for (std::map <std::string, unsigned>::iterator v = p->second->enum_values.begin (); v != p->second->enum_values.end (); ++v)
+				dbg ("enum");
+				std::map <std::string, unsigned>::iterator v;
+				for (v = p->second->second.enum_values.begin (); v !=
+						p->second->second.enum_values.end ();
+						++v)
 				{
 					if (!l (escape (v->first)))
 						continue;
-					p->second->value = v->second;
+					dbg ("enumcheck " << v->first);
+					p->second->second.value = v->second;
+					break;
 				}
-				break;
+				if (v == p->second->second.enum_values.end ())
+					break;
 			}
 			else
 			{
+				dbg ("num");
 				std::string::size_type pos = 0;
-				p->second->value = read_expr (l.rest (), pos);
+				p->second->second.value = read_expr (l.rest (), false, pos);
 				if (pos == std::string::npos)
 					break;
 				l.skip (pos);
 			}
 		}
-		if (p != s->parts.end () || !l (s->post) || !l (" %"))
+		if (p != s->parts.end () || !l (escape (s->post))
+				|| (!l (" %") && !l (" ;")))
 			continue;
 		if (output)
 			write_out (*s);
+		if (make_label)
+		{
+			if (old_label_valid
+					&& new_label->value != old_label_value)
+				error (shevek::ostring ("Value of label %s "
+							"changed from %x to "
+							"%x", new_label->name,
+							old_label_value,
+							new_label->value));
+		}
 		addr += s->targets.size ();
-		return;
+		dbg ("done writing " << s->targets.size () << " bytes");
+		return undef;
 	}
+	error ("Syntax error");
+	return undef;
 }
 
 int main (int argc, char **argv)
@@ -516,31 +587,37 @@ int main (int argc, char **argv)
 		shevek::args::option (0, "defs", "code definitions",
 				false, defs),
 	};
-	shevek::args args (argc, argv, opts, 0, 0, "Generic assembler", "2008");
-	bool need_header = false;
-	if (defs.empty ())
-	{
-		defs = argv[0];
-		need_header = true;
-	}
+	shevek::args args (argc, argv, opts, 0, 1, "Generic assembler", "2008");
 	std::ifstream file (defs.c_str ());
 	if (!file)
 		shevek_error_errno ("unable to open file " << defs);
 	std::string line;
-	if (need_header)
-	{
-		std::getline (file, line);
-		if (!file || line.size () < 2
-				|| line[0] != '#' || line[1] != '!')
-			shevek_error ("you must specify a definitions file");
-	}
-	read_input (file);
+	if (defs.empty ())
+		shevek_error ("you must specify a definitions file");
+	read_definitions (file);
 	if (errors)
 		return 1;
 	std::vector <std::pair <unsigned, std::string> > input;
+	std::istream *infile;
+	bool must_delete;
+	if (args.size () == 0 || args[0] == "-")
+	{
+		infile = &std::cin;
+		must_delete = false;
+		source = "Standard input";
+	}
+	else
+	{
+		infile = new std::ifstream (args[0].c_str ());
+		if (!infile)
+			shevek_error_errno ("unable to open input file "
+					<< infile);
+		must_delete = true;
+		source = args[0];
+	}
 	std::string pre;
 	ln = 0;
-	while (std::getline (std::cin, line))
+	while (std::getline (*infile, line))
 	{
 		++ln;
 		if (!line.empty () && line[line.size () - 1] == '\\')
@@ -553,21 +630,37 @@ int main (int argc, char **argv)
 	}
 	if (!pre.empty ())
 		input.push_back (std::make_pair (ln, pre));
+	if (must_delete)
+		delete infile;
 	// Determine labels
-	addr = 0;
-	for (unsigned t = 0; t < input.size (); ++t)
+	bool first = true;
+	int undefined_labels = -1;
+	while (undefined_labels != 0)
 	{
-		ln = input[t].first;
-		parse (input[t].second, false);
+		int last_undefined_labels = undefined_labels;
+		addr = 0;
+		undefined_labels = 0;
+		for (unsigned t = 0; t < input.size (); ++t)
+		{
+			ln = input[t].first;
+			undefined_labels
+				+= parse (input[t].second, false, first);
+		}
+		if (undefined_labels == last_undefined_labels)
+		{
+			error ("Label dependency loop");
+			return 1;
+		}
+		if (errors)
+			return 1;
+		first = false;
 	}
-	if (errors)
-		return 1;
 	// Write output
 	addr = 0;
 	for (unsigned t = 0; t < input.size (); ++t)
 	{
 		ln = input[t].first;
-		parse (input[t].second, true);
+		parse (input[t].second, true, false);
 	}
 	if (errors)
 		return 1;
