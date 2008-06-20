@@ -5,18 +5,20 @@
 #include <shevek/error.hh>
 #include "asm.hh"
 
-unsigned ln;
 unsigned addr;
 unsigned errors;
-std::string source;
+
+std::stack <Input> input_stack;
 
 std::map <std::string, Param> params;
 std::list <Label> labels;
 std::list <Source> sources;
+std::list <DefsMacro> defs_macros;
 
 void error (std::string const &message)
 {
-	std::cerr << source << ':' << ln << ": " << message << std::endl;
+	std::cerr << input_stack.top ().name << ':' << input_stack.top ().ln
+		<< ": " << message << std::endl;
 	++errors;
 }
 
@@ -294,7 +296,7 @@ int read_expr (std::string const &expr, bool allow_params, std::string::size_typ
 	Expr e = Expr::read (expr, allow_params, pos);
 	if (pos != std::string::npos)
 	{
-#if 1
+#if 0
 		std::cerr << "Expression successfully read:";
 		for (std::list <ExprElem>::iterator i = e.list.begin ();
 				i != e.list.end (); ++i)
@@ -353,21 +355,87 @@ std::map <std::string, Param>::reverse_iterator
 	return params.rend ();
 }
 
-void read_definitions (std::istream &file)
+std::string subst_args (std::string const &orig,
+		std::vector <std::pair <std::string, std::string> > const &args)
+{
+	std::string o = orig;
+	for (unsigned i = 0; i < args.size (); ++i)
+	{
+		std::string ret;
+		std::string::size_type pos = 0;
+		while (true)
+		{
+			std::string::size_type
+				p = orig.find (args[i].first, pos);
+			if (p == std::string::npos)
+				break;
+			ret += o.substr (pos, p - pos);
+			ret += args[i].second;
+			pos = p + args[i].first.size ();
+		}
+		o = ret + o.substr (pos);
+	}
+	return o;
+}
+
+bool getline (std::string &ret)
+{
+	while (true)
+	{
+		switch (input_stack.top ().type)
+		{
+		case Input::FILE:
+			if (!std::getline (*input_stack.top ().file, ret))
+				return false;
+			break;
+		case Input::MACRO:
+			if (input_stack.top ().ln >= input_stack.top ()
+					.macro->code.size ())
+				return false;
+			ret = input_stack.top ().macro->code
+				[input_stack.top ().ln];
+			ret = subst_args (ret, input_stack.top ().macro->args);
+			break;
+		default:
+			error ("Bug: invalid case reached");
+			return false;
+		}
+		++input_stack.top ().ln;
+		if (!ret.empty ())
+			break;
+	}
+	return true;
+}
+
+void read_definitions ()
 {
 	bool is_enum = false, is_num = false, is_source = false;
+	bool recording = false;
 	std::map <std::string, unsigned>::iterator current_enum;
 	int current_value;
 	std::map <std::string, Param>::iterator current_param;
-	ln = 0;
+	input_stack.top ().ln = 0;
 	std::string line;
-	while (std::getline (file, line))
+	while (getline (line))
 	{
-		++ln;
 		shevek::istring l (line);
 		l (" ");
 		if (l.rest ().empty () || l ("#"))
 			continue;
+		if (recording)
+		{
+			if (l ("endmacro: "))
+			{
+				if (!recording)
+					error ("endmacro without macro");
+				recording = false;
+				if (!l ("%") && !l ("#"))
+					error ("junk after endmacro");
+				continue;
+			}
+			defs_macros.back ().code.push_back (line);
+			continue;
+		}
 		std::string d;
 		if (l ("enum: %s %", d))
 		{
@@ -481,9 +549,49 @@ void read_definitions (std::istream &file)
 			}
 			sources.back ().targets.push_back (d);
 		}
+		else if (l ("macro: %s", d))
+		{
+			is_num = false;
+			is_enum = false;
+			is_source = false;
+			defs_macros.push_back (DefsMacro ());
+			defs_macros.back ().name = d;
+			while (l (" %s", d))
+				defs_macros.back ().args.push_back
+					(std::make_pair (d, std::string ()));
+			recording = true;
+		}
 		else
+		{
+			std::list <DefsMacro>::iterator i;
+			for (i = defs_macros.begin (); i != defs_macros.end ();
+					++i)
+			{
+				if (l (escape (i->name)))
+				{
+					unsigned k;
+					for (k = 0; k < i->args.size (); ++k)
+					{
+						if (!l (" %s", i->args[k].second))
+						{
+							error ("not enough macro arguments");
+							break;
+						}
+					}
+					if (k < i->args.size ())
+						break;
+					input_stack.push (Input ());
+					input_stack.top ().name = i->name;
+					input_stack.top ().ln = 0;
+					input_stack.top ().type = Input::MACRO;
+					input_stack.top ().macro = i;
+				}
+			}
+			if (i != defs_macros.end ())
+				continue;
 			error (shevek::ostring ("syntax error trying to "
 						"parse `%s'", line));
+		}
 	}
 }
 
@@ -609,13 +717,17 @@ int main (int argc, char **argv)
 				false, defs),
 	};
 	shevek::args args (argc, argv, opts, 0, 1, "Generic assembler", "2008");
+	if (defs.empty ())
+		shevek_error ("you must specify a definitions file");
 	std::ifstream file (defs.c_str ());
 	if (!file)
 		shevek_error_errno ("unable to open file " << defs);
 	std::string line;
-	if (defs.empty ())
-		shevek_error ("you must specify a definitions file");
-	read_definitions (file);
+	input_stack.push (Input ());
+	input_stack.top ().name = defs;
+	input_stack.top ().type = Input::FILE;
+	input_stack.top ().file = &file;
+	read_definitions ();
 	if (errors)
 		return 1;
 	std::vector <std::pair <unsigned, std::string> > input;
@@ -625,7 +737,7 @@ int main (int argc, char **argv)
 	{
 		infile = &std::cin;
 		must_delete = false;
-		source = "Standard input";
+		input_stack.top ().name = "Standard input";
 	}
 	else
 	{
@@ -634,23 +746,24 @@ int main (int argc, char **argv)
 			shevek_error_errno ("unable to open input file "
 					<< infile);
 		must_delete = true;
-		source = args[0];
+		input_stack.top ().name = args[0];
 	}
 	std::string pre;
-	ln = 0;
+	input_stack.top ().ln = 0;
 	while (std::getline (*infile, line))
 	{
-		++ln;
+		++input_stack.top ().ln;
 		if (!line.empty () && line[line.size () - 1] == '\\')
 		{
 			pre += line.substr (0, line.size () - 1);
 			continue;
 		}
-		input.push_back (std::make_pair (ln, pre + line));
+		input.push_back (std::make_pair (input_stack.top ().ln,
+					pre + line));
 		pre.clear ();
 	}
 	if (!pre.empty ())
-		input.push_back (std::make_pair (ln, pre));
+		input.push_back (std::make_pair (input_stack.top ().ln, pre));
 	if (must_delete)
 		delete infile;
 	// Determine labels
@@ -663,7 +776,7 @@ int main (int argc, char **argv)
 		undefined_labels = 0;
 		for (unsigned t = 0; t < input.size (); ++t)
 		{
-			ln = input[t].first;
+			input_stack.top ().ln = input[t].first;
 			undefined_labels
 				+= parse (input[t].second, false, first);
 		}
@@ -680,7 +793,7 @@ int main (int argc, char **argv)
 	addr = 0;
 	for (unsigned t = 0; t < input.size (); ++t)
 	{
-		ln = input[t].first;
+		input_stack.top ().ln = input[t].first;
 		parse (input[t].second, true, false);
 	}
 	if (errors)

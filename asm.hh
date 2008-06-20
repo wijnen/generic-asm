@@ -1,11 +1,23 @@
-#ifndef OPERATORS_HH
-#define OPERATORS_HH
+#ifndef ASM_HH
+#define ASM_HH
 
 #include <string>
 #include <stack>
 #include <shevek/iostring.hh>
 #include <map>
 #include <list>
+#include <vector>
+
+struct DefsMacro;
+
+struct Input
+{
+	std::string name;
+	unsigned ln;
+	enum { FILE, MACRO } type;
+	std::list <DefsMacro>::iterator macro;
+	std::istream *file;
+};
 
 struct Oper
 {
@@ -71,6 +83,13 @@ struct Source
 	std::list <std::string> targets;
 };
 
+struct DefsMacro
+{
+	std::string name;
+	std::vector <std::pair <std::string, std::string> > args;
+	std::vector <std::string> code;
+};
+
 void error (std::string const &message);
 std::string escape (std::string const &in);
 Label *find_label (std::string name);
@@ -78,11 +97,11 @@ void read_input (std::istream &file);
 
 extern std::list <Label> labels;
 extern std::list <Source> sources;
+extern std::list <DefsMacro> defs_macros;
 
-extern unsigned ln;
 extern unsigned addr;
 extern unsigned errors;
-extern std::string source;
+extern std::stack <Input> input_stack;
 
 extern Oper operators1[3];
 extern Oper operators2[19];

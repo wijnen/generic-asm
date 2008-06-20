@@ -113,27 +113,27 @@ target: 0x8
 
 source: djnz .addr
 target: 0x10
-target: .addr - ..
+target: .addr - $
 
 source: jr .addr
 target: 0x18
-target: .addr - ..
+target: .addr - $
 
 source: jr nz , .addr
 target: 0x20
-target: .addr - ..
+target: .addr - $
 
 source: jr z , .addr
 target: 0x28
-target: .addr - ..
+target: .addr - $
 
 source: jr nc , .addr
 target: 0x30
-target: .addr - ..
+target: .addr - $
 
 source: jr c , .addr
 target: 0x38
-target: .addr - ..
+target: .addr - $
 
 
 # 01xxxxxx
