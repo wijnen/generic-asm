@@ -1,0 +1,436 @@
+#!/home/shevek/src/git/asm/asm --defs
+
+num: .dir
+constraint: (.dir >= 0) && (.dir <= 0xff)
+
+num: .dir2
+constraint: (.dir >= 0) && (.dir <= 0xff)
+
+num: .ext
+constraint: (.ext >= 0) && (.ext <= 0xffff)
+
+num: .imm
+constraint: (.imm >= -0x80) && (.imm <= 0xff)
+
+num: .ix1
+constraint: (.ix1 >= -0x80) && (.ix1 <= 0x7f)
+
+num: .ix2
+constraint: (.ix2 >= -0x8000) && (.ix2 <= 0x7fff)
+
+num: .addr
+constraint: (.addr >= 0) && (.addr <= 0xffff)
+
+macro: .stax .cmd .base
+
+source: .cmd * .dir
+target: .base + 0xb0
+target: .dir
+
+source: .cmd .ext
+target: .base + 0xc0
+target: .ext >> 8
+target: .ext & 0xff
+
+source: .cmd .ix1 , x
+target: .base + 0xe0
+target: .ix1
+
+source: .cmd .ix2 , x
+target: .base + 0xd0
+target: .ix2 >> 8
+target: .ix2 & 0xff
+
+source: .cmd , x
+target: .base + 0xf0
+
+source: .cmd .ix1 , sp
+target: 0x9e
+target: .base + 0xe0
+target: .ix1
+
+source: .cmd .ix2 , sp
+target: 0x9e
+target: .base + 0xd0
+target: .ix2 >> 8
+target: .ix2 & 0xff
+
+endmacro:
+
+macro: .ldax .cmd .base
+
+source: .cmd # .imm
+target: .base + 0xa0
+target: .imm
+
+.stax .cmd .base
+
+endmacro:
+
+macro: .regop .cmd .base
+source: .cmd * .dir
+target: .base + 0x30
+target: .dir
+
+source: .cmda
+target: .base + 0x40
+
+source: .cmdx
+target: .base + 0x50
+
+source: .cmd .ix1 , x
+target: .base + 0x60
+target: .ix1
+
+source: .cmd , x
+target: .base + 0x70
+
+source: .cmd .ix1 , sp
+target: 0x9e
+target: .base + 0x60
+
+endmacro:
+
+.ldax adc 0x9
+.ldax add 0xb
+.regop asl 0x8
+.regop asr 0x7
+
+source: bcc .addr
+target: 0x24
+target: .addr - $
+
+source: bclr .bit , * .dir
+target: 0x11 + 2 * .bit
+target: .dir
+
+source: bcs .addr
+target: 0x25
+target: .addr - $
+
+source: beq .addr
+target: 0x27
+target: .addr - $
+
+source: bge .addr
+target: 0x90
+target: .addr - $
+
+source: bgt .addr
+target: 0x92
+target: .addr - $
+
+source: bhcc .addr
+target: 0x28
+target: .addr - $
+
+source: bhcs .addr
+target: 0x29
+target: .addr - $
+
+source: bhi .addr
+target: 0x22
+target: .addr - $
+
+source: bhs .addr
+target: 0x24
+target: .addr - $
+
+source: bih .addr
+target: 0x2f
+target: .addr - $
+
+source: bil .addr
+target: 0x2e
+target: .addr - $
+
+.ldax bit 0x5
+
+source: ble .addr
+target: 0x93
+target: .addr - $
+
+source: blo .addr
+target: 0x25
+target: .addr - $
+
+source: bls .addr
+target: 0x23
+target: .addr - $
+
+source: blt .addr
+target: 0x91
+target: .addr - $
+
+source: bmc .addr
+target: 0x2c
+target: .addr - $
+
+source: bmi .addr
+target: 0x2b
+target: .addr - $
+
+source: bms .addr
+target: 0x2d
+target: .addr - $
+
+source: bne .addr
+target: 0x26
+target: .addr - $
+
+source: bpl .addr
+target: 0x2a
+target: .addr - $
+
+source: bra .addr
+target: 0x20
+target: .addr - $
+
+source: brclr .bit , * .dir , .addr
+target: 1 + 2 * .bit
+target: .dir
+target: .addr - $
+
+source: brn .addr
+target: 0x21
+target: .addr - $
+
+source: brset .bit , * .dir , .addr
+target: 0 + 2 * .bit
+target: .dir
+target: .addr - $
+
+source: bset .bit , * .dir
+target: 0x10 + 2 * .bit
+target: .dir
+
+source: bsr .addr
+target: 0xad
+target: .addr - $
+
+source: cbeq * .dir , .addr
+target: 0x31
+target: .dir
+target: .addr - $
+
+source: cbeqa # .imm , .addr
+target: 0x41
+target: .addr - $
+
+source: cbeqx # .imm , .addr
+target: 0x51
+target: .addr - $
+
+source: cbeq .ix1 , x + , .addr
+target: 0x61
+target: .addr - $
+
+source: cbeq , x + , .addr
+target: 0x71
+target: .addr - $
+
+source: cbeq .ix1 , sp , .addr
+target: 0x9e
+target: 0x61
+target: .addr - $
+
+source: clc
+target: 0x98
+
+source: cli
+target: 0x9a
+
+.regop clr 0xf
+
+source: clrh
+target: 0x8c
+
+.ldax cmp 0x1
+
+.regop com 0x3
+
+source: cphx # .ext
+target: 0x65
+target: .ext >> 8
+target: .ext & 0xff
+
+source: cphx * .dir
+target: 0x75
+target: .dir
+
+.ldax cpx 0x3
+
+source: daa
+target: 0x72
+
+source: dbnz * .dir , .addr
+target: 0x3b
+target: .dir
+target: .addr - $
+
+source: dbnza .addr
+target: 0x4b
+target: .addr - $
+
+source: dbnzx .addr
+target: 0x5b
+target: .addr - $
+
+source: dbnz .ix1 , x , .addr
+target: 0x6b
+target: .ix1
+target: .addr - $
+
+source: dbnz , x , .addr
+target: 0x7b
+target: .addr - $
+
+source: dbnz .ix1 , sp , .addr
+target: 0x9e
+target: 0x6b
+target: .ix1
+target: .addr - $
+
+.regop dec 0xa
+
+source: div
+target: 0x52
+
+.ldax eor 0x8
+
+.regop inc 0xc
+
+macro: .jmp .cmd .base
+source: .cmd * .dir
+target: .base + 0xb0
+target: .dir
+
+source: .cmd .addr
+target: .base + 0xc0
+target: .addr >> 8
+target: .addr & 0xff
+
+source: .cmd .ix1 , x
+target: .base + 0xe0
+target: .ix1
+
+source: .cmd .ix2 , x
+target: .base + 0xd0
+target: .ix2 >> 8
+target: .ix2 & 0xff
+
+source: .cmd , x
+target: .base + 0xf0
+endmacro:
+
+.jmp jmp 0xc
+.jmp jsr 0xd
+
+.ldax lda 0x6
+
+source: ldhx # .ext
+target: 0x45
+target: .ext >> 8
+target: .ext & 0xff
+
+source: ldhx * .dir
+target: 0x55
+target: .dir
+
+.ldax ldx 0xe
+.regop lsl 0x8
+.regop lsr 0x4
+
+source: mov * .dir , * .dir2
+target: 0x4e
+target: .dir
+target: .dir2
+
+source: mov * .dir , x +
+target: 0x5e
+target: .dir
+
+source: mov # .imm , * .dir
+target: 0x6e
+target: .dir
+
+source: mov x + , * .dir
+target: 0x7e
+target: .dir
+
+source: mul
+target: 0x42
+
+.regop neg 0x0
+
+source: nop
+target: 0x9d
+
+source: nsa
+target: 0x62
+
+.ldax ora 0xa
+
+source: psha
+target: 0x87
+source: pshh
+target: 0x8b
+source: pshx
+target: 0x89
+source: pula
+target: 0x86
+source: pulh
+target: 0x8a
+source: pulx
+target: 0x88
+
+.regop rol 0x9
+.regop ror 0x6
+
+source: rsp
+target: 0x9c
+
+source: rti
+target: 0x80
+
+source: rts
+target: 0x81
+
+.ldax sbc 0x2
+
+source: sec
+target: 0x99
+
+source: sei
+target: 0x9b
+
+.stax sta 0x7
+
+source: sthx * .dir
+target: 0x35
+target: .dir
+
+source: stop
+target: 0x8e
+
+.stax stx 0xf
+.ldax sub 0x0
+
+source: swi
+target: 0x83
+
+source: tap
+target: 0x84
+source: tax
+target: 0x97
+source: tpa
+target: 0x85
+
+.regop tst 0xd
+
+source: tsx
+target: 0x95
+source: txa
+target: 0x9f
+source: txs
+target: 0x94
