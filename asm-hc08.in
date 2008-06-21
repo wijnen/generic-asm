@@ -1,4 +1,4 @@
-#!/home/shevek/src/git/asm/asm --defs
+#!NAME --defs
 
 num: .dir
 constraint: (.dir >= 0) && (.dir <= 0xff)

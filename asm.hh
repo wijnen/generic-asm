@@ -42,7 +42,8 @@ struct Param
 	int value;
 
 	static void reset ();
-	static std::map <std::string, Param>::reverse_iterator find (std::string const &name);
+	static std::map <std::string, Param>::reverse_iterator find
+		(std::string const &name);
 };
 
 extern std::map <std::string, Param> params;
@@ -55,7 +56,9 @@ struct ExprElem
 	std::string label;
 	std::map <std::string, Param>::reverse_iterator param;
 	ExprElem (Type t, int v, Oper *o = NULL,
-	std::string l = std::string (), std::map <std::string, Param>::reverse_iterator p = params.rend ())
+			std::string l = std::string (),
+			std::map <std::string, Param>::reverse_iterator
+			p = params.rend ())
 		: type (t), value (v), oper (o), label (l), param (p) {}
 };
 
@@ -78,7 +81,8 @@ struct Label
 
 struct Source
 {
-	std::list <std::pair <std::string, std::map <std::string, Param>::reverse_iterator> > parts;
+	std::list <std::pair <std::string, std::map <std::string, Param>
+				::reverse_iterator> > parts;
 	std::string post;
 	std::list <std::string> targets;
 };
@@ -90,11 +94,6 @@ struct DefsMacro
 	std::vector <std::string> code;
 };
 
-void error (std::string const &message);
-std::string escape (std::string const &in);
-Label *find_label (std::string name);
-void read_input (std::istream &file);
-
 extern std::list <Label> labels;
 extern std::list <Source> sources;
 extern std::list <DefsMacro> defs_macros;
@@ -102,6 +101,26 @@ extern std::list <DefsMacro> defs_macros;
 extern unsigned addr;
 extern unsigned errors;
 extern std::stack <Input> input_stack;
+
+extern Oper operators1[3];
+extern Oper operators2[19];
+extern Oper operators3[1];
+
+template <typename T, unsigned n> unsigned num_elem (T (&arr)[n]) { return n; }
+
+void error (std::string const &message);
+std::string escape (std::string const &in);
+Label *find_label (std::string name);
+int read_expr (std::string const &expr, bool allow_params,
+		std::string::size_type &pos, bool *valid);
+int read_expr (std::string const &expr);
+std::string subst_args (std::string const &orig, std::vector
+		<std::pair <std::string, std::string> > const &args);
+bool getline (std::string &ret);
+void read_definitions ();
+void write_out (Source const &s);
+unsigned parse (std::string line, bool output, bool first_pass);
+int main (int argc, char **argv);
 
 extern Oper operators1[3];
 extern Oper operators2[19];

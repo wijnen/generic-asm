@@ -1,4 +1,4 @@
-#!/home/shevek/src/git/asm/asm --defs
+#!NAME --defs
 
 enum: .rr
 name: bc

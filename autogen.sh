@@ -9,4 +9,4 @@ done
 echo "Bas Wijnen <wijnen@debian.org>" > AUTHORS
 
 autoreconf --force --install --symlink
-./configure "$@"
+test "$NOCONFIGURE" || ./configure "$@"
