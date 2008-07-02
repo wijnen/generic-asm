@@ -1,5 +1,17 @@
 #!NAME --defs
 
+directive: org org
+directive: defb defb
+directive: equ equ
+directive: include include
+directive: incbin incbin
+directive: seek seek
+directive: macro macro
+directive: endmacro endmacro
+directive: if if
+directive: else else
+directive: endif endif
+
 enum: .rr
 name: bc
 value: 0x00

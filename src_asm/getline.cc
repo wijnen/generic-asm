@@ -2,18 +2,26 @@
 
 bool getline (std::string &ret)
 {
-	while (true)
+	while (!input_stack.empty ())
 	{
 		switch (input_stack.top ().type)
 		{
 		case Input::FILE:
 			if (!std::getline (*input_stack.top ().file, ret))
-				return false;
+			{
+				if (input_stack.top ().must_delete)
+					delete input_stack.top ().file;
+				input_stack.pop ();
+				continue;
+			}
 			break;
 		case Input::MACRO:
 			if (input_stack.top ().ln >= input_stack.top ()
 					.macro->code.size ())
-				return false;
+			{
+				input_stack.pop ();
+				continue;
+			}
 			ret = input_stack.top ().macro->code
 				[input_stack.top ().ln];
 			ret = subst_args (ret, input_stack.top ().macro->args);
@@ -26,5 +34,5 @@ bool getline (std::string &ret)
 		if (!ret.empty ())
 			break;
 	}
-	return true;
+	return !input_stack.empty ();
 }

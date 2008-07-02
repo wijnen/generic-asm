@@ -4,6 +4,7 @@ unsigned addr;
 unsigned errors;
 
 std::stack <Input> input_stack;
+std::list <std::pair <unsigned, std::string> > *current_stack;
 
 std::map <std::string, Param> params;
 std::list <Label> labels;

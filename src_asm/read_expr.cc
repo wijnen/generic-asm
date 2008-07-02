@@ -40,10 +40,19 @@ int read_expr (std::string const &expr, bool allow_params,
 	return 0;
 }
 
-int read_expr (std::string const &expr)
+int read_expr (std::string const &expr, std::string const &comment)
 {
 	std::string::size_type pos = 0;
-	read_expr (expr, true, pos, NULL);
+	int ret = read_expr (expr, true, pos, NULL);
 	if (pos == std::string::npos)
 		error (shevek::ostring ("invalid expression: %s", expr));
+	else
+	{
+		shevek::istring s (expr.substr (pos));
+		s (" ");
+		if (!s.rest ().empty () && !s (comment))
+			error (shevek::ostring ("junk at end of value: %s",
+						s.rest ()));
+	}
+	return ret;
 }

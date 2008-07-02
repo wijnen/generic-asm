@@ -13,7 +13,6 @@ configure
 depcomp
 install-sh
 missing
-asm
 asm-hc08
 asm-z80
 genasm

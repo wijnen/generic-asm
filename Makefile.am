@@ -5,6 +5,19 @@ dist_bin_SCRIPTS = asm-z80 asm-hc08
 
 genasm_SOURCES = asm.hh \
 	src_asm/data.cc \
+	src_asm/dir_defb.cc \
+	src_asm/dir_else.cc \
+	src_asm/dir_endif.cc \
+	src_asm/dir_endmacro.cc \
+	src_asm/dir_equ.cc \
+	src_asm/dir_error.cc \
+	src_asm/dir_if.cc \
+	src_asm/dir_incbin.cc \
+	src_asm/dir_include.cc \
+	src_asm/dir_macro.cc \
+	src_asm/dir_org.cc \
+	src_asm/dir_seek.cc \
+	src_asm/directives.cc \
 	src_asm/error.cc \
 	src_asm/escape.cc \
 	src_asm/expr_compute.cc \
@@ -13,6 +26,7 @@ genasm_SOURCES = asm.hh \
 	src_asm/find.cc \
 	src_asm/find_label.cc \
 	src_asm/getline.cc \
+	src_asm/input_line.cc \
 	src_asm/main.cc \
 	src_asm/operators.cc \
 	src_asm/param_reset.cc \
@@ -20,6 +34,7 @@ genasm_SOURCES = asm.hh \
 	src_asm/read_definitions.cc \
 	src_asm/read_expr.cc \
 	src_asm/subst_args.cc \
+	src_asm/write_byte.cc \
 	src_asm/write_out.cc
 genasm_CPPFLAGS = $(SHEVEK_CFLAGS) -I.
 genasm_LDADD = $(SHEVEK_LIBS)
