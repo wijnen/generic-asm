@@ -118,6 +118,6 @@ unsigned parse (input_line &input, bool output, bool first_pass, bool report)
 		addr += s->targets.size ();
 		return undef;
 	}
-	error ("Syntax error");
+	error (shevek::ostring ("Syntax error: %s", l.rest ()));
 	return undef;
 }

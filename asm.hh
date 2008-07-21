@@ -146,6 +146,7 @@ int main (int argc, char **argv);
 
 unsigned dir_org (shevek::istring &args, bool write, Label *current_label);
 unsigned dir_defb (shevek::istring &args, bool write, Label *current_label);
+unsigned dir_comment (shevek::istring &args, bool write, Label *current_label);
 unsigned dir_equ (shevek::istring &args, bool write, Label *current_label);
 unsigned dir_include (shevek::istring &args, bool write, Label *current_label);
 unsigned dir_incbin (shevek::istring &args, bool write, Label *current_label);
@@ -159,6 +160,6 @@ unsigned dir_endif (shevek::istring &args, bool write, Label *current_label);
 extern Oper operators1[3];
 extern Oper operators2[19];
 extern Oper operators3[1];
-extern Directive directives[12];
+extern Directive directives[13];
 
 #endif

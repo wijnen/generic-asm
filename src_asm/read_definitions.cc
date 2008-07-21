@@ -19,8 +19,6 @@ void read_definitions ()
 		{
 			if (l ("endmacro: "))
 			{
-				if (!recording)
-					error ("endmacro without macro");
 				recording = false;
 				if (!l ("%") && !l ("#"))
 					error ("junk after endmacro");
@@ -211,6 +209,7 @@ void read_definitions ()
 					input_stack.top ().ln = 0;
 					input_stack.top ().type = Input::MACRO;
 					input_stack.top ().macro = i;
+					break;
 				}
 			}
 			if (i != defs_macros.end ())

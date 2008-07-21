@@ -1,4 +1,5 @@
 #include "asm.hh"
+#include <iostream>
 
 int Expr::compute (bool *valid)
 {
@@ -15,6 +16,8 @@ int Expr::compute (bool *valid)
 			stack.push (i->value);
 			break;
 		case ExprElem::OPER:
+			std::cerr << "running operator " << i->oper->name
+				<< std::endl;
 			i->oper->run (stack);
 			break;
 		case ExprElem::PARAM:

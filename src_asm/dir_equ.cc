@@ -17,8 +17,9 @@ unsigned dir_equ (shevek::istring &args, bool write, Label *current_label)
 		error ("invalid expression");
 		return 1;
 	}
+	args.skip (pos);
 	args (" ");
-	if (!args.rest ().empty () && !args (";"))
+	if (!args.rest ().empty ())
 		error (shevek::ostring ("junk at end of expression: %s",
 					args.rest ()));
 	return current_label->valid ? 0 : 1;

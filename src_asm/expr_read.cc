@@ -7,8 +7,8 @@ Expr Expr::read (std::string const &input, bool allow_params,
 	shevek::istring l (input.substr (pos));
 	bool expect_number = true;
 	std::stack <Oper *> opers;
-	Oper open ('(', "(", -1, NULL), close (')', ")", -1, NULL);
-	Oper tri_start ('?', "?", 0, NULL);
+	Oper open ('(', "(", -3, NULL), close (')', ")", -2, NULL);
+	Oper tri_start ('?', "?", -1, NULL);
 	int correction = 0;
 	while (true)
 	{
@@ -112,34 +112,27 @@ Expr Expr::read (std::string const &input, bool allow_params,
 			if (l (escape (operators3[0].name)))
 			{
 				ret.handle_oper (opers, &operators3[0]);
-				if (ret.list.empty ()
-						|| ret.list.back ().type
-						!= ExprElem::OPER
-						|| ret.list.back ().oper->code
-						!= '?')
+				if (opers.empty ()
+						|| opers.top ()->code != '?')
 				{
 					pos = std::string::npos;
 					return Expr ();
 				}
-				ret.list.pop_back ();
+				opers.pop ();
 				expect_number = true;
 				continue;
 			}
 			if (l (")"))
 			{
 				ret.handle_oper (opers, &close);
-				opers.pop ();
-				if (ret.list.empty ()
-						|| ret.list.back ().type
-						!= ExprElem::OPER
-						|| ret.list.back ().oper->code
-						!= '(')
+				if (opers.empty ()
+						|| opers.top ()->code != '(')
 				{
 					// End of expression.
 					correction = 1;
 					break;
 				}
-				ret.list.pop_back ();
+				opers.pop ();
 				continue;
 			}
 			// Unknown character: end of expression.

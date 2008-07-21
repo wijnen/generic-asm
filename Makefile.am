@@ -6,6 +6,7 @@ dist_bin_SCRIPTS = asm-z80 asm-hc08
 genasm_SOURCES = asm.hh \
 	src_asm/data.cc \
 	src_asm/dir_defb.cc \
+	src_asm/dir_comment.cc \
 	src_asm/dir_else.cc \
 	src_asm/dir_endif.cc \
 	src_asm/dir_endmacro.cc \

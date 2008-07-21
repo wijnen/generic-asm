@@ -1,6 +1,6 @@
 #include "asm.hh"
 
-Directive directives[12] = {
+Directive directives[13] = {
 	Directive ("org", &dir_org),
 	Directive ("defb", &dir_defb),
 	Directive ("equ", &dir_equ),
@@ -12,5 +12,6 @@ Directive directives[12] = {
 	Directive ("if", &dir_if),
 	Directive ("else", &dir_else),
 	Directive ("endif", &dir_endif),
-	Directive ("error", &dir_endif)
+	Directive ("error", &dir_endif),
+	Directive (";", &dir_comment)
 };
