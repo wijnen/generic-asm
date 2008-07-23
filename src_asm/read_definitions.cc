@@ -204,8 +204,11 @@ void read_definitions ()
 					}
 					if (k < i->args.size ())
 						break;
+					std::string base
+						= input_stack.top ().basedir;
 					input_stack.push (Input ());
 					input_stack.top ().name = i->name;
+					input_stack.top ().basedir = base;
 					input_stack.top ().ln = 0;
 					input_stack.top ().type = Input::MACRO;
 					input_stack.top ().macro = i;

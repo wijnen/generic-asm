@@ -1,9 +1,11 @@
 #include "asm.hh"
 
-unsigned dir_defb (shevek::istring &args, bool write, Label *current_label)
+unsigned dir_defb (shevek::istring &args, bool write, bool first,
+		Label *current_label)
 {
 	(void)current_label;
 	unsigned undef = 0;
+	unsigned s = 0;
 	while (true)
 	{
 		bool valid;
@@ -22,6 +24,15 @@ unsigned dir_defb (shevek::istring &args, bool write, Label *current_label)
 		if (write)
 			write_byte (v);
 		++addr;
+		++s;
+	}
+	if (write && listfile)
+	{
+		int size = 5 + 3 * s;
+		int numtabs = (31 - size) / 8;
+		if (numtabs <= 0)
+			numtabs = 1;
+		*listfile << std::string (numtabs, '\t');
 	}
 	return undef;
 }

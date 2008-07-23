@@ -67,3 +67,5 @@ src_asm/genasm-dir_seek.o
 src_asm/genasm-directives.o
 src_asm/genasm-input_line.o
 src_asm/genasm-write_byte.o
+src_asm/genasm-hex.o
+src_asm/genasm-read_filename.o

@@ -31,8 +31,7 @@ bool getline (std::string &ret)
 			return false;
 		}
 		++input_stack.top ().ln;
-		if (!ret.empty ())
-			break;
+		break;
 	}
 	return !input_stack.empty ();
 }

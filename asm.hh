@@ -13,6 +13,7 @@ struct DefsMacro;
 struct Input
 {
 	std::string name;
+	std::string basedir;
 	unsigned ln;
 	enum { FILE, MACRO } type;
 	std::list <DefsMacro>::iterator macro;
@@ -84,6 +85,7 @@ private:
 struct Label
 {
 	std::string name;
+	input_line *definition;
 	int value;
 	bool valid;
 };
@@ -107,17 +109,33 @@ struct Directive
 {
 	std::string name;
 	std::list <std::string> nick;
-	unsigned (*function) (shevek::istring &args, bool write,
+	unsigned (*function) (shevek::istring &args, bool write, bool first,
 			Label *current_label);
 	Directive (std::string const &n,
-			unsigned (*f)(shevek::istring &, bool, Label *))
+			unsigned (*f)(shevek::istring &, bool, bool, Label *))
 		: name (n), function (f) {}
+};
+
+class Hex
+{
+public:
+	void open (std::istream &file);
+	void write (std::ostream &file);
+	int get (unsigned address) const;
+	void set (unsigned address, int value);
+	unsigned size () const { return data.size (); }
+private:
+	std::vector <int> data;
 };
 
 extern std::list <Label> labels;
 extern std::list <Source> sources;
 extern std::list <DefsMacro> defs_macros;
+extern std::list <std::string> include_path;
 
+extern std::ostream *outfile, *listfile;
+extern bool usehex;
+extern Hex hexfile;
 extern unsigned addr;
 extern unsigned errors;
 extern std::stack <Input> input_stack;
@@ -139,23 +157,36 @@ std::string subst_args (std::string const &orig, std::vector
 		<std::pair <std::string, std::string> > const &args);
 bool getline (std::string &ret);
 void read_definitions ();
+std::string read_filename (shevek::istring &args);
 void write_out (Source const &s);
 void write_byte (int byte);
 unsigned parse (input_line &input, bool output, bool first_pass, bool report);
 int main (int argc, char **argv);
 
-unsigned dir_org (shevek::istring &args, bool write, Label *current_label);
-unsigned dir_defb (shevek::istring &args, bool write, Label *current_label);
-unsigned dir_comment (shevek::istring &args, bool write, Label *current_label);
-unsigned dir_equ (shevek::istring &args, bool write, Label *current_label);
-unsigned dir_include (shevek::istring &args, bool write, Label *current_label);
-unsigned dir_incbin (shevek::istring &args, bool write, Label *current_label);
-unsigned dir_seek (shevek::istring &args, bool write, Label *current_label);
-unsigned dir_macro (shevek::istring &args, bool write, Label *current_label);
-unsigned dir_endmacro (shevek::istring &args, bool write, Label *current_label);
-unsigned dir_if (shevek::istring &args, bool write, Label *current_label);
-unsigned dir_else (shevek::istring &args, bool write, Label *current_label);
-unsigned dir_endif (shevek::istring &args, bool write, Label *current_label);
+unsigned dir_org (shevek::istring &args, bool write, bool first,
+		Label *current_label);
+unsigned dir_defb (shevek::istring &args, bool write, bool first,
+		Label *current_label);
+unsigned dir_comment (shevek::istring &args, bool write, bool first,
+		Label *current_label);
+unsigned dir_equ (shevek::istring &args, bool write, bool first,
+		Label *current_label);
+unsigned dir_include (shevek::istring &args, bool write, bool first,
+		Label *current_label);
+unsigned dir_incbin (shevek::istring &args, bool write, bool first,
+		Label *current_label);
+unsigned dir_seek (shevek::istring &args, bool write, bool first,
+		Label *current_label);
+unsigned dir_macro (shevek::istring &args, bool write, bool first,
+		Label *current_label);
+unsigned dir_endmacro (shevek::istring &args, bool write, bool first,
+		Label *current_label);
+unsigned dir_if (shevek::istring &args, bool write, bool first,
+		Label *current_label);
+unsigned dir_else (shevek::istring &args, bool write, bool first,
+		Label *current_label);
+unsigned dir_endif (shevek::istring &args, bool write, bool first,
+		Label *current_label);
 
 extern Oper operators1[3];
 extern Oper operators2[19];

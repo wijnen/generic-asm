@@ -1,4 +1,5 @@
 #include "asm.hh"
+#include <shevek/debug.hh>
 
 Expr Expr::read (std::string const &input, bool allow_params,
 		std::string::size_type &pos)
@@ -55,22 +56,7 @@ Expr Expr::read (std::string const &input, bool allow_params,
 					if (i != params.rend ())
 						continue;
 				}
-				// Label
-				std::list <Label>::const_iterator i;
-				for (i = labels.begin (); i != labels.end ();
-						++i)
-				{
-					if (word != i->name)
-						continue;
-					ret.list.push_back (ExprElem
-							(ExprElem::LABEL,
-							 0, NULL, i->name));
-					expect_number = false;
-					break;
-				}
-				if (i != labels.end ())
-					continue;
-				// Label which will be defined later
+				// Label (may be defined later)
 				ret.list.push_back (ExprElem (ExprElem::LABEL,
 							0, NULL, word));
 				expect_number = false;
@@ -112,27 +98,30 @@ Expr Expr::read (std::string const &input, bool allow_params,
 			if (l (escape (operators3[0].name)))
 			{
 				ret.handle_oper (opers, &operators3[0]);
+				opers.pop ();	// The :
 				if (opers.empty ()
-						|| opers.top ()->code != '?')
+						|| opers.top () != &tri_start)
 				{
 					pos = std::string::npos;
 					return Expr ();
 				}
-				opers.pop ();
+				opers.pop ();	// The ?
+				opers.push (&operators3[0]);
 				expect_number = true;
 				continue;
 			}
 			if (l (")"))
 			{
 				ret.handle_oper (opers, &close);
-				if (opers.empty ()
-						|| opers.top ()->code != '(')
+				opers.pop ();	// The closing parentheses
+				if (opers.empty () || opers.top () != &open)
 				{
+					dbg ("ending expression on closing parentheses");
 					// End of expression.
 					correction = 1;
 					break;
 				}
-				opers.pop ();
+				opers.pop ();	// The opening parentheses
 				continue;
 			}
 			// Unknown character: end of expression.
@@ -143,6 +132,7 @@ Expr Expr::read (std::string const &input, bool allow_params,
 	{
 		if (opers.top () == &open)
 		{
+			dbg ("too many open parentheses");
 			pos = std::string::npos;
 			return Expr ();
 		}
@@ -151,6 +141,7 @@ Expr Expr::read (std::string const &input, bool allow_params,
 			pos = std::string::npos;
 			return Expr ();
 		}
+		dbg ("pushing pending operator " << opers.top ()->name);
 		ret.list.push_back (ExprElem (ExprElem::OPER, 0, opers.top ()));
 		opers.pop ();
 	}

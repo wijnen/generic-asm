@@ -1,9 +1,9 @@
 #include "asm.hh"
 
-unsigned dir_equ (shevek::istring &args, bool write, Label *current_label)
+unsigned dir_equ (shevek::istring &args, bool write, bool first,
+		Label *current_label)
 {
 	(void)current_label;
-	(void)write;
 	if (!current_label)
 	{
 		error ("equ used without a label");
@@ -22,5 +22,7 @@ unsigned dir_equ (shevek::istring &args, bool write, Label *current_label)
 	if (!args.rest ().empty ())
 		error (shevek::ostring ("junk at end of expression: %s",
 					args.rest ()));
+	if (write && listfile)
+		*listfile << "\t\t\t";
 	return current_label->valid ? 0 : 1;
 }

@@ -13,26 +13,32 @@ directive: else .else
 directive: endif .endif
 directive: ; ;
 
+num: .bit
+constraint: .bit >= 0 && .bit <= 7
+
 num: .dir
-constraint: (.dir >= 0) && (.dir <= 0xff)
+constraint: .dir >= 0 && .dir <= 0xff
 
 num: .dir2
-constraint: (.dir >= 0) && (.dir <= 0xff)
+constraint: .dir >= 0 && .dir <= 0xff
 
 num: .ext
-constraint: (.ext >= 0) && (.ext <= 0xffff)
+constraint: .ext >= 0 && .ext <= 0xffff
 
 num: .imm
-constraint: (.imm >= -0x80) && (.imm <= 0xff)
+constraint: .imm >= -0x80 && .imm <= 0xff
+
+num: .aimm
+constraint: .aimm >= -0x80 && .aimm <= 0x7f
 
 num: .ix1
-constraint: (.ix1 >= -0x80) && (.ix1 <= 0x7f)
+constraint: .ix1 >= -0x80 && .ix1 <= 0x7f
 
 num: .ix2
-constraint: (.ix2 >= -0x8000) && (.ix2 <= 0x7fff)
+constraint: .ix2 >= -0x8000 && .ix2 <= 0x7fff
 
 num: .addr
-constraint: (.addr >= 0) && (.addr <= 0xffff)
+constraint: .addr >= 0 && .addr <= 0xffff
 
 macro: .stax .cmd .base
 
@@ -104,8 +110,17 @@ target: .base + 0x60
 
 endmacro:
 
+source: ais # .aimm
+target: 0xa7
+target: .aimm
+
+source: aix # .aimm
+target: 0xaf
+target: .aimm
+
 .ldax adc 0x9
 .ldax add 0xb
+.ldax and 0x4
 .regop asl 0x8
 .regop asr 0x7
 
@@ -113,7 +128,7 @@ source: bcc .addr
 target: 0x24
 target: .addr - $
 
-source: bclr .bit , * .dir
+source: bclr # .bit , * .dir
 target: 0x11 + 2 * .bit
 target: .dir
 
@@ -199,7 +214,7 @@ source: bra .addr
 target: 0x20
 target: .addr - $
 
-source: brclr .bit , * .dir , .addr
+source: brclr # .bit , * .dir , .addr
 target: 1 + 2 * .bit
 target: .dir
 target: .addr - $
@@ -208,12 +223,12 @@ source: brn .addr
 target: 0x21
 target: .addr - $
 
-source: brset .bit , * .dir , .addr
+source: brset # .bit , * .dir , .addr
 target: 0 + 2 * .bit
 target: .dir
 target: .addr - $
 
-source: bset .bit , * .dir
+source: bset # .bit , * .dir
 target: 0x10 + 2 * .bit
 target: .dir
 
@@ -253,10 +268,10 @@ target: 0x98
 source: cli
 target: 0x9a
 
-.regop clr 0xf
-
 source: clrh
 target: 0x8c
+
+.regop clr 0xf
 
 .ldax cmp 0x1
 
@@ -365,6 +380,7 @@ target: .dir
 
 source: mov # .imm , * .dir
 target: 0x6e
+target: .imm
 target: .dir
 
 source: mov x + , * .dir
@@ -447,3 +463,9 @@ source: txa
 target: 0x9f
 source: txs
 target: 0x94
+
+source: wait
+target: 0x8f
+
+source: stop
+target: 0x8e

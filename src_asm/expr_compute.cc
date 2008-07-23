@@ -1,8 +1,10 @@
 #include "asm.hh"
 #include <iostream>
+#include <shevek/debug.hh>
 
 int Expr::compute (bool *valid)
 {
+	dbg ("computing");
 	if (valid)
 		*valid = true;
 	std::stack <int> stack;
@@ -13,11 +15,11 @@ int Expr::compute (bool *valid)
 		{
 			int a, b, c;
 		case ExprElem::NUM:
+			dbg ("computing num " << i->value);
 			stack.push (i->value);
 			break;
 		case ExprElem::OPER:
-			std::cerr << "running operator " << i->oper->name
-				<< std::endl;
+			dbg ("computing operator " << i->oper->name);
 			i->oper->run (stack);
 			break;
 		case ExprElem::PARAM:
@@ -33,13 +35,18 @@ int Expr::compute (bool *valid)
 				stack.push (0);
 			}
 			else
+			{
+				dbg ("computing param " << i->param->first);
 				stack.push (i->param->second.value);
+			}
 			break;
 		case ExprElem::LABEL:
+			dbg ("computing label " << i->label);
 			Label *l;
 			l = find_label (i->label);
 			if (!l || !l->valid)
 			{
+				dbg ("invalid");
 				if (valid)
 					*valid = false;
 				else
@@ -47,7 +54,10 @@ int Expr::compute (bool *valid)
 				stack.push (0);
 			}
 			else
+			{
+				dbg ("valid");
 				stack.push (l->value);
+			}
 			break;
 		}
 	}

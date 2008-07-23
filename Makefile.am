@@ -27,6 +27,7 @@ genasm_SOURCES = asm.hh \
 	src_asm/find.cc \
 	src_asm/find_label.cc \
 	src_asm/getline.cc \
+	src_asm/hex.cc \
 	src_asm/input_line.cc \
 	src_asm/main.cc \
 	src_asm/operators.cc \
@@ -34,6 +35,7 @@ genasm_SOURCES = asm.hh \
 	src_asm/parse.cc \
 	src_asm/read_definitions.cc \
 	src_asm/read_expr.cc \
+	src_asm/read_filename.cc \
 	src_asm/subst_args.cc \
 	src_asm/write_byte.cc \
 	src_asm/write_out.cc

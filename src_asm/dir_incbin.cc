@@ -1,7 +1,8 @@
 #include "asm.hh"
 #include <fstream>
 
-unsigned dir_incbin (shevek::istring &args, bool write, Label *current_label)
+unsigned dir_incbin (shevek::istring &args, bool write, bool first,
+		Label *current_label)
 {
 	(void)current_label;
 	std::ifstream file (args.rest ().c_str ());
@@ -17,5 +18,7 @@ unsigned dir_incbin (shevek::istring &args, bool write, Label *current_label)
 			write_byte (c);
 		++addr;
 	}
+	if (write && listfile)
+		*listfile << "...\t\t";
 	return 0;
 }

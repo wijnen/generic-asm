@@ -1,21 +1,17 @@
 #include "asm.hh"
 #include <iostream>
 #include <shevek/error.hh>
+#include <shevek/debug.hh>
 
 void error (std::string const &message)
 {
-	if (!input_stack.empty ())
-	{
-		input_line l ("");
-		current_stack = &l.stack;
-	}
 	if (current_stack->empty ())
 		shevek_error ("bug in assembler: empty stack");
-	std::cerr << current_stack->front ().second << ':'
-		<< current_stack->front ().first << ": " << message << '\n';
-	for (std::list <std::pair <unsigned, std::string> >::iterator
-			i = ++current_stack->begin ();
-			i != current_stack->end (); ++i)
+	std::cerr << current_stack->back ().second << ':'
+		<< current_stack->back ().first << ": " << message << '\n';
+	for (std::list <std::pair <unsigned, std::string> >::reverse_iterator
+			i = ++current_stack->rbegin ();
+			i != current_stack->rend (); ++i)
 		std::cerr << i->second << ':' << i->first
 			<< ": included from here\n";
 	std::cerr.flush ();
