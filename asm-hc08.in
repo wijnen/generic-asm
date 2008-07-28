@@ -2,6 +2,7 @@
 
 directive: org .org
 directive: defb .defb
+directive: defb .db
 directive: equ .equ
 directive: include .include
 directive: incbin .incbin
@@ -12,6 +13,17 @@ directive: if .if
 directive: else .else
 directive: endif .endif
 directive: ; ;
+
+num: .word
+constraint: .word >= -0x8000 && .word <= 0xffff
+
+source: .defw .word
+target: .word >> 8
+target: .word & 0xff
+
+source: .dw .word
+target: .word >> 8
+target: .word & 0xff
 
 num: .bit
 constraint: .bit >= 0 && .bit <= 7
@@ -126,7 +138,7 @@ target: .aimm
 
 source: bcc .addr
 target: 0x24
-target: .addr - $
+target: .addr - ($ + 2)
 
 source: bclr # .bit , * .dir
 target: 0x11 + 2 * .bit
@@ -134,99 +146,99 @@ target: .dir
 
 source: bcs .addr
 target: 0x25
-target: .addr - $
+target: .addr - ($ + 2)
 
 source: beq .addr
 target: 0x27
-target: .addr - $
+target: .addr - ($ + 2)
 
 source: bge .addr
 target: 0x90
-target: .addr - $
+target: .addr - ($ + 2)
 
 source: bgt .addr
 target: 0x92
-target: .addr - $
+target: .addr - ($ + 2)
 
 source: bhcc .addr
 target: 0x28
-target: .addr - $
+target: .addr - ($ + 2)
 
 source: bhcs .addr
 target: 0x29
-target: .addr - $
+target: .addr - ($ + 2)
 
 source: bhi .addr
 target: 0x22
-target: .addr - $
+target: .addr - ($ + 2)
 
 source: bhs .addr
 target: 0x24
-target: .addr - $
+target: .addr - ($ + 2)
 
 source: bih .addr
 target: 0x2f
-target: .addr - $
+target: .addr - ($ + 2)
 
 source: bil .addr
 target: 0x2e
-target: .addr - $
+target: .addr - ($ + 2)
 
 .ldax bit 0x5
 
 source: ble .addr
 target: 0x93
-target: .addr - $
+target: .addr - ($ + 2)
 
 source: blo .addr
 target: 0x25
-target: .addr - $
+target: .addr - ($ + 2)
 
 source: bls .addr
 target: 0x23
-target: .addr - $
+target: .addr - ($ + 2)
 
 source: blt .addr
 target: 0x91
-target: .addr - $
+target: .addr - ($ + 2)
 
 source: bmc .addr
 target: 0x2c
-target: .addr - $
+target: .addr - ($ + 2)
 
 source: bmi .addr
 target: 0x2b
-target: .addr - $
+target: .addr - ($ + 2)
 
 source: bms .addr
 target: 0x2d
-target: .addr - $
+target: .addr - ($ + 2)
 
 source: bne .addr
 target: 0x26
-target: .addr - $
+target: .addr - ($ + 2)
 
 source: bpl .addr
 target: 0x2a
-target: .addr - $
+target: .addr - ($ + 2)
 
 source: bra .addr
 target: 0x20
-target: .addr - $
+target: .addr - ($ + 2)
 
 source: brclr # .bit , * .dir , .addr
 target: 1 + 2 * .bit
 target: .dir
-target: .addr - $
+target: .addr - ($ + 3)
 
 source: brn .addr
 target: 0x21
-target: .addr - $
+target: .addr - ($ + 2)
 
 source: brset # .bit , * .dir , .addr
 target: 0 + 2 * .bit
 target: .dir
-target: .addr - $
+target: .addr - ($ + 3)
 
 source: bset # .bit , * .dir
 target: 0x10 + 2 * .bit
@@ -234,33 +246,33 @@ target: .dir
 
 source: bsr .addr
 target: 0xad
-target: .addr - $
+target: .addr - ($ + 2)
 
 source: cbeq * .dir , .addr
 target: 0x31
 target: .dir
-target: .addr - $
+target: .addr - ($ + 3)
 
 source: cbeqa # .imm , .addr
 target: 0x41
-target: .addr - $
+target: .addr - ($ + 2)
 
 source: cbeqx # .imm , .addr
 target: 0x51
-target: .addr - $
+target: .addr - ($ + 2)
 
 source: cbeq .ix1 , x + , .addr
 target: 0x61
-target: .addr - $
+target: .addr - ($ + 2)
 
 source: cbeq , x + , .addr
 target: 0x71
-target: .addr - $
+target: .addr - ($ + 2)
 
 source: cbeq .ix1 , sp , .addr
 target: 0x9e
 target: 0x61
-target: .addr - $
+target: .addr - ($ + 3)
 
 source: clc
 target: 0x98
@@ -294,30 +306,30 @@ target: 0x72
 source: dbnz * .dir , .addr
 target: 0x3b
 target: .dir
-target: .addr - $
+target: .addr - ($ + 3)
 
 source: dbnza .addr
 target: 0x4b
-target: .addr - $
+target: .addr - ($ + 2)
 
 source: dbnzx .addr
 target: 0x5b
-target: .addr - $
+target: .addr - ($ + 2)
 
 source: dbnz .ix1 , x , .addr
 target: 0x6b
 target: .ix1
-target: .addr - $
+target: .addr - ($ + 3)
 
 source: dbnz , x , .addr
 target: 0x7b
-target: .addr - $
+target: .addr - ($ + 2)
 
 source: dbnz .ix1 , sp , .addr
 target: 0x9e
 target: 0x6b
 target: .ix1
-target: .addr - $
+target: .addr - ($ + 4)
 
 .regop dec 0xa
 

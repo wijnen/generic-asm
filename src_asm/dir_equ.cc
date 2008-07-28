@@ -19,7 +19,7 @@ unsigned dir_equ (shevek::istring &args, bool write, bool first,
 	}
 	args.skip (pos);
 	args (" ");
-	if (!args.rest ().empty ())
+	if (!args (";") && !args.rest ().empty ())
 		error (shevek::ostring ("junk at end of expression: %s",
 					args.rest ()));
 	if (write && listfile)

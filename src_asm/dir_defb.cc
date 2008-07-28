@@ -22,10 +22,10 @@ unsigned dir_defb (shevek::istring &args, bool write, bool first,
 		if (!valid)
 			++undef;
 		if (write)
-			write_byte (v);
-		++addr;
+			write_byte (v, s);
 		++s;
 	}
+	addr += s;
 	if (write && listfile)
 	{
 		int size = 5 + 3 * s;

@@ -171,7 +171,7 @@ int main (int argc, char **argv)
 		return 1;
 	}
 	if (usehex)
-		hexfile.write (*outfile);
+		hexfile.write_s19 (*outfile);
 	if (!outfilename.empty ())
 		delete outfile;
 	if (listfile)

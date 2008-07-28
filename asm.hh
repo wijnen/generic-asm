@@ -120,7 +120,8 @@ class Hex
 {
 public:
 	void open (std::istream &file);
-	void write (std::ostream &file);
+	void write_hex (std::ostream &file);
+	void write_s19 (std::ostream &file);
 	int get (unsigned address) const;
 	void set (unsigned address, int value);
 	unsigned size () const { return data.size (); }
@@ -159,7 +160,7 @@ bool getline (std::string &ret);
 void read_definitions ();
 std::string read_filename (shevek::istring &args);
 void write_out (Source const &s);
-void write_byte (int byte);
+void write_byte (int byte, int addr_offset);
 unsigned parse (input_line &input, bool output, bool first_pass, bool report);
 int main (int argc, char **argv);
 

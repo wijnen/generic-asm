@@ -15,7 +15,7 @@ unsigned dir_incbin (shevek::istring &args, bool write, bool first,
 	while (file >> c)
 	{
 		if (write)
-			write_byte (c);
+			write_byte (c, 0);
 		++addr;
 	}
 	if (write && listfile)

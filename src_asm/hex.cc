@@ -146,47 +146,84 @@ namespace
 			shevek_error ("line too short for s19 file");
 			return result;
 		}
-		if (line[1] != '1' && line[1] != '9')
-		{
-			shevek_warning ("unparsed line: " << line);
-			return result;
-		}
+		unsigned addrsize = 0;
 		unsigned len = rd_byte (&line.data ()[2]);
-		if (len * 2 + 4 != line.size ())
+		if ((len + 2) * 2 != line.size ())
 		{
-			shevek_error ("line has incorrect length in s19 file: " << line);
+			shevek_error ("line has incorrect length in S19 file: "
+					<< line);
 			return result;
 		}
-		int h = rd_byte (&line.data ()[4]);
-		int l = rd_byte (&line.data ()[6]);
-		if (h < 0 || l < 0)
+		switch (line[1])
 		{
-			shevek_error ("invalid address in " << line);
+		case '0':
+			// Header data: ignore.
 			return result;
+		case '1':
+			addrsize = 2;
+			break;
+		case '2':
+			addrsize = 3;
+			break;
+		case '3':
+			addrsize = 4;
+			break;
+		case '5':
+			// Record count.  Meaning?
+			shevek_warning ("ignoring record count field");
+			return result;
+		case '7':
+			eof = true;
+			addrsize = 4;
+			break;
+		case '8':
+			eof = true;
+			addrsize = 3;
+			break;
+		case '9':
+			eof = true;
+			addrsize = 2;
+			break;
+		default:
+			shevek_error ("invalid S19 line type");
+			return result;
+		}
+		if (eof)
+		{
+			if (len != addrsize + 1)
+				shevek_error ("invalid EOF record: " << line);
+			return result;
+		}
+		unsigned a = 0;
+		unsigned checksum (len);
+		for (unsigned i = 0; i < addrsize; ++i)
+		{
+			int n = rd_byte (&line.data ()[4 + i * 2]);
+			if (n < 0)
+			{
+				shevek_error ("invalid address in " << line);
+				return result;
+			}
+			a += n << ((addrsize - i - 1) * 8);
+			checksum += n;
 		}
 
 		// Correct for address bytes and checksum
 		len -= 3;
 
-		result.addr = (h << 8) + l;
+		result.addr = a;
 		result.data.resize (len);
-		unsigned checksum (len + l + h);
 		for (unsigned i = 0; i < len; ++i)
 		{
-			unsigned d = rd_byte (&line.data ()[8 + 2 * i]);
+			unsigned d = rd_byte (&line.data ()
+					[2 * (1 + addrsize + i)]);
 			checksum += d;
 			result.data[i] = d;
 		}
-		if ((checksum + rd_byte (&line.data ()[8 + 2 * len])) & 0xff != 0)
+		if (((checksum ^ rd_byte (&line.data ()[8 + 2 * len])) & 0xff)
+				!= 0xff)
 		{
 			shevek_error ("incorrect checksum on line: " << line);
-			return result;
-		}
-		if (line[1] == '9')
-		{
-			eof = true;
-			if (result.data.size () != 0)
-				shevek_error ("invalid EOF record: " << line);
 			return result;
 		}
 		return result;
@@ -255,7 +292,7 @@ namespace
 		return ret;
 	}
 
-	void write_record (std::ostream &file, int type,
+	void write_record_hex (std::ostream &file, int type,
 			std::string const &data = std::string (), int addr = 0)
 	{
 		int sum = type + addr + (addr >> 8);
@@ -267,6 +304,40 @@ namespace
 			file << make_hex (data[i]);
 		}
 		file << make_hex (-sum) << '\n';
+	}
+
+	void write_record_s19 (std::ostream &file, std::string const &data,
+			int addr)
+	{
+		std::string a;
+		file << 'S';
+		unsigned checksum;
+		if (addr < 1 << 16)
+		{
+			a = make_hex (addr >> 8) + make_hex (addr);
+			file << '1';
+		}
+		else if (addr < 1 << 24)
+		{
+			a = make_hex (addr >> 16) + make_hex (addr >> 8)
+				+ make_hex (addr);
+			file << '2';
+		}
+		else
+		{
+			a = make_hex (addr >> 24) + make_hex (addr >> 16)
+				+ make_hex (addr >> 8) + make_hex (addr);
+			file << '3';
+		}
+		checksum = (addr >> 24) + (addr >> 16) + (addr >> 8) + addr;
+		checksum += a.size () / 2 + data.size () + 1;
+		file << make_hex (a.size () / 2 + data.size () + 1) << a;
+		for (unsigned i = 0; i < data.size (); ++i)
+		{
+			file << make_hex (data[i]);
+			checksum += data[i];
+		}
+		file << make_hex (~checksum) << '\n';
 	}
 }
 
@@ -286,7 +357,7 @@ void Hex::open (std::istream &file)
 	}
 }
 
-void Hex::write (std::ostream &file)
+void Hex::write_hex (std::ostream &file)
 {
 	int high = 0;
 	std::string tosend;
@@ -297,7 +368,7 @@ void Hex::write (std::ostream &file)
 		{
 			if (!tosend.empty ())
 			{
-				write_record (file, 0, tosend, base_addr);
+				write_record_hex (file, 0, tosend, base_addr);
 				tosend.clear ();
 			}
 			continue;
@@ -306,7 +377,7 @@ void Hex::write (std::ostream &file)
 		{
 			if (!tosend.empty ())
 			{
-				write_record (file, 0, tosend, base_addr);
+				write_record_hex (file, 0, tosend, base_addr);
 				tosend.clear ();
 			}
 			high = a >> 16;
@@ -314,20 +385,49 @@ void Hex::write (std::ostream &file)
 			str.resize (2);
 			str[0] = high & 0xff;
 			str[1] = (high >> 8) & 0xff;
-			write_record (file, 2, str);
+			write_record_hex (file, 2, str);
 		}
 		if (tosend.empty ())
 			base_addr = a;
 		tosend += data[a];
 		if (tosend.size () == 0x20)
 		{
-			write_record (file, 0, tosend, base_addr);
+			write_record_hex (file, 0, tosend, base_addr);
 			tosend.clear ();
 		}
 	}
 	if (!tosend.empty ())
-		write_record (file, 0, tosend, base_addr);
-	write_record (file, 1);
+		write_record_hex (file, 0, tosend, base_addr);
+	write_record_hex (file, 1);
+}
+
+void Hex::write_s19 (std::ostream &file)
+{
+	std::string tosend;
+	unsigned base_addr = 0;
+	for (unsigned a = 0; a < data.size (); ++a)
+	{
+		if (data[a] == -1)
+		{
+			if (!tosend.empty ())
+			{
+				write_record_s19 (file, tosend, base_addr);
+				tosend.clear ();
+			}
+			continue;
+		}
+		if (tosend.empty ())
+			base_addr = a;
+		tosend += data[a];
+		if (tosend.size () == 0x20)
+		{
+			write_record_s19 (file, tosend, base_addr);
+			tosend.clear ();
+		}
+	}
+	if (!tosend.empty ())
+		write_record_s19 (file, tosend, base_addr);
+	file << "S9030000FC\n";
 }
 
 int Hex::get (unsigned address) const
