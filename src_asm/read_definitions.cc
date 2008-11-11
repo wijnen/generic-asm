@@ -4,11 +4,11 @@ void read_definitions ()
 {
 	bool is_enum = false, is_num = false, is_source = false;
 	bool recording = false;
-	std::map <std::string, unsigned>::iterator current_enum;
+	std::map <Glib::ustring, unsigned>::iterator current_enum;
 	int current_value;
-	std::map <std::string, Param>::iterator current_param;
+	std::map <Glib::ustring, Param>::iterator current_param;
 	input_stack.top ().ln = 0;
-	std::string line;
+	Glib::ustring line;
 	while (getline (line))
 	{
 		shevek::istring l (line);
@@ -27,7 +27,7 @@ void read_definitions ()
 			defs_macros.back ().code.push_back (line);
 			continue;
 		}
-		std::string d, n;
+		Glib::ustring d, n;
 		if (l ("enum: %s %", d))
 		{
 			is_num = false;
@@ -113,19 +113,19 @@ void read_definitions ()
 			is_enum = false;
 			is_source = true;
 			sources.push_back (Source ());
-			std::string::size_type pos = 0;
+			Glib::ustring::size_type pos = 0;
 			while (true)
 			{
 				// find next param
-				std::string::size_type first = d.size ();
-				std::map <std::string, Param>::reverse_iterator
+				Glib::ustring::size_type first = d.size ();
+				std::map <Glib::ustring, Param>::reverse_iterator
 					firstp;
-				for (std::map <std::string, Param>
+				for (std::map <Glib::ustring, Param>
 						::reverse_iterator
 						i = params.rbegin ();
 						i != params.rend (); ++i)
 				{
-					std::string::size_type
+					Glib::ustring::size_type
 						p = d.find (i->first, pos);
 					if (p < first)
 					{
@@ -162,7 +162,7 @@ void read_definitions ()
 			defs_macros.back ().name = d;
 			while (l (" %s", d))
 				defs_macros.back ().args.push_back
-					(std::make_pair (d, std::string ()));
+					(std::make_pair (d, Glib::ustring ()));
 			recording = true;
 		}
 		else if (l ("directive: %s %s", d, n))

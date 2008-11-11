@@ -24,18 +24,18 @@ struct Input
 struct input_line
 {
 	// This is a list because it must be fifo.
-	std::list <std::pair <unsigned, std::string> > stack;
-	std::string data;
-	input_line (std::string d);
+	std::list <std::pair <unsigned, Glib::ustring> > stack;
+	Glib::ustring data;
+	input_line (Glib::ustring d);
 };
 
 struct Oper
 {
 	char code;
-	std::string name;
+	Glib::ustring name;
 	int priority;
 	void (*run) (std::stack <int> &stack);
-	Oper (char c, std::string const &n, int p,
+	Oper (char c, Glib::ustring const &n, int p,
 			void (*r)(std::stack <int> &))
 		: code (c), name (n), priority (p), run (r) {}
 };
@@ -45,29 +45,29 @@ struct Expr;
 struct Param
 {
 	bool is_enum;
-	std::map <std::string, unsigned> enum_values;
+	std::map <Glib::ustring, unsigned> enum_values;
 	std::list <Expr> constraints;
 
 	bool is_active;
 	int value;
 
 	static void reset ();
-	static std::map <std::string, Param>::reverse_iterator find
-		(std::string const &name);
+	static std::map <Glib::ustring, Param>::reverse_iterator find
+		(Glib::ustring const &name);
 };
 
-extern std::map <std::string, Param> params;
+extern std::map <Glib::ustring, Param> params;
 
 struct ExprElem
 {
 	enum Type { NUM, OPER, PARAM, LABEL } type;
 	int value;
 	Oper *oper;
-	std::string label;
-	std::map <std::string, Param>::reverse_iterator param;
+	Glib::ustring label;
+	std::map <Glib::ustring, Param>::reverse_iterator param;
 	ExprElem (Type t, int v, Oper *o = NULL,
-			std::string l = std::string (),
-			std::map <std::string, Param>::reverse_iterator
+			Glib::ustring l = Glib::ustring (),
+			std::map <Glib::ustring, Param>::reverse_iterator
 			p = params.rend ())
 		: type (t), value (v), oper (o), label (l), param (p) {}
 };
@@ -76,15 +76,15 @@ struct Expr
 {
 	std::list <ExprElem> list;
 	int compute (bool *valid);
-	static Expr read (std::string const &input, bool allow_params,
-			std::string::size_type &pos);
+	static Expr read (Glib::ustring const &input, bool allow_params,
+			Glib::ustring::size_type &pos);
 private:
 	void handle_oper (std::stack <Oper *> &stack, Oper *oper);
 };
 
 struct Label
 {
-	std::string name;
+	Glib::ustring name;
 	input_line *definition;
 	int value;
 	bool valid;
@@ -92,26 +92,26 @@ struct Label
 
 struct Source
 {
-	std::list <std::pair <std::string, std::map <std::string, Param>
+	std::list <std::pair <Glib::ustring, std::map <Glib::ustring, Param>
 				::reverse_iterator> > parts;
-	std::string post;
-	std::list <std::string> targets;
+	Glib::ustring post;
+	std::list <Glib::ustring> targets;
 };
 
 struct DefsMacro
 {
-	std::string name;
-	std::vector <std::pair <std::string, std::string> > args;
-	std::vector <std::string> code;
+	Glib::ustring name;
+	std::vector <std::pair <Glib::ustring, Glib::ustring> > args;
+	std::vector <Glib::ustring> code;
 };
 
 struct Directive
 {
-	std::string name;
-	std::list <std::string> nick;
+	Glib::ustring name;
+	std::list <Glib::ustring> nick;
 	unsigned (*function) (shevek::istring &args, bool write, bool first,
 			Label *current_label);
-	Directive (std::string const &n,
+	Directive (Glib::ustring const &n,
 			unsigned (*f)(shevek::istring &, bool, bool, Label *))
 		: name (n), function (f) {}
 };
@@ -140,7 +140,7 @@ extern Hex hexfile;
 extern unsigned addr;
 extern unsigned errors;
 extern std::stack <Input> input_stack;
-extern std::list <std::pair <unsigned, std::string> > *current_stack;
+extern std::list <std::pair <unsigned, Glib::ustring> > *current_stack;
 
 extern Oper operators1[3];
 extern Oper operators2[19];
@@ -148,15 +148,15 @@ extern Oper operators3[1];
 
 template <typename T, unsigned n> unsigned num_elem (T (&arr)[n]) { return n; }
 
-void error (std::string const &message);
-std::string escape (std::string const &in);
-Label *find_label (std::string name);
-int read_expr (std::string const &expr, bool allow_params,
-		std::string::size_type &pos, bool *valid);
-int read_expr (std::string const &expr, std::string const &comment);
-std::string subst_args (std::string const &orig, std::vector
-		<std::pair <std::string, std::string> > const &args);
-bool getline (std::string &ret);
+void error (Glib::ustring const &message);
+Glib::ustring escape (Glib::ustring const &in);
+Label *find_label (Glib::ustring name);
+int read_expr (Glib::ustring const &expr, bool allow_params,
+		Glib::ustring::size_type &pos, bool *valid);
+int read_expr (Glib::ustring const &expr, Glib::ustring const &comment);
+Glib::ustring subst_args (Glib::ustring const &orig, std::vector
+		<std::pair <Glib::ustring, Glib::ustring> > const &args);
+bool getline (Glib::ustring &ret);
 void read_definitions ();
 std::string read_filename (shevek::istring &args);
 void write_out (Source const &s);

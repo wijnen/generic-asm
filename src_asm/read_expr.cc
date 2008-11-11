@@ -1,10 +1,10 @@
 #include "asm.hh"
 
-int read_expr (std::string const &expr, bool allow_params,
-		std::string::size_type &pos, bool *valid)
+int read_expr (Glib::ustring const &expr, bool allow_params,
+		Glib::ustring::size_type &pos, bool *valid)
 {
 	Expr e = Expr::read (expr, allow_params, pos);
-	if (pos != std::string::npos)
+	if (pos != Glib::ustring::npos)
 	{
 #if 0
 		std::cerr << "Expression successfully read:";
@@ -40,11 +40,11 @@ int read_expr (std::string const &expr, bool allow_params,
 	return 0;
 }
 
-int read_expr (std::string const &expr, std::string const &comment)
+int read_expr (Glib::ustring const &expr, Glib::ustring const &comment)
 {
-	std::string::size_type pos = 0;
+	Glib::ustring::size_type pos = 0;
 	int ret = read_expr (expr, true, pos, NULL);
-	if (pos == std::string::npos)
+	if (pos == Glib::ustring::npos)
 		error (shevek::ostring ("invalid expression: %s", expr));
 	else
 	{

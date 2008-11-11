@@ -1,6 +1,6 @@
 #include "asm.hh"
 
-input_line::input_line (std::string d)
+input_line::input_line (Glib::ustring d)
 	: data (d)
 {
 	std::stack <Input> tmp = input_stack;

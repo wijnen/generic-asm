@@ -41,7 +41,8 @@ unsigned dir_include (shevek::istring &args, bool write, bool first,
 		}
 		if (!file)
 		{
-			error (shevek::ostring ("unable to open %s", name));
+			error (shevek::ostring ("unable to open %s",
+						Glib::ustring (name)));
 			return 0;
 		}
 	}

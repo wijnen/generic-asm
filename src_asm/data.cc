@@ -7,9 +7,9 @@ unsigned addr;
 unsigned errors;
 
 std::stack <Input> input_stack;
-std::list <std::pair <unsigned, std::string> > *current_stack;
+std::list <std::pair <unsigned, Glib::ustring> > *current_stack;
 
-std::map <std::string, Param> params;
+std::map <Glib::ustring, Param> params;
 std::list <Label> labels;
 std::list <Source> sources;
 std::list <DefsMacro> defs_macros;

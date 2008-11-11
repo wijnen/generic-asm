@@ -1,8 +1,8 @@
 #include "asm.hh"
 #include <shevek/debug.hh>
 
-Expr Expr::read (std::string const &input, bool allow_params,
-		std::string::size_type &pos)
+Expr Expr::read (Glib::ustring const &input, bool allow_params,
+		Glib::ustring::size_type &pos)
 {
 	Expr ret;
 	shevek::istring l (input.substr (pos));
@@ -34,13 +34,13 @@ Expr Expr::read (std::string const &input, bool allow_params,
 				opers.push (&open);
 				continue;
 			}
-			std::string word;
+			Glib::ustring word;
 			if (l ("%r/[A-Za-z_.][A-Za-z_.0-9]*/", word))
 			{
 				// Param
 				if (allow_params)
 				{
-					std::map <std::string, Param>::reverse_iterator i;
+					std::map <Glib::ustring, Param>::reverse_iterator i;
 					for (i = params.rbegin ();
 							i != params.rend ();
 							++i)
@@ -49,7 +49,7 @@ Expr Expr::read (std::string const &input, bool allow_params,
 							continue;
 						if (word != i->first)
 							continue;
-						ret.list.push_back (ExprElem (ExprElem::PARAM, 0, NULL, std::string (), i));
+						ret.list.push_back (ExprElem (ExprElem::PARAM, 0, NULL, Glib::ustring (), i));
 						expect_number = false;
 						break;
 					}
@@ -74,7 +74,7 @@ Expr Expr::read (std::string const &input, bool allow_params,
 			int n;
 			if (!l ("%i", n))
 			{
-				pos = std::string::npos;
+				pos = Glib::ustring::npos;
 				return Expr ();
 			}
 			ret.list.push_back (ExprElem (ExprElem::NUM, n));
@@ -102,7 +102,7 @@ Expr Expr::read (std::string const &input, bool allow_params,
 				if (opers.empty ()
 						|| opers.top () != &tri_start)
 				{
-					pos = std::string::npos;
+					pos = Glib::ustring::npos;
 					return Expr ();
 				}
 				opers.pop ();	// The ?
@@ -133,12 +133,12 @@ Expr Expr::read (std::string const &input, bool allow_params,
 		if (opers.top () == &open)
 		{
 			dbg ("too many open parentheses");
-			pos = std::string::npos;
+			pos = Glib::ustring::npos;
 			return Expr ();
 		}
 		if (opers.top () == &tri_start)
 		{
-			pos = std::string::npos;
+			pos = Glib::ustring::npos;
 			return Expr ();
 		}
 		dbg ("pushing pending operator " << opers.top ()->name);

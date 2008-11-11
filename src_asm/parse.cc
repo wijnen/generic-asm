@@ -6,13 +6,14 @@ unsigned parse (input_line &input, bool output, bool first_pass, bool report)
 	current_stack = &input.stack;
 	unsigned undef = 0;
 	bool make_label = false;
-	std::string label;
+	Glib::ustring label;
 	Label *new_label = NULL;
 	int old_label_value = 0;
 	bool old_label_valid = false;
 	shevek::istring l (input.data);
 	if (l (" %r/[a-zA-Z_.][a-zA-Z_.0-9]*/:", label))
 	{
+		dbg ("found label " << label);
 		make_label = true;
 		new_label = find_label (label);
 		if (first_pass && new_label)
@@ -54,7 +55,7 @@ unsigned parse (input_line &input, bool output, bool first_pass, bool report)
 	unsigned i;
 	for (i = 0; i < num_elem (directives); ++i)
 	{
-		std::list <std::string>::iterator k;
+		std::list <Glib::ustring>::iterator k;
 		for (k = directives[i].nick.begin ();
 				k != directives[i].nick.end (); ++k)
 		{
@@ -67,7 +68,7 @@ unsigned parse (input_line &input, bool output, bool first_pass, bool report)
 						<< addr << ' ';
 				}
 				unsigned lineno = input.stack.back ().first;
-				std::string line = input.data;
+				Glib::ustring line = input.data;
 				undef += directives[i].function
 					(l, output, first_pass, new_label);
 				if (output && listfile)
@@ -89,7 +90,7 @@ unsigned parse (input_line &input, bool output, bool first_pass, bool report)
 		l.push ();
 		// Set all params to unused.
 		Param::reset ();
-		std::list <std::pair <std::string, std::map <std::string,
+		std::list <std::pair <Glib::ustring, std::map <Glib::ustring,
 			Param>::reverse_iterator> >::iterator p;
 		for (p = s->parts.begin (); p != s->parts.end (); ++p)
 		{
@@ -98,7 +99,7 @@ unsigned parse (input_line &input, bool output, bool first_pass, bool report)
 				break;
 			if (p->second->second.is_enum)
 			{
-				std::map <std::string, unsigned>::iterator v;
+				std::map <Glib::ustring, unsigned>::iterator v;
 				for (v = p->second->second.enum_values
 						.begin (); v != p->second
 						->second.enum_values.end ();
@@ -114,11 +115,11 @@ unsigned parse (input_line &input, bool output, bool first_pass, bool report)
 			}
 			else
 			{
-				std::string::size_type pos = 0;
+				Glib::ustring::size_type pos = 0;
 				bool valid;
 				p->second->second.value = read_expr
 					(l.rest (), false, pos, &valid);
-				if (pos == std::string::npos)
+				if (pos == Glib::ustring::npos)
 				{
 					dbg ("failed to read expression");
 					break;
@@ -157,7 +158,7 @@ unsigned parse (input_line &input, bool output, bool first_pass, bool report)
 			{
 				int size = 5 + 3 * s->targets.size ();
 				int numtabs = (31 - size) / 8;
-				*listfile << std::string (numtabs, '\t')
+				*listfile << Glib::ustring (numtabs, '\t')
 					<< std::dec << std::setw (6)
 					<< std::setfill (' ')
 					<< input.stack.back ().first

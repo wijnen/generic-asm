@@ -1,17 +1,17 @@
 #include "asm.hh"
 
-std::string subst_args (std::string const &orig,
-		std::vector <std::pair <std::string, std::string> > const &args)
+Glib::ustring subst_args (Glib::ustring const &orig,
+		std::vector <std::pair <Glib::ustring, Glib::ustring> > const &args)
 {
-	std::string ret;
-	std::string::size_type pos = 0;
+	Glib::ustring ret;
+	Glib::ustring::size_type pos = 0;
 	for (unsigned i = 0; i < args.size (); ++i)
 	{
 		while (true)
 		{
-			std::string::size_type
+			Glib::ustring::size_type
 				p = orig.find (args[i].first, pos);
-			if (p == std::string::npos)
+			if (p == Glib::ustring::npos)
 				break;
 			ret += orig.substr (pos, p - pos);
 			ret += args[i].second;

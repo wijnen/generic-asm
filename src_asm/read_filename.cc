@@ -8,9 +8,9 @@ std::string read_filename (shevek::istring &args)
 		error ("include without filename");
 		return std::string ();
 	}
-	std::string rest = args.rest ();
-	std::string::size_type pos = rest.find (quote);
-	if (pos == std::string::npos)
+	Glib::ustring rest = args.rest ();
+	Glib::ustring::size_type pos = rest.find (quote);
+	if (pos == Glib::ustring::npos)
 	{
 		error ("no matching quote for filename");
 		return std::string ();
@@ -20,7 +20,7 @@ std::string read_filename (shevek::istring &args)
 		error ("empty name");
 		return std::string ();
 	}
-	std::string name = args.rest ().substr (0, pos);
+	Glib::ustring name = args.rest ().substr (0, pos);
 	args.skip (pos + 1);
-	return name;
+	return filename_from_utf8 (name);
 }

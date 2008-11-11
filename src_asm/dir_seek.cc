@@ -3,6 +3,7 @@
 unsigned dir_seek (shevek::istring &args, bool write, bool first,
 		Label *current_label)
 {
+	(void)args;
 	(void)current_label;
 	error ("seek is not yet implemented");
 	if (write && listfile)

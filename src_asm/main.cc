@@ -65,8 +65,7 @@ int main (int argc, char **argv)
 	if (!*input_stack.top ().file)
 	{
 		delete input_stack.top ().file;
-		shevek_error_errno
-			("unable to open definitions file " << defs);
+		shevek_error_errno (shevek::ostring ("unable to open definitions file %s", Glib::ustring (defs)));
 	}
 	read_definitions ();
 	if (errors)
@@ -100,13 +99,12 @@ int main (int argc, char **argv)
 		input_stack.top ().file = new std::ifstream
 			(input_stack.top ().name.c_str ());
 		if (!input_stack.top ().file)
-			shevek_error_errno ("unable to open input file "
-					<< input_stack.top ().name);
+			shevek_error_errno (shevek::ostring ("unable to open input file %s", Glib::ustring (input_stack.top ().name)));
 		input_stack.top ().must_delete = true;
 	}
 	// Determine labels
 	int undefined_labels = 0;
-	std::string line;
+	Glib::ustring line;
 	while (getline (line))
 	{
 		input.push_back (input_line (line));

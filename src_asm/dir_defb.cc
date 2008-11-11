@@ -9,9 +9,9 @@ unsigned dir_defb (shevek::istring &args, bool write, bool first,
 	while (true)
 	{
 		bool valid;
-		std::string::size_type pos = 0;
+		Glib::ustring::size_type pos = 0;
 		int v = read_expr (args.rest (), false, pos, &valid);
-		if (pos == std::string::npos)
+		if (pos == Glib::ustring::npos)
 		{
 			error ("invalid expression");
 			break;
@@ -32,7 +32,7 @@ unsigned dir_defb (shevek::istring &args, bool write, bool first,
 		int numtabs = (31 - size) / 8;
 		if (numtabs <= 0)
 			numtabs = 1;
-		*listfile << std::string (numtabs, '\t');
+		*listfile << Glib::ustring (numtabs, '\t');
 	}
 	return undef;
 }

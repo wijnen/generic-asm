@@ -28,7 +28,7 @@ namespace
 			return data - 'A' + 10;
 		if (data >= 'a' && data <= 'f')
 			return data - 'a' + 10;
-		shevek_error ("invalid character in number: " << data);
+		shevek_error (shevek::ostring ("invalid character in number: %c", data));
 		return -1;
 	}
 
@@ -48,7 +48,7 @@ namespace
 		line_t () : addr (0) {}
 	};
 
-	line_t rd_intel_line (std::string const &line, unsigned &linear,
+	line_t rd_intel_line (Glib::ustring const &line, unsigned &linear,
 			unsigned &segment, bool &eof)
 	{
 		line_t result;
@@ -65,9 +65,7 @@ namespace
 		unsigned len = rd_byte (&line.data ()[1]);
 		if (line.size () != (len << 1) + 11)
 		{
-			shevek_error ("line has incorrect size ("
-					<< line.size () << " != "
-					<< ((len << 1) + 11));
+			shevek_error (shevek::ostring ("line has incorrect size (%d != %d)", line.size (), (len << 1) + 11));
 			return result;
 		}
 		result.data.resize (len);
@@ -81,7 +79,7 @@ namespace
 		unsigned checksum = rd_byte (&line.data ()[( (len + 4) << 1) + 1]);
 		if ( ( (checksum + check) & 0xff) != 0)
 		{
-			shevek_error ("invalid checksum (" << checksum << " + " << check << " & 0xff != 0)");
+			shevek_error (shevek::ostring ("invalid checksum (0x%x + 0x%x & 0xff != 0)", checksum, check));
 			return result;
 		}
 		unsigned type = rd_byte (&line.data ()[7]);
@@ -132,13 +130,14 @@ namespace
 			result.data.clear ();
 			return result;
 		default:
-			shevek_error ("invalid record type " << type);
+			shevek_error (shevek::ostring
+					("invalid record type %d", type));
 			result.data.clear ();
 			return result;
 		}
 	}
 
-	line_t rd_s19_line (std::string const &line, bool &eof)
+	line_t rd_s19_line (Glib::ustring const &line, bool &eof)
 	{
 		line_t result;
 		if (line.size () < 6)
@@ -150,8 +149,7 @@ namespace
 		unsigned len = rd_byte (&line.data ()[2]);
 		if ((len + 2) * 2 != line.size ())
 		{
-			shevek_error ("line has incorrect length in S19 file: "
-					<< line);
+			shevek_error (shevek::ostring ("line has incorrect length in S19 file: %s", line));
 			return result;
 		}
 		switch (line[1])
@@ -191,7 +189,7 @@ namespace
 		if (eof)
 		{
 			if (len != addrsize + 1)
-				shevek_error ("invalid EOF record: " << line);
+				shevek_error (shevek::ostring ("invalid EOF record: %s", line));
 			return result;
 		}
 		unsigned a = 0;
@@ -201,7 +199,7 @@ namespace
 			int n = rd_byte (&line.data ()[4 + i * 2]);
 			if (n < 0)
 			{
-				shevek_error ("invalid address in " << line);
+				shevek_error (shevek::ostring ("invalid address in %d", line));
 				return result;
 			}
 			a += n << ((addrsize - i - 1) * 8);
@@ -223,13 +221,13 @@ namespace
 		if (((checksum ^ rd_byte (&line.data ()[8 + 2 * len])) & 0xff)
 				!= 0xff)
 		{
-			shevek_error ("incorrect checksum on line: " << line);
+			shevek_error (shevek::ostring ("incorrect checksum on line: %s", line));
 			return result;
 		}
 		return result;
 	}
 
-	line_t rd_line (std::string const &line, unsigned &linear,
+	line_t rd_line (Glib::ustring const &line, unsigned &linear,
 			unsigned &segment, bool &eof)
 	{
 		switch (line[0])
@@ -309,7 +307,7 @@ namespace
 	void write_record_s19 (std::ostream &file, std::string const &data,
 			int addr)
 	{
-		std::string a;
+		Glib::ustring a;
 		file << 'S';
 		unsigned checksum;
 		if (addr < 1 << 16)
