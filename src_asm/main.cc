@@ -26,7 +26,7 @@ int main (int argc, char **argv)
 		shevek::args::option ('L', "list",
 				"list file", false, listfilename),
 		shevek::args::option ('h', "hex",
-				"intel hex output format", usehex, true),
+				"s19 hexfile output format", usehex, true),
 		shevek::args::option ('b', "binary",
 				"binary output format", usehex, false),
 		shevek::args::option ('I', "includedir",

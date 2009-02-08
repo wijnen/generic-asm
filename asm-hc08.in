@@ -255,14 +255,17 @@ target: .addr - ($ + 3)
 
 source: cbeqa # .imm , .addr
 target: 0x41
+target: .imm
 target: .addr - ($ + 2)
 
 source: cbeqx # .imm , .addr
 target: 0x51
+target: .imm
 target: .addr - ($ + 2)
 
 source: cbeq .ix1 , x + , .addr
 target: 0x61
+target: .ix1
 target: .addr - ($ + 2)
 
 source: cbeq , x + , .addr
@@ -272,6 +275,7 @@ target: .addr - ($ + 2)
 source: cbeq .ix1 , sp , .addr
 target: 0x9e
 target: 0x61
+target: .ix1
 target: .addr - ($ + 3)
 
 source: clc
