@@ -281,7 +281,7 @@ namespace
 		std::string ret;
 		ret.resize (2 * size);
 		char const *digit = "0123456789ABCDEF";
-		for (unsigned i = 0; i < size; ++i)
+		for (int i = 0; i < size; ++i)
 		{
 			int n = num >> ((size - i - 1) * 8);
 			ret[2 * i] = digit[(n >> 4) & 0xf];
@@ -296,7 +296,7 @@ namespace
 		int sum = type + addr + (addr >> 8);
 		file << ':' << make_hex (data.size ()) << make_hex (addr, 2)
 			<< make_hex (type);
-		for (unsigned i = 0; i < data.size (); ++i)
+		for (int i = 0; i < (int)data.size (); ++i)
 		{
 			sum += data[i];
 			file << make_hex (data[i]);
@@ -360,7 +360,7 @@ void Hex::write_hex (std::ostream &file)
 	int high = 0;
 	std::string tosend;
 	unsigned base_addr = 0;
-	for (unsigned a = 0; a < data.size (); ++a)
+	for (int a = 0; a < (int)data.size (); ++a)
 	{
 		if (data[a] == -1)
 		{

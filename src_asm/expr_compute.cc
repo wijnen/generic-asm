@@ -13,7 +13,6 @@ int Expr::compute (bool *valid)
 	{
 		switch (i->type)
 		{
-			int a, b, c;
 		case ExprElem::NUM:
 			dbg ("computing num " << i->value);
 			stack.push (i->value);
@@ -25,13 +24,9 @@ int Expr::compute (bool *valid)
 		case ExprElem::PARAM:
 			if (!i->param->second.is_active)
 			{
-				error (shevek::ostring
-						("inactive param %s used",
-						 i->param->first));
+				error (shevek::ostring ("inactive param %s used", i->param->first));
 				if (valid)
 					*valid = false;
-				else
-					error ("invalid expression");
 				stack.push (0);
 			}
 			else

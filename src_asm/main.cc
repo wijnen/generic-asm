@@ -81,7 +81,6 @@ int main (int argc, char **argv)
 	}
 	// Read input in memory.
 	std::vector <input_line> input;
-	bool must_delete;
 	input_stack.push (Input ());
 	input_stack.top ().type = Input::FILE;
 	input_stack.top ().ln = 0;
@@ -134,7 +133,6 @@ int main (int argc, char **argv)
 		dbg ("undefined labels: " << undefined_labels);
 		if (undefined_labels == last_undefined_labels)
 		{
-			error ("Label dependency loop");
 			for (unsigned t = 0; t < input.size (); ++t)
 			{
 				parse (input[t], false, false, true);

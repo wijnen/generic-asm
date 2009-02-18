@@ -33,17 +33,17 @@ run2 (run_plus, +)
 run2 (run_minus, -)
 run2 (run_lshift, <<)
 run2 (run_rshift, >>)
-run2 (run_lt, <)
-run2 (run_gt, >)
 run2 (run_lte, <=)
 run2 (run_gte, >=)
+run2 (run_lt, <)
+run2 (run_gt, >)
 run2 (run_eq, ==)
 run2 (run_neq, !=)
+run2 (run_and, &&)
+run2 (run_or, ||)
 run2 (run_bitand, &)
 run2 (run_bitor, |)
 run2 (run_bitxor, ^)
-run2 (run_and, &&)
-run2 (run_or, ||)
 
 static void run_xor (std::stack <int> &stack)
 {
@@ -73,18 +73,18 @@ Oper operators2[19] = {
 	Oper ('-', "-", 10, &run_minus),
 	Oper ('{', "<<", 9, &run_lshift),
 	Oper ('}', ">>", 9, &run_rshift),
-	Oper ('<', "<", 8, &run_lt),
-	Oper ('>', ">", 8, &run_gt),
 	Oper ('[', "<=", 8, &run_lte),
 	Oper (']', ">=", 8, &run_gte),
+	Oper ('<', "<", 8, &run_lt),
+	Oper ('>', ">", 8, &run_gt),
 	Oper ('=', "==", 7, &run_eq),
 	Oper ('1', "!=", 7, &run_neq),
-	Oper ('&', "&", 6, &run_bitand),
-	Oper ('|', "|", 5, &run_bitor),
-	Oper ('^', "^", 4, &run_bitxor),
 	Oper ('7', "&&", 3, &run_and),
 	Oper ('6', "^^", 2, &run_xor),
-	Oper ('\\', "||", 1, &run_or)
+	Oper ('\\', "||", 1, &run_or),
+	Oper ('&', "&", 6, &run_bitand),
+	Oper ('|', "|", 5, &run_bitor),
+	Oper ('^', "^", 4, &run_bitxor)
 };
 
 Oper operators3[1] = {

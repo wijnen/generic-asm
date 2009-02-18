@@ -1,9 +1,9 @@
 #include "asm.hh"
 #include <fstream>
 
-unsigned dir_incbin (shevek::istring &args, bool write, bool first,
-		Label *current_label)
+unsigned dir_incbin (shevek::istring &args, bool write, bool first, Label *current_label)
 {
+	(void)first;
 	(void)current_label;
 	std::string filename = Glib::filename_from_utf8 (args.rest ());
 	std::ifstream file (filename.c_str ());

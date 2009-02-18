@@ -51,8 +51,7 @@ int read_expr (Glib::ustring const &expr, Glib::ustring const &comment)
 		shevek::istring s (expr.substr (pos));
 		s (" ");
 		if (!s.rest ().empty () && !s (comment))
-			error (shevek::ostring ("junk at end of value: %s",
-						s.rest ()));
+			error (shevek::ostring ("junk at end of value: %s", s.rest ()));
 	}
 	return ret;
 }

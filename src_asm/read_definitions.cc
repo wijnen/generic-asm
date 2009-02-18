@@ -1,11 +1,12 @@
 #include "asm.hh"
+#include <shevek/debug.hh>
 
 void read_definitions ()
 {
 	bool is_enum = false, is_num = false, is_source = false;
 	bool recording = false;
 	std::map <Glib::ustring, unsigned>::iterator current_enum;
-	int current_value;
+	int current_value = 0;
 	std::map <Glib::ustring, Param>::iterator current_param;
 	input_stack.top ().ln = 0;
 	Glib::ustring line;
@@ -35,8 +36,7 @@ void read_definitions ()
 			is_source = false;
 			if (Param::find (d) != params.rend ())
 			{
-				error (shevek::ostring ("duplicate definition "
-							"of param %s", d));
+				error (shevek::ostring ("duplicate definition of param %s", d));
 				continue;
 			}
 			is_enum = true;
@@ -86,17 +86,15 @@ void read_definitions ()
 			is_source = false;
 			if (Param::find (d) != params.rend ())
 			{
-				error (shevek::ostring ("duplicate definition "
-							"of param %s", d));
+				error (shevek::ostring ("duplicate definition of param %s", d));
 				continue;
 			}
 			is_num = true;
-			current_param = params.insert (std::make_pair
-					(d, Param ())).first;
+			current_param = params.insert (std::make_pair (d, Param ())).first;
 			current_param->second.is_enum = false;
 			current_param->second.is_active = false;
 		}
-		else if (l ("constraint: %l", d))
+		else if (l ("constraint:"))
 		{
 			is_enum = false;
 			is_source = false;
@@ -105,7 +103,22 @@ void read_definitions ()
 				error ("constraint without num");
 				continue;
 			}
-			//current_params->second.constraint = read_expr (d);
+			Glib::ustring::size_type pos = 0;
+			Param::reset ();
+			current_param->second.is_active = true;
+			Expr e = Expr::read (l.rest (), true, pos);
+			if (pos == Glib::ustring::npos)
+			{
+				error ("invalid constraint expression: " + l.rest ());
+				continue;
+			}
+			l.skip (pos);
+			if (!l (" %") && !l (" #"))
+			{
+				error (shevek::ostring ("junk after constraint: %s", l.rest ()));
+				continue;
+			}
+			current_param->second.constraints.push_back (e);
 		}
 		else if (l ("source: %l", d))
 		{
@@ -217,8 +230,7 @@ void read_definitions ()
 			}
 			if (i != defs_macros.end ())
 				continue;
-			error (shevek::ostring ("syntax error trying to "
-						"parse `%s'", line));
+			error (shevek::ostring ("syntax error trying to parse `%s'", line));
 		}
 	}
 }

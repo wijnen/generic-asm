@@ -18,8 +18,7 @@ unsigned parse (input_line &input, bool output, bool first_pass, bool report)
 		new_label = find_label (label);
 		if (first_pass && new_label)
 		{
-			error (shevek::ostring ("Duplicate definition "
-						"of label %s", label));
+			error (shevek::ostring ("Duplicate definition of label %s", label));
 			current_stack = &new_label->definition->stack;
 			error ("Previous definition was here");
 			current_stack = &input.stack;
@@ -35,7 +34,7 @@ unsigned parse (input_line &input, bool output, bool first_pass, bool report)
 		}
 		else
 		{
-			old_label_valid = true;
+			old_label_valid = new_label->valid;
 			old_label_value = new_label->value;
 		}
 	}
@@ -73,25 +72,20 @@ unsigned parse (input_line &input, bool output, bool first_pass, bool report)
 					(l, output, first_pass, new_label);
 				if (output && listfile)
 				{
-					*listfile << std::dec << std::setw (6)
-						<< std::setfill (' ')
-						<< lineno << std::hex << "  "
-						<< line << '\n';
+					*listfile << std::dec << std::setw (6) << std::setfill (' ') << lineno << std::hex << "  " << line << '\n';
 				}
 				return undef;
 			}
 		}
 	}
-	for (std::list <Source>::iterator
-			s = sources.begin (); s != sources.end (); ++s)
+	for (std::list <Source>::iterator s = sources.begin (); s != sources.end (); ++s)
 	{
 		// Restore start of line (after label).
 		l.pop ();
 		l.push ();
 		// Set all params to unused.
 		Param::reset ();
-		std::list <std::pair <Glib::ustring, std::map <Glib::ustring,
-			Param>::reverse_iterator> >::iterator p;
+		std::list <std::pair <Glib::ustring, std::map <Glib::ustring, Param>::reverse_iterator> >::iterator p;
 		for (p = s->parts.begin (); p != s->parts.end (); ++p)
 		{
 			p->second->second.is_active = true;
@@ -100,10 +94,7 @@ unsigned parse (input_line &input, bool output, bool first_pass, bool report)
 			if (p->second->second.is_enum)
 			{
 				std::map <Glib::ustring, unsigned>::iterator v;
-				for (v = p->second->second.enum_values
-						.begin (); v != p->second
-						->second.enum_values.end ();
-						++v)
+				for (v = p->second->second.enum_values.begin (); v != p->second->second.enum_values.end (); ++v)
 				{
 					if (!l (escape (v->first)))
 						continue;
@@ -117,8 +108,7 @@ unsigned parse (input_line &input, bool output, bool first_pass, bool report)
 			{
 				Glib::ustring::size_type pos = 0;
 				bool valid;
-				p->second->second.value = read_expr
-					(l.rest (), false, pos, &valid);
+				p->second->second.value = read_expr (l.rest (), false, pos, &valid);
 				if (pos == Glib::ustring::npos)
 				{
 					dbg ("failed to read expression");
@@ -128,42 +118,39 @@ unsigned parse (input_line &input, bool output, bool first_pass, bool report)
 				{
 					dbg ("invalid expression found");
 					if (report)
-						error ("invalid expression "
-								"is here");
+						error ("undefined or recursively defined label");
 					++undef;
+				}
+				else
+				{
+					dbg ("computing " << p->second->second.constraints.size () << " constraints");
+					for (std::list <Expr>::iterator i = p->second->second.constraints.begin (); i != p->second->second.constraints.end (); ++i)
+					{
+						dbg ("computing constraint");
+						if (!i->compute (NULL))
+							error (shevek::ostring ("Given value %d fails constraint", p->second->second.value));
+					}
 				}
 				l.skip (pos);
 			}
 		}
-		if (p != s->parts.end () || !l (escape (s->post))
-				|| (!l (" %") && !l (" ;")))
+		if (p != s->parts.end () || !l (escape (s->post)) || (!l (" %") && !l (" ;")))
 			continue;
 		if (make_label)
 		{
-			if (old_label_valid
-					&& new_label->value != old_label_value)
-				error (shevek::ostring ("Value of label %s "
-							"changed from %x to "
-							"%x", new_label->name,
-							old_label_value,
-							new_label->value));
+			if (old_label_valid && new_label->value != old_label_value)
+				error (shevek::ostring ("Value of label %s changed from %x to %x", new_label->name, old_label_value, new_label->value));
 		}
 		if (output)
 		{
 			if (listfile)
-				*listfile << std::setw (4)
-					<< std::setfill ('0') << addr << ' ';
+				*listfile << std::setw (4) << std::setfill ('0') << addr << ' ';
 			write_out (*s);
 			if (listfile)
 			{
 				int size = 5 + 3 * s->targets.size ();
 				int numtabs = (31 - size) / 8;
-				*listfile << Glib::ustring (numtabs, '\t')
-					<< std::dec << std::setw (6)
-					<< std::setfill (' ')
-					<< input.stack.back ().first
-					<< std::hex << "  " << input.data
-					<< '\n';
+				*listfile << Glib::ustring (numtabs, '\t') << shevek::ostring ("%6d  %s", input.stack.back ().first, input.data);
 			}
 		}
 		else

@@ -43,9 +43,9 @@ static std::list <int> defb_expr (shevek::istring &args, unsigned &undef)
 	return ret;
 }
 
-unsigned dir_defb (shevek::istring &args, bool write, bool first,
-		Label *current_label)
+unsigned dir_defb (shevek::istring &args, bool write, bool first, Label *current_label)
 {
+	(void)first;
 	(void)current_label;
 	unsigned undef = 0;
 	unsigned s = 0;

@@ -41,14 +41,16 @@ Expr Expr::read (Glib::ustring const &input, bool allow_params,
 				if (allow_params)
 				{
 					std::map <Glib::ustring, Param>::reverse_iterator i;
-					for (i = params.rbegin ();
-							i != params.rend ();
-							++i)
+					for (i = params.rbegin (); i != params.rend (); ++i)
 					{
 						if (!i->second.is_active)
+						{
 							continue;
+						}
 						if (word != i->first)
+						{
 							continue;
+						}
 						ret.list.push_back (ExprElem (ExprElem::PARAM, 0, NULL, Glib::ustring (), i));
 						expect_number = false;
 						break;
@@ -57,8 +59,7 @@ Expr Expr::read (Glib::ustring const &input, bool allow_params,
 						continue;
 				}
 				// Label (may be defined later)
-				ret.list.push_back (ExprElem (ExprElem::LABEL,
-							0, NULL, word));
+				ret.list.push_back (ExprElem (ExprElem::LABEL, 0, NULL, word));
 				expect_number = false;
 				continue;
 			}
@@ -74,6 +75,7 @@ Expr Expr::read (Glib::ustring const &input, bool allow_params,
 			int n;
 			if (!l ("%i", n))
 			{
+				dbg ("Not a number");
 				pos = Glib::ustring::npos;
 				return Expr ();
 			}
@@ -99,9 +101,9 @@ Expr Expr::read (Glib::ustring const &input, bool allow_params,
 			{
 				ret.handle_oper (opers, &operators3[0]);
 				opers.pop ();	// The :
-				if (opers.empty ()
-						|| opers.top () != &tri_start)
+				if (opers.empty () || opers.top () != &tri_start)
 				{
+					dbg (": without ?");
 					pos = Glib::ustring::npos;
 					return Expr ();
 				}
@@ -138,6 +140,7 @@ Expr Expr::read (Glib::ustring const &input, bool allow_params,
 		}
 		if (opers.top () == &tri_start)
 		{
+			dbg ("unfinished ?: operator");
 			pos = Glib::ustring::npos;
 			return Expr ();
 		}

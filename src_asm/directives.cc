@@ -12,6 +12,6 @@ Directive directives[13] = {
 	Directive ("if", &dir_if),
 	Directive ("else", &dir_else),
 	Directive ("endif", &dir_endif),
-	Directive ("error", &dir_endif),
+	Directive ("error", &dir_error),
 	Directive (";", &dir_comment)
 };

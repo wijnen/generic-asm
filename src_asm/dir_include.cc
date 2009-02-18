@@ -1,8 +1,7 @@
 #include "asm.hh"
 #include <fstream>
 
-unsigned dir_include (shevek::istring &args, bool write, bool first,
-		Label *current_label)
+unsigned dir_include (shevek::istring &args, bool write, bool first, Label *current_label)
 {
 	(void)current_label;
 	if (write && listfile)

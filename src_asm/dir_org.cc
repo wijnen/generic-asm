@@ -1,8 +1,8 @@
 #include "asm.hh"
 
-unsigned dir_org (shevek::istring &args, bool write, bool first,
-		Label *current_label)
+unsigned dir_org (shevek::istring &args, bool write, bool first, Label *current_label)
 {
+	(void)first;
 	(void)current_label;
 	addr = read_expr (args.rest (), ";");
 	if (write && listfile)

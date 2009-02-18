@@ -76,8 +76,7 @@ struct Expr
 {
 	std::list <ExprElem> list;
 	int compute (bool *valid);
-	static Expr read (Glib::ustring const &input, bool allow_params,
-			Glib::ustring::size_type &pos);
+	static Expr read (Glib::ustring const &input, bool allow_params, Glib::ustring::size_type &pos);
 private:
 	void handle_oper (std::stack <Oper *> &stack, Oper *oper);
 };
@@ -146,7 +145,7 @@ extern Oper operators1[3];
 extern Oper operators2[19];
 extern Oper operators3[1];
 
-template <typename T, unsigned n> unsigned num_elem (T (&arr)[n]) { return n; }
+template <typename T, unsigned n> unsigned num_elem (T (&arr)[n]) { (void)arr; return n; }
 
 void error (Glib::ustring const &message);
 Glib::ustring escape (Glib::ustring const &in);
@@ -164,30 +163,19 @@ void write_byte (int byte, int addr_offset);
 unsigned parse (input_line &input, bool output, bool first_pass, bool report);
 int main (int argc, char **argv);
 
-unsigned dir_org (shevek::istring &args, bool write, bool first,
-		Label *current_label);
-unsigned dir_defb (shevek::istring &args, bool write, bool first,
-		Label *current_label);
-unsigned dir_comment (shevek::istring &args, bool write, bool first,
-		Label *current_label);
-unsigned dir_equ (shevek::istring &args, bool write, bool first,
-		Label *current_label);
-unsigned dir_include (shevek::istring &args, bool write, bool first,
-		Label *current_label);
-unsigned dir_incbin (shevek::istring &args, bool write, bool first,
-		Label *current_label);
-unsigned dir_seek (shevek::istring &args, bool write, bool first,
-		Label *current_label);
-unsigned dir_macro (shevek::istring &args, bool write, bool first,
-		Label *current_label);
-unsigned dir_endmacro (shevek::istring &args, bool write, bool first,
-		Label *current_label);
-unsigned dir_if (shevek::istring &args, bool write, bool first,
-		Label *current_label);
-unsigned dir_else (shevek::istring &args, bool write, bool first,
-		Label *current_label);
-unsigned dir_endif (shevek::istring &args, bool write, bool first,
-		Label *current_label);
+unsigned dir_org (shevek::istring &args, bool write, bool first, Label *current_label);
+unsigned dir_defb (shevek::istring &args, bool write, bool first, Label *current_label);
+unsigned dir_comment (shevek::istring &args, bool write, bool first, Label *current_label);
+unsigned dir_equ (shevek::istring &args, bool write, bool first, Label *current_label);
+unsigned dir_include (shevek::istring &args, bool write, bool first, Label *current_label);
+unsigned dir_incbin (shevek::istring &args, bool write, bool first, Label *current_label);
+unsigned dir_seek (shevek::istring &args, bool write, bool first, Label *current_label);
+unsigned dir_macro (shevek::istring &args, bool write, bool first, Label *current_label);
+unsigned dir_endmacro (shevek::istring &args, bool write, bool first, Label *current_label);
+unsigned dir_if (shevek::istring &args, bool write, bool first, Label *current_label);
+unsigned dir_else (shevek::istring &args, bool write, bool first, Label *current_label);
+unsigned dir_endif (shevek::istring &args, bool write, bool first, Label *current_label);
+unsigned dir_error (shevek::istring &args, bool write, bool first, Label *current_label);
 
 extern Oper operators1[3];
 extern Oper operators2[19];

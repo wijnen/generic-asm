@@ -39,7 +39,7 @@ genasm_SOURCES = asm.hh \
 	src_asm/subst_args.cc \
 	src_asm/write_byte.cc \
 	src_asm/write_out.cc
-genasm_CPPFLAGS = $(SHEVEK_CFLAGS) -I.
+genasm_CPPFLAGS = $(SHEVEK_CFLAGS) -I. -Wall -Werror -Wextra -Wmissing-declarations -Wredundant-decls -O -Wunused
 genasm_LDADD = $(SHEVEK_LIBS)
 
 asm-%: asm-%.in Makefile
