@@ -16,6 +16,14 @@ Expr Expr::read (Glib::ustring const &input, bool allow_params,
 		l (" ");
 		if (expect_number)
 		{
+			Glib::ustring word;
+			// Is this a label existance check?
+			if (l ("?%r/[A-Za-z_.][A-Za-z_.0-9]*/", word))
+			{
+				ret.list.push_back (ExprElem (ExprElem::ISLABEL, 0, NULL, word));
+				expect_number = false;
+				continue;
+			}
 			// Check prefix operators first
 			unsigned i;
 			for (i = 0; i < num_elem (operators1); ++i)
@@ -34,7 +42,6 @@ Expr Expr::read (Glib::ustring const &input, bool allow_params,
 				opers.push (&open);
 				continue;
 			}
-			Glib::ustring word;
 			if (l ("%r/[A-Za-z_.][A-Za-z_.0-9]*/", word))
 			{
 				// Param

@@ -11,6 +11,7 @@ int Expr::compute (bool *valid)
 	for (std::list <ExprElem>::const_iterator
 			i = list.begin (); i != list.end (); ++i)
 	{
+		Label *l;
 		switch (i->type)
 		{
 		case ExprElem::NUM:
@@ -37,7 +38,6 @@ int Expr::compute (bool *valid)
 			break;
 		case ExprElem::LABEL:
 			dbg ("computing label " << i->label);
-			Label *l;
 			l = find_label (i->label);
 			if (!l || !l->valid)
 			{
@@ -53,6 +53,10 @@ int Expr::compute (bool *valid)
 				dbg ("valid");
 				stack.push (l->value);
 			}
+			break;
+		case ExprElem::ISLABEL:
+			l = find_label (i->label);
+			stack.push (l ? 1 : 0);
 			break;
 		}
 	}

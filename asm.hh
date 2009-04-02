@@ -35,8 +35,7 @@ struct Oper
 	Glib::ustring name;
 	int priority;
 	void (*run) (std::stack <int> &stack);
-	Oper (char c, Glib::ustring const &n, int p,
-			void (*r)(std::stack <int> &))
+	Oper (char c, Glib::ustring const &n, int p, void (*r)(std::stack <int> &))
 		: code (c), name (n), priority (p), run (r) {}
 };
 
@@ -60,15 +59,12 @@ extern std::map <Glib::ustring, Param> params;
 
 struct ExprElem
 {
-	enum Type { NUM, OPER, PARAM, LABEL } type;
+	enum Type { NUM, OPER, PARAM, LABEL, ISLABEL } type;
 	int value;
 	Oper *oper;
 	Glib::ustring label;
 	std::map <Glib::ustring, Param>::reverse_iterator param;
-	ExprElem (Type t, int v, Oper *o = NULL,
-			Glib::ustring l = Glib::ustring (),
-			std::map <Glib::ustring, Param>::reverse_iterator
-			p = params.rend ())
+	ExprElem (Type t, int v, Oper *o = NULL, Glib::ustring l = Glib::ustring (), std::map <Glib::ustring, Param>::reverse_iterator p = params.rend ())
 		: type (t), value (v), oper (o), label (l), param (p) {}
 };
 
