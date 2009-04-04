@@ -3,7 +3,16 @@ AUTOMAKE_OPTIONS = foreign subdir-objects
 bin_PROGRAMS = genasm
 dist_bin_SCRIPTS = asm-z80 asm-hc08
 
-genasm_SOURCES = asm.hh \
+genasm_SOURCES = \
+	src_asm/operators.cc \
+	src_asm/param_reset.cc \
+	src_asm/parse.cc \
+	src_asm/read_definitions.cc \
+	src_asm/read_expr.cc \
+	src_asm/read_filename.cc \
+	src_asm/subst_args.cc \
+	src_asm/write_byte.cc \
+	src_asm/write_out.cc \
 	src_asm/data.cc \
 	src_asm/dir_defb.cc \
 	src_asm/dir_comment.cc \
@@ -30,15 +39,7 @@ genasm_SOURCES = asm.hh \
 	src_asm/hex.cc \
 	src_asm/input_line.cc \
 	src_asm/main.cc \
-	src_asm/operators.cc \
-	src_asm/param_reset.cc \
-	src_asm/parse.cc \
-	src_asm/read_definitions.cc \
-	src_asm/read_expr.cc \
-	src_asm/read_filename.cc \
-	src_asm/subst_args.cc \
-	src_asm/write_byte.cc \
-	src_asm/write_out.cc
+	asm.hh
 genasm_CPPFLAGS = $(SHEVEK_CFLAGS) -I. -Wall -Werror -Wextra -Wmissing-declarations -Wredundant-decls -O -Wunused
 genasm_LDADD = $(SHEVEK_LIBS)
 

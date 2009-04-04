@@ -1,8 +1,7 @@
 #include "asm.hh"
 #include <shevek/debug.hh>
 
-Expr Expr::read (Glib::ustring const &input, bool allow_params,
-		Glib::ustring::size_type &pos)
+Expr Expr::read (Glib::ustring const &input, bool allow_params, Glib::ustring::size_type &pos)
 {
 	Expr ret;
 	shevek::istring l (input.substr (pos));
@@ -20,7 +19,10 @@ Expr Expr::read (Glib::ustring const &input, bool allow_params,
 			// Is this a label existance check?
 			if (l ("?%r/[A-Za-z_.][A-Za-z_.0-9]*/", word))
 			{
-				ret.list.push_back (ExprElem (ExprElem::ISLABEL, 0, NULL, word));
+				valid_int i;
+				i.valid = false;
+				i.value = 0;
+				ret.list.push_back (ExprElem (ExprElem::ISLABEL, i, NULL, word));
 				expect_number = false;
 				continue;
 			}
@@ -58,7 +60,10 @@ Expr Expr::read (Glib::ustring const &input, bool allow_params,
 						{
 							continue;
 						}
-						ret.list.push_back (ExprElem (ExprElem::PARAM, 0, NULL, Glib::ustring (), i));
+						valid_int vi;
+						vi.value = 0;
+						vi.valid = false;
+						ret.list.push_back (ExprElem (ExprElem::PARAM, vi, NULL, Glib::ustring (), i));
 						expect_number = false;
 						break;
 					}
@@ -66,15 +71,20 @@ Expr Expr::read (Glib::ustring const &input, bool allow_params,
 						continue;
 				}
 				// Label (may be defined later)
-				ret.list.push_back (ExprElem (ExprElem::LABEL, 0, NULL, word));
+				valid_int i;
+				i.value = 0;
+				i.valid = false;
+				ret.list.push_back (ExprElem (ExprElem::LABEL, i, NULL, word));
 				expect_number = false;
 				continue;
 			}
 			// The special number "$"
 			if (l ("$"))
 			{
-				ret.list.push_back
-					(ExprElem (ExprElem::NUM, addr));
+				valid_int i;
+				i.value = addr;
+				i.valid = true;
+				ret.list.push_back (ExprElem (ExprElem::NUM, i));
 				expect_number = false;
 				continue;
 			}
@@ -86,7 +96,10 @@ Expr Expr::read (Glib::ustring const &input, bool allow_params,
 				pos = Glib::ustring::npos;
 				return Expr ();
 			}
-			ret.list.push_back (ExprElem (ExprElem::NUM, n));
+			valid_int vi;
+			vi.value = n;
+			vi.valid = true;
+			ret.list.push_back (ExprElem (ExprElem::NUM, vi));
 			expect_number = false;
 		}
 		else
@@ -152,7 +165,10 @@ Expr Expr::read (Glib::ustring const &input, bool allow_params,
 			return Expr ();
 		}
 		dbg ("pushing pending operator " << opers.top ()->name);
-		ret.list.push_back (ExprElem (ExprElem::OPER, 0, opers.top ()));
+		valid_int i;
+		i.valid = false;
+		i.value = 0;
+		ret.list.push_back (ExprElem (ExprElem::OPER, i, opers.top ()));
 		opers.pop ();
 	}
 	pos = input.size () - l.rest ().size () - correction;

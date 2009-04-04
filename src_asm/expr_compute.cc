@@ -2,12 +2,10 @@
 #include <iostream>
 #include <shevek/debug.hh>
 
-int Expr::compute (bool *valid)
+Expr::valid_int Expr::compute ()
 {
 	dbg ("computing");
-	if (valid)
-		*valid = true;
-	std::stack <int> stack;
+	std::stack <valid_int> stack;
 	for (std::list <ExprElem>::const_iterator
 			i = list.begin (); i != list.end (); ++i)
 	{
@@ -15,7 +13,7 @@ int Expr::compute (bool *valid)
 		switch (i->type)
 		{
 		case ExprElem::NUM:
-			dbg ("computing num " << i->value);
+			dbg ("computing num " << i->value.valid << ':' << i->value.value);
 			stack.push (i->value);
 			break;
 		case ExprElem::OPER:
@@ -26,9 +24,10 @@ int Expr::compute (bool *valid)
 			if (!i->param->second.is_active)
 			{
 				error (shevek::ostring ("inactive param %s used", i->param->first));
-				if (valid)
-					*valid = false;
-				stack.push (0);
+				valid_int i;
+				i.valid = false;
+				i.value = 0;
+				stack.push (i);
 			}
 			else
 			{
@@ -39,35 +38,36 @@ int Expr::compute (bool *valid)
 		case ExprElem::LABEL:
 			dbg ("computing label " << i->label);
 			l = find_label (i->label);
-			if (!l || !l->valid)
+			if (!l)
 			{
 				dbg ("invalid");
-				if (valid)
-					*valid = false;
-				else
-					error ("invalid expression");
-				stack.push (0);
+				valid_int i;
+				i.valid = false;
+				i.value = 0;
+				stack.push (i);
 			}
 			else
 			{
-				dbg ("valid");
+				dbg ("possibly valid");
 				stack.push (l->value);
 			}
 			break;
 		case ExprElem::ISLABEL:
 			l = find_label (i->label);
-			stack.push (l ? 1 : 0);
+			Expr::valid_int i;
+			i.valid = true;
+			i.value = l ? 1 : 0;
+			stack.push (i);
 			break;
 		}
 	}
 	if (stack.size () != 1)
 	{
 		error ("bug in assembler: not 1 value returned by expression");
-		if (valid)
-			*valid = false;
-		else
-			error ("invalid expression");
-		return 0;
+		Expr::valid_int i;
+		i.value = 0;
+		i.valid = false;
+		return i;
 	}
 	return stack.top ();
 }

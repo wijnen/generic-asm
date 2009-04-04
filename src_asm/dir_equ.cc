@@ -1,7 +1,7 @@
 #include "asm.hh"
 #include <shevek/debug.hh>
 
-unsigned dir_equ (shevek::istring &args, bool write, bool first, Label *current_label)
+void dir_equ (shevek::istring &args, bool write, bool first, Label *current_label)
 {
 	startfunc;
 	(void)first;
@@ -9,21 +9,19 @@ unsigned dir_equ (shevek::istring &args, bool write, bool first, Label *current_
 	if (!current_label)
 	{
 		error ("equ used without a label");
-		return 1;
+		return;
 	}
 	Glib::ustring::size_type pos = 0;
-	current_label->value = read_expr (args.rest (), false, pos, &current_label->valid);
+	current_label->value = read_expr (args.rest (), false, pos);
 	if (pos == Glib::ustring::npos)
 	{
-		error ("invalid expression");
-		return 1;
+		error ("incorrect expression in equ");
+		return;
 	}
 	args.skip (pos);
 	args (" ");
 	if (!args (";") && !args.rest ().empty ())
-		error (shevek::ostring ("junk at end of expression: %s",
-					args.rest ()));
+		error (shevek::ostring ("junk at end of expression: %s", args.rest ()));
 	if (write && listfile)
 		*listfile << "\t\t\t";
-	return current_label->valid ? 0 : 1;
 }

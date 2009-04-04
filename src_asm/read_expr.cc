@@ -1,7 +1,6 @@
 #include "asm.hh"
 
-int read_expr (Glib::ustring const &expr, bool allow_params,
-		Glib::ustring::size_type &pos, bool *valid)
+Expr::valid_int read_expr (Glib::ustring const &expr, bool allow_params, Glib::ustring::size_type &pos)
 {
 	Expr e = Expr::read (expr, allow_params, pos);
 	if (pos != Glib::ustring::npos)
@@ -34,18 +33,20 @@ int read_expr (Glib::ustring const &expr, bool allow_params,
 		std::cerr << std::endl;
 #endif
 
-		int ret = e.compute (valid);
-		return ret;
+		return e.compute ();
 	}
-	return 0;
+	Expr::valid_int i;
+	i.value = 0;
+	i.valid = false;
+	return i;
 }
 
-int read_expr (Glib::ustring const &expr, Glib::ustring const &comment)
+Expr::valid_int read_expr (Glib::ustring const &expr, Glib::ustring const &comment)
 {
 	Glib::ustring::size_type pos = 0;
-	int ret = read_expr (expr, true, pos, NULL);
+	Expr::valid_int ret = read_expr (expr, true, pos);
 	if (pos == Glib::ustring::npos)
-		error (shevek::ostring ("invalid expression: %s", expr));
+		error (shevek::ostring ("incorrect expression: %s", expr));
 	else
 	{
 		shevek::istring s (expr.substr (pos));

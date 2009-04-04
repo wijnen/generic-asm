@@ -29,26 +29,36 @@ struct input_line
 	input_line (Glib::ustring d);
 };
 
+struct Oper;
+struct ExprElem;
+struct Expr
+{
+	struct valid_int { bool valid; int value; };
+	std::list <ExprElem> list;
+	valid_int compute ();
+	static Expr read (Glib::ustring const &input, bool allow_params, Glib::ustring::size_type &pos);
+private:
+	void handle_oper (std::stack <Oper *> &stack, Oper *oper);
+};
+
 struct Oper
 {
 	char code;
 	Glib::ustring name;
 	int priority;
-	void (*run) (std::stack <int> &stack);
-	Oper (char c, Glib::ustring const &n, int p, void (*r)(std::stack <int> &))
+	void (*run) (std::stack <Expr::valid_int> &stack);
+	Oper (char c, Glib::ustring const &n, int p, void (*r)(std::stack <Expr::valid_int> &))
 		: code (c), name (n), priority (p), run (r) {}
 };
-
-struct Expr;
 
 struct Param
 {
 	bool is_enum;
-	std::map <Glib::ustring, unsigned> enum_values;
+	std::map <Glib::ustring, Expr::valid_int> enum_values;
 	std::list <Expr> constraints;
 
 	bool is_active;
-	int value;
+	Expr::valid_int value;
 
 	static void reset ();
 	static std::map <Glib::ustring, Param>::reverse_iterator find
@@ -60,29 +70,19 @@ extern std::map <Glib::ustring, Param> params;
 struct ExprElem
 {
 	enum Type { NUM, OPER, PARAM, LABEL, ISLABEL } type;
-	int value;
+	Expr::valid_int value;
 	Oper *oper;
 	Glib::ustring label;
 	std::map <Glib::ustring, Param>::reverse_iterator param;
-	ExprElem (Type t, int v, Oper *o = NULL, Glib::ustring l = Glib::ustring (), std::map <Glib::ustring, Param>::reverse_iterator p = params.rend ())
+	ExprElem (Type t, Expr::valid_int v, Oper *o = NULL, Glib::ustring l = Glib::ustring (), std::map <Glib::ustring, Param>::reverse_iterator p = params.rend ())
 		: type (t), value (v), oper (o), label (l), param (p) {}
-};
-
-struct Expr
-{
-	std::list <ExprElem> list;
-	int compute (bool *valid);
-	static Expr read (Glib::ustring const &input, bool allow_params, Glib::ustring::size_type &pos);
-private:
-	void handle_oper (std::stack <Oper *> &stack, Oper *oper);
 };
 
 struct Label
 {
 	Glib::ustring name;
 	input_line *definition;
-	int value;
-	bool valid;
+	Expr::valid_int value;
 };
 
 struct Source
@@ -104,10 +104,8 @@ struct Directive
 {
 	Glib::ustring name;
 	std::list <Glib::ustring> nick;
-	unsigned (*function) (shevek::istring &args, bool write, bool first,
-			Label *current_label);
-	Directive (Glib::ustring const &n,
-			unsigned (*f)(shevek::istring &, bool, bool, Label *))
+	void (*function) (shevek::istring &args, bool write, bool first, Label *current_label);
+	Directive (Glib::ustring const &n, void (*f)(shevek::istring &, bool, bool, Label *))
 		: name (n), function (f) {}
 };
 
@@ -146,32 +144,30 @@ template <typename T, unsigned n> unsigned num_elem (T (&arr)[n]) { (void)arr; r
 void error (Glib::ustring const &message);
 Glib::ustring escape (Glib::ustring const &in);
 Label *find_label (Glib::ustring name);
-int read_expr (Glib::ustring const &expr, bool allow_params,
-		Glib::ustring::size_type &pos, bool *valid);
-int read_expr (Glib::ustring const &expr, Glib::ustring const &comment);
-Glib::ustring subst_args (Glib::ustring const &orig, std::vector
-		<std::pair <Glib::ustring, Glib::ustring> > const &args);
+Expr::valid_int read_expr (Glib::ustring const &expr, bool allow_params, Glib::ustring::size_type &pos);
+Expr::valid_int read_expr (Glib::ustring const &expr, Glib::ustring const &comment);
+Glib::ustring subst_args (Glib::ustring const &orig, std::vector <std::pair <Glib::ustring, Glib::ustring> > const &args);
 bool getline (Glib::ustring &ret);
 void read_definitions ();
 std::string read_filename (shevek::istring &args);
 void write_out (Source const &s);
-void write_byte (int byte, int addr_offset);
-unsigned parse (input_line &input, bool output, bool first_pass, bool report);
+void write_byte (Expr::valid_int byte, int addr_offset);
+void parse (input_line &input, bool output, bool first_pass, bool report);
 int main (int argc, char **argv);
 
-unsigned dir_org (shevek::istring &args, bool write, bool first, Label *current_label);
-unsigned dir_defb (shevek::istring &args, bool write, bool first, Label *current_label);
-unsigned dir_comment (shevek::istring &args, bool write, bool first, Label *current_label);
-unsigned dir_equ (shevek::istring &args, bool write, bool first, Label *current_label);
-unsigned dir_include (shevek::istring &args, bool write, bool first, Label *current_label);
-unsigned dir_incbin (shevek::istring &args, bool write, bool first, Label *current_label);
-unsigned dir_seek (shevek::istring &args, bool write, bool first, Label *current_label);
-unsigned dir_macro (shevek::istring &args, bool write, bool first, Label *current_label);
-unsigned dir_endmacro (shevek::istring &args, bool write, bool first, Label *current_label);
-unsigned dir_if (shevek::istring &args, bool write, bool first, Label *current_label);
-unsigned dir_else (shevek::istring &args, bool write, bool first, Label *current_label);
-unsigned dir_endif (shevek::istring &args, bool write, bool first, Label *current_label);
-unsigned dir_error (shevek::istring &args, bool write, bool first, Label *current_label);
+void dir_org (shevek::istring &args, bool write, bool first, Label *current_label);
+void dir_defb (shevek::istring &args, bool write, bool first, Label *current_label);
+void dir_comment (shevek::istring &args, bool write, bool first, Label *current_label);
+void dir_equ (shevek::istring &args, bool write, bool first, Label *current_label);
+void dir_include (shevek::istring &args, bool write, bool first, Label *current_label);
+void dir_incbin (shevek::istring &args, bool write, bool first, Label *current_label);
+void dir_seek (shevek::istring &args, bool write, bool first, Label *current_label);
+void dir_macro (shevek::istring &args, bool write, bool first, Label *current_label);
+void dir_endmacro (shevek::istring &args, bool write, bool first, Label *current_label);
+void dir_if (shevek::istring &args, bool write, bool first, Label *current_label);
+void dir_else (shevek::istring &args, bool write, bool first, Label *current_label);
+void dir_endif (shevek::istring &args, bool write, bool first, Label *current_label);
+void dir_error (shevek::istring &args, bool write, bool first, Label *current_label);
 
 extern Oper operators1[3];
 extern Oper operators2[19];

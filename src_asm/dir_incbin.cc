@@ -1,7 +1,7 @@
 #include "asm.hh"
 #include <fstream>
 
-unsigned dir_incbin (shevek::istring &args, bool write, bool first, Label *current_label)
+void dir_incbin (shevek::istring &args, bool write, bool first, Label *current_label)
 {
 	(void)first;
 	(void)current_label;
@@ -10,16 +10,18 @@ unsigned dir_incbin (shevek::istring &args, bool write, bool first, Label *curre
 	if (!file)
 	{
 		error (shevek::ostring ("unable to open %s", args.rest ()));
-		return 0;
+		return;
 	}
 	char c;
 	while (file >> c)
 	{
+		Expr::valid_int i;
+		i.value = c;
+		i.valid = false;
 		if (write)
-			write_byte (c, 0);
+			write_byte (i, 0);
 		++addr;
 	}
 	if (write && listfile)
 		*listfile << "...\t\t";
-	return 0;
 }

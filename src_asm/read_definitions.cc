@@ -5,7 +5,7 @@ void read_definitions ()
 {
 	bool is_enum = false, is_num = false, is_source = false;
 	bool recording = false;
-	std::map <Glib::ustring, unsigned>::iterator current_enum;
+	std::map <Glib::ustring, Expr::valid_int>::iterator current_enum;
 	int current_value = 0;
 	std::map <Glib::ustring, Param>::iterator current_param;
 	input_stack.top ().ln = 0;
@@ -63,8 +63,10 @@ void read_definitions ()
 						 d));
 				continue;
 			}
-			current_enum = current_param->second.enum_values.insert
-				(std::make_pair (d, current_value++)).first;
+			Expr::valid_int i;
+			i.value = current_value++;
+			i.valid = true;
+			current_enum = current_param->second.enum_values.insert (std::make_pair (d, i)).first;
 		}
 		else if (l ("value: %l", d))
 		{

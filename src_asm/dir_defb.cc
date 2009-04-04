@@ -1,13 +1,13 @@
 #include "asm.hh"
 
-static std::list <int> defb_expr (shevek::istring &args, unsigned &undef)
+static std::list <Expr::valid_int> defb_expr (shevek::istring &args)
 {
-	std::list <int> ret;
+	std::list <Expr::valid_int> ret;
 	args (" ");
 	if (args.rest ().empty ())
 	{
 		error ("empty expression in defb");
-		return std::list <int> ();
+		return std::list <Expr::valid_int> ();
 	}
 	Glib::ustring r = args.rest ();
 	if (r[0] == '\'' || r[0] == '"')
@@ -15,48 +15,47 @@ static std::list <int> defb_expr (shevek::istring &args, unsigned &undef)
 		Glib::ustring::size_type p = 1;
 		while (p < r.size () && r[p] != r[0])
 		{
-			ret.push_back (r[p]);
+			Expr::valid_int i;
+			i.valid = true;
+			i.value = r[p];
+			ret.push_back (i);
 			++p;
 		}
 		if (p >= r.size ())
 		{
 			error ("unterminated string in defb");
-			return std::list <int> ();
+			return std::list <Expr::valid_int> ();
 		}
 		args.skip (p + 1);
 	}
 	else
 	{
 		Glib::ustring::size_type pos = 0;
-		bool valid;
-		int v = read_expr (args.rest (), false, pos, &valid);
+		Expr::valid_int v = read_expr (args.rest (), false, pos);
 		if (pos == Glib::ustring::npos)
 		{
-			error ("invalid expression in defb");
-			return std::list <int> ();
+			error ("incorrect expression in defb");
+			return std::list <Expr::valid_int> ();
 		}
-		if (!valid)
-			++undef;
 		args.skip (pos);
 		ret.push_back (v);
 	}
 	return ret;
 }
 
-unsigned dir_defb (shevek::istring &args, bool write, bool first, Label *current_label)
+void dir_defb (shevek::istring &args, bool write, bool first, Label *current_label)
 {
 	(void)first;
 	(void)current_label;
-	unsigned undef = 0;
 	unsigned s = 0;
 	while (true)
 	{
-		std::list <int> v = defb_expr (args, undef);
+		std::list <Expr::valid_int> v = defb_expr (args);
 		if (v.empty ())
 			break;
 		if (write)
 		{
-			std::list <int>::iterator i;
+			std::list <Expr::valid_int>::iterator i;
 			unsigned p;
 			for (i = v.begin (), p = 0; i != v.end (); ++i, ++p)
 				write_byte (*i, s + p);
@@ -74,5 +73,4 @@ unsigned dir_defb (shevek::istring &args, bool write, bool first, Label *current
 			numtabs = 1;
 		*listfile << Glib::ustring (numtabs, '\t');
 	}
-	return undef;
 }

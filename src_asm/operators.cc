@@ -1,25 +1,31 @@
 #include "asm.hh"
 
-static int do_pop (std::stack <int> &stack)
+static Expr::valid_int do_pop (std::stack <Expr::valid_int> &stack)
 {
-	int ret = stack.top ();
+	Expr::valid_int ret = stack.top ();
 	stack.pop ();
 	return ret;
 }
 
 #define run1(name, oper) \
-	static void name (std::stack <int> &stack) \
+	static void name (std::stack <Expr::valid_int> &stack) \
 	{ \
-		int a = do_pop (stack); \
-		stack.push (oper a); \
+		Expr::valid_int a = do_pop (stack); \
+		Expr::valid_int r; \
+		r.valid = a.valid; \
+		r.value = oper a.value; \
+		stack.push (r); \
 	}
 
 #define run2(name, oper) \
-	static void name (std::stack <int> &stack) \
+	static void name (std::stack <Expr::valid_int> &stack) \
 	{ \
-		int a = do_pop (stack); \
-		int b = do_pop (stack); \
-		stack.push (b oper a); \
+		Expr::valid_int a = do_pop (stack); \
+		Expr::valid_int b = do_pop (stack); \
+		Expr::valid_int r; \
+		r.valid = a.valid && b.valid; \
+		r.value = b.value oper a.value; \
+		stack.push (r); \
 	}
 
 run1 (run_not, !)
@@ -45,19 +51,25 @@ run2 (run_bitand, &)
 run2 (run_bitor, |)
 run2 (run_bitxor, ^)
 
-static void run_xor (std::stack <int> &stack)
+static void run_xor (std::stack <Expr::valid_int> &stack)
 {
-	int a = do_pop (stack);
-	int b = do_pop (stack);
-	stack.push (!b ^ !a);
+	Expr::valid_int a = do_pop (stack);
+	Expr::valid_int b = do_pop (stack);
+	Expr::valid_int r;
+	r.valid = a.valid && b.valid;
+	r.value = !b.value ^ !a.value;
+	stack.push (r);
 }
 
-static void run_tri (std::stack <int> &stack)
+static void run_tri (std::stack <Expr::valid_int> &stack)
 {
-	int a = do_pop (stack);
-	int b = do_pop (stack);
-	int c = do_pop (stack);
-	stack.push (c ? b : a);
+	Expr::valid_int a = do_pop (stack);
+	Expr::valid_int b = do_pop (stack);
+	Expr::valid_int c = do_pop (stack);
+	Expr::valid_int r;
+	r.valid = a.valid && b.valid;
+	r.value = c.value ? b.value : a.value;
+	stack.push (r);
 }
 
 Oper operators1[3] = {

@@ -1,15 +1,15 @@
 #include "asm.hh"
 #include <shevek/debug.hh>
 
-unsigned parse (input_line &input, bool output, bool first_pass, bool report)
+void parse (input_line &input, bool output, bool first_pass, bool report)
 {
 	current_stack = &input.stack;
-	unsigned undef = 0;
 	bool make_label = false;
 	Glib::ustring label;
 	Label *new_label = NULL;
-	int old_label_value = 0;
-	bool old_label_valid = false;
+	Expr::valid_int old_label;
+	old_label.value = 0;
+	old_label.valid = false;
 	shevek::istring l (input.data);
 	if (l (" %r/[a-zA-Z_.][a-zA-Z_.0-9]*/:", label))
 	{
@@ -29,13 +29,12 @@ unsigned parse (input_line &input, bool output, bool first_pass, bool report)
 			new_label = &labels.back ();
 			new_label->name = label;
 			new_label->definition = &input;
-			new_label->value = addr;
-			new_label->valid = true;
+			new_label->value.value = addr;
+			new_label->value.valid = true;
 		}
 		else
 		{
-			old_label_valid = new_label->valid;
-			old_label_value = new_label->value;
+			old_label = new_label->value;
 		}
 	}
 	l (" ");
@@ -47,7 +46,7 @@ unsigned parse (input_line &input, bool output, bool first_pass, bool report)
 				<< std::setw (6) << std::setfill (' ')
 				<< input.stack.back ().first << std::hex
 				<< "  " << input.data << '\n';
-		return 0;
+		return;
 	}
 	l.push ();
 	// Check if it's a directive
@@ -68,13 +67,12 @@ unsigned parse (input_line &input, bool output, bool first_pass, bool report)
 				}
 				unsigned lineno = input.stack.back ().first;
 				Glib::ustring line = input.data;
-				undef += directives[i].function
-					(l, output, first_pass, new_label);
+				directives[i].function (l, output, first_pass, new_label);
 				if (output && listfile)
 				{
 					*listfile << std::dec << std::setw (6) << std::setfill (' ') << lineno << std::hex << "  " << line << '\n';
 				}
-				return undef;
+				return;
 			}
 		}
 	}
@@ -93,7 +91,7 @@ unsigned parse (input_line &input, bool output, bool first_pass, bool report)
 				break;
 			if (p->second->second.is_enum)
 			{
-				std::map <Glib::ustring, unsigned>::iterator v;
+				std::map <Glib::ustring, Expr::valid_int>::iterator v;
 				for (v = p->second->second.enum_values.begin (); v != p->second->second.enum_values.end (); ++v)
 				{
 					if (!l (escape (v->first)))
@@ -107,19 +105,17 @@ unsigned parse (input_line &input, bool output, bool first_pass, bool report)
 			else
 			{
 				Glib::ustring::size_type pos = 0;
-				bool valid;
-				p->second->second.value = read_expr (l.rest (), false, pos, &valid);
+				p->second->second.value = read_expr (l.rest (), false, pos);
 				if (pos == Glib::ustring::npos)
 				{
 					dbg ("failed to read expression");
 					break;
 				}
-				if (!valid)
+				if (!p->second->second.value.valid)
 				{
 					dbg ("invalid expression found");
 					if (report)
 						error ("undefined or recursively defined label");
-					++undef;
 				}
 				else
 				{
@@ -127,8 +123,11 @@ unsigned parse (input_line &input, bool output, bool first_pass, bool report)
 					for (std::list <Expr>::iterator i = p->second->second.constraints.begin (); i != p->second->second.constraints.end (); ++i)
 					{
 						dbg ("computing constraint");
-						if (!i->compute (NULL))
-							error (shevek::ostring ("Given value %d fails constraint", p->second->second.value));
+						Expr::valid_int vi = i->compute ();
+						if (!vi.valid)
+							error ("Constraint is invalid");
+						if (!vi.value)
+							error (shevek::ostring ("Given value %d fails constraint", p->second->second.value.value));
 					}
 				}
 				l.skip (pos);
@@ -138,8 +137,8 @@ unsigned parse (input_line &input, bool output, bool first_pass, bool report)
 			continue;
 		if (make_label)
 		{
-			if (old_label_valid && new_label->value != old_label_value)
-				error (shevek::ostring ("Value of label %s changed from %x to %x", new_label->name, old_label_value, new_label->value));
+			if (old_label.valid && (!new_label->value.valid || new_label->value.value != old_label.value))
+				error (shevek::ostring ("Value of label %s changed from 0x%x to 0x%x", new_label->name, old_label.value, new_label->value.value));
 		}
 		if (output)
 		{
@@ -155,8 +154,7 @@ unsigned parse (input_line &input, bool output, bool first_pass, bool report)
 		}
 		else
 			addr += s->targets.size ();
-		return undef;
+		return;
 	}
 	error (shevek::ostring ("Syntax error: %s", l.rest ()));
-	return undef;
 }

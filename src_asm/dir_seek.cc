@@ -1,6 +1,6 @@
 #include "asm.hh"
 
-unsigned dir_seek (shevek::istring &args, bool write, bool first, Label *current_label)
+void dir_seek (shevek::istring &args, bool write, bool first, Label *current_label)
 {
 	(void)first;
 	(void)args;
@@ -8,5 +8,4 @@ unsigned dir_seek (shevek::istring &args, bool write, bool first, Label *current
 	error ("seek is not yet implemented");
 	if (write && listfile)
 		*listfile << "\t\t\t";
-	return 0;
 }
