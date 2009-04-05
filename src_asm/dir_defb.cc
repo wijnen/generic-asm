@@ -43,7 +43,7 @@ static std::list <Expr::valid_int> defb_expr (shevek::istring &args)
 	return ret;
 }
 
-void dir_defb (shevek::istring &args, bool write, bool first, Label *current_label)
+void dir_defb (shevek::istring &args, bool first, Label *current_label)
 {
 	(void)first;
 	(void)current_label;
@@ -53,19 +53,16 @@ void dir_defb (shevek::istring &args, bool write, bool first, Label *current_lab
 		std::list <Expr::valid_int> v = defb_expr (args);
 		if (v.empty ())
 			break;
-		if (write)
-		{
-			std::list <Expr::valid_int>::iterator i;
-			unsigned p;
-			for (i = v.begin (), p = 0; i != v.end (); ++i, ++p)
-				write_byte (*i, s + p);
-		}
+		std::list <Expr::valid_int>::iterator i;
+		unsigned p;
+		for (i = v.begin (), p = 0; i != v.end (); ++i, ++p)
+			write_byte (*i, s + p);
 		s += v.size ();
 		if (!args (" ,"))
 			break;
 	}
 	addr += s;
-	if (write && listfile)
+	if (writing && listfile)
 	{
 		int size = 5 + 3 * s;
 		int numtabs = (31 - size) / 8;

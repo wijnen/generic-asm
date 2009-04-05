@@ -5,6 +5,8 @@ bool usehex;
 Hex hexfile;
 unsigned addr;
 unsigned errors;
+unsigned undefined_labels;
+bool writing;
 
 std::stack <Input> input_stack;
 std::list <std::pair <unsigned, Glib::ustring> > *current_stack;

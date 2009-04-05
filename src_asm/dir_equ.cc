@@ -1,7 +1,7 @@
 #include "asm.hh"
 #include <shevek/debug.hh>
 
-void dir_equ (shevek::istring &args, bool write, bool first, Label *current_label)
+void dir_equ (shevek::istring &args, bool first, Label *current_label)
 {
 	startfunc;
 	(void)first;
@@ -22,6 +22,6 @@ void dir_equ (shevek::istring &args, bool write, bool first, Label *current_labe
 	args (" ");
 	if (!args (";") && !args.rest ().empty ())
 		error (shevek::ostring ("junk at end of expression: %s", args.rest ()));
-	if (write && listfile)
+	if (writing && listfile)
 		*listfile << "\t\t\t";
 }

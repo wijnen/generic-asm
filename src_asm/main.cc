@@ -102,12 +102,13 @@ int main (int argc, char **argv)
 		input_stack.top ().must_delete = true;
 	}
 	// Determine labels
-	int undefined_labels = 0;
 	Glib::ustring line;
+	undefined_labels = 0;
+	writing = false;
 	while (getline (line))
 	{
 		input.push_back (input_line (line));
-		undefined_labels += parse (input.back (), false, true, false);
+		parse (input.back (), true, false);
 	}
 	if (errors)
 	{
@@ -122,20 +123,19 @@ int main (int argc, char **argv)
 	}
 	while (undefined_labels != 0)
 	{
-		int last_undefined_labels = undefined_labels;
+		unsigned last_undefined_labels = undefined_labels;
 		addr = 0;
 		undefined_labels = 0;
 		for (unsigned t = 0; t < input.size (); ++t)
 		{
-			undefined_labels += parse (input[t], false, false,
-					false);
+			parse (input[t], false, false);
 		}
 		dbg ("undefined labels: " << undefined_labels);
 		if (undefined_labels == last_undefined_labels)
 		{
 			for (unsigned t = 0; t < input.size (); ++t)
 			{
-				parse (input[t], false, false, true);
+				parse (input[t], false, true);
 			}
 			if (!outfilename.empty ())
 			{
@@ -150,10 +150,11 @@ int main (int argc, char **argv)
 			return 1;
 	}
 	// Write output
+	writing = true;
 	addr = 0;
 	for (unsigned t = 0; t < input.size (); ++t)
 	{
-		parse (input[t], true, false, false);
+		parse (input[t], false, false);
 	}
 	if (errors)
 	{

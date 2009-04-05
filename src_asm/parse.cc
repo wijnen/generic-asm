@@ -1,7 +1,7 @@
 #include "asm.hh"
 #include <shevek/debug.hh>
 
-void parse (input_line &input, bool output, bool first_pass, bool report)
+void parse (input_line &input, bool first_pass, bool report)
 {
 	current_stack = &input.stack;
 	bool make_label = false;
@@ -40,7 +40,7 @@ void parse (input_line &input, bool output, bool first_pass, bool report)
 	l (" ");
 	if (l.rest ().empty ())
 	{
-		if (output && listfile)
+		if (writing && listfile)
 			*listfile << std::setw (4) << std::setfill ('0')
 				<< addr << " \t\t\t" << std::dec
 				<< std::setw (6) << std::setfill (' ')
@@ -59,7 +59,7 @@ void parse (input_line &input, bool output, bool first_pass, bool report)
 		{
 			if (l (escape (*k)))
 			{
-				if (output && listfile)
+				if (writing && listfile)
 				{
 					*listfile << std::setw (4)
 						<< std::setfill ('0')
@@ -67,8 +67,8 @@ void parse (input_line &input, bool output, bool first_pass, bool report)
 				}
 				unsigned lineno = input.stack.back ().first;
 				Glib::ustring line = input.data;
-				directives[i].function (l, output, first_pass, new_label);
-				if (output && listfile)
+				directives[i].function (l, first_pass, new_label);
+				if (writing && listfile)
 				{
 					*listfile << std::dec << std::setw (6) << std::setfill (' ') << lineno << std::hex << "  " << line << '\n';
 				}
@@ -140,17 +140,14 @@ void parse (input_line &input, bool output, bool first_pass, bool report)
 			if (old_label.valid && (!new_label->value.valid || new_label->value.value != old_label.value))
 				error (shevek::ostring ("Value of label %s changed from 0x%x to 0x%x", new_label->name, old_label.value, new_label->value.value));
 		}
-		if (output)
+		if (writing && listfile)
+			*listfile << std::setw (4) << std::setfill ('0') << addr << ' ';
+		write_out (*s);
+		if (writing && listfile)
 		{
-			if (listfile)
-				*listfile << std::setw (4) << std::setfill ('0') << addr << ' ';
-			write_out (*s);
-			if (listfile)
-			{
-				int size = 5 + 3 * s->targets.size ();
-				int numtabs = (31 - size) / 8;
-				*listfile << Glib::ustring (numtabs, '\t') << shevek::ostring ("%6d  %s", input.stack.back ().first, input.data);
-			}
+			int size = 5 + 3 * s->targets.size ();
+			int numtabs = (31 - size) / 8;
+			*listfile << Glib::ustring (numtabs, '\t') << shevek::ostring ("%6d  %s", input.stack.back ().first, input.data);
 		}
 		else
 			addr += s->targets.size ();

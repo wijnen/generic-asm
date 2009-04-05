@@ -1,6 +1,6 @@
 #include "asm.hh"
 
-void dir_org (shevek::istring &args, bool write, bool first, Label *current_label)
+void dir_org (shevek::istring &args, bool first, Label *current_label)
 {
 	(void)first;
 	(void)current_label;
@@ -8,6 +8,6 @@ void dir_org (shevek::istring &args, bool write, bool first, Label *current_labe
 	if (!i.valid)
 		error ("invalid expression in org");
 	addr = i.value;
-	if (write && listfile)
+	if (writing && listfile)
 		*listfile << "\t\t\t";
 }

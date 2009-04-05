@@ -104,8 +104,8 @@ struct Directive
 {
 	Glib::ustring name;
 	std::list <Glib::ustring> nick;
-	void (*function) (shevek::istring &args, bool write, bool first, Label *current_label);
-	Directive (Glib::ustring const &n, void (*f)(shevek::istring &, bool, bool, Label *))
+	void (*function) (shevek::istring &args, bool first, Label *current_label);
+	Directive (Glib::ustring const &n, void (*f)(shevek::istring &, bool, Label *))
 		: name (n), function (f) {}
 };
 
@@ -134,6 +134,8 @@ extern unsigned addr;
 extern unsigned errors;
 extern std::stack <Input> input_stack;
 extern std::list <std::pair <unsigned, Glib::ustring> > *current_stack;
+extern unsigned undefined_labels;
+extern bool writing;
 
 extern Oper operators1[3];
 extern Oper operators2[19];
@@ -152,22 +154,22 @@ void read_definitions ();
 std::string read_filename (shevek::istring &args);
 void write_out (Source const &s);
 void write_byte (Expr::valid_int byte, int addr_offset);
-void parse (input_line &input, bool output, bool first_pass, bool report);
+void parse (input_line &input, bool first_pass, bool report);
 int main (int argc, char **argv);
 
-void dir_org (shevek::istring &args, bool write, bool first, Label *current_label);
-void dir_defb (shevek::istring &args, bool write, bool first, Label *current_label);
-void dir_comment (shevek::istring &args, bool write, bool first, Label *current_label);
-void dir_equ (shevek::istring &args, bool write, bool first, Label *current_label);
-void dir_include (shevek::istring &args, bool write, bool first, Label *current_label);
-void dir_incbin (shevek::istring &args, bool write, bool first, Label *current_label);
-void dir_seek (shevek::istring &args, bool write, bool first, Label *current_label);
-void dir_macro (shevek::istring &args, bool write, bool first, Label *current_label);
-void dir_endmacro (shevek::istring &args, bool write, bool first, Label *current_label);
-void dir_if (shevek::istring &args, bool write, bool first, Label *current_label);
-void dir_else (shevek::istring &args, bool write, bool first, Label *current_label);
-void dir_endif (shevek::istring &args, bool write, bool first, Label *current_label);
-void dir_error (shevek::istring &args, bool write, bool first, Label *current_label);
+void dir_org (shevek::istring &args, bool first, Label *current_label);
+void dir_defb (shevek::istring &args, bool first, Label *current_label);
+void dir_comment (shevek::istring &args, bool first, Label *current_label);
+void dir_equ (shevek::istring &args, bool first, Label *current_label);
+void dir_include (shevek::istring &args, bool first, Label *current_label);
+void dir_incbin (shevek::istring &args, bool first, Label *current_label);
+void dir_seek (shevek::istring &args, bool first, Label *current_label);
+void dir_macro (shevek::istring &args, bool first, Label *current_label);
+void dir_endmacro (shevek::istring &args, bool first, Label *current_label);
+void dir_if (shevek::istring &args, bool first, Label *current_label);
+void dir_else (shevek::istring &args, bool first, Label *current_label);
+void dir_endif (shevek::istring &args, bool first, Label *current_label);
+void dir_error (shevek::istring &args, bool first, Label *current_label);
 
 extern Oper operators1[3];
 extern Oper operators2[19];

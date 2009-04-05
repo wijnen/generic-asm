@@ -1,10 +1,10 @@
 #include "asm.hh"
 #include <fstream>
 
-void dir_include (shevek::istring &args, bool write, bool first, Label *current_label)
+void dir_include (shevek::istring &args, bool first, Label *current_label)
 {
 	(void)current_label;
-	if (write && listfile)
+	if (writing && listfile)
 		*listfile << "\t\t\t";
 	if (!first)
 		return;

@@ -1,10 +1,10 @@
 #include "asm.hh"
 
-void dir_comment (shevek::istring &args, bool write, bool first, Label *current_label)
+void dir_comment (shevek::istring &args, bool first, Label *current_label)
 {
 	(void)first;
 	(void)current_label;
 	(void)args;
-	if (write && listfile)
+	if (writing && listfile)
 		*listfile << "\t\t\t";
 }

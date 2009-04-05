@@ -4,10 +4,9 @@
 void write_byte (Expr::valid_int byte, int addr_offset)
 {
 	if (!byte.valid)
-	{
-		error ("trying to write invalid byte");
+		++undefined_labels;
+	if (!writing)
 		return;
-	}
 	if ((byte.value < -0x80) || (byte.value >= 0x100))
 		error (shevek::ostring ("byte %x out of range", byte.value));
 	if (usehex)
