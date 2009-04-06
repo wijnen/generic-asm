@@ -31,6 +31,7 @@ void parse (input_line &input, bool first_pass, bool report)
 			new_label->definition = &input;
 			new_label->value.value = addr;
 			new_label->value.valid = true;
+			dbg ("Label " << label << " defined at " << addr);
 		}
 		else
 		{
@@ -147,10 +148,9 @@ void parse (input_line &input, bool first_pass, bool report)
 		{
 			int size = 5 + 3 * s->targets.size ();
 			int numtabs = (31 - size) / 8;
-			*listfile << Glib::ustring (numtabs, '\t') << shevek::ostring ("%6d  %s", input.stack.back ().first, input.data);
+			*listfile << Glib::ustring (numtabs, '\t') << shevek::ostring ("%6d  %s\n", input.stack.back ().first, input.data);
 		}
-		else
-			addr += s->targets.size ();
+		addr += s->targets.size ();
 		return;
 	}
 	error (shevek::ostring ("Syntax error: %s", l.rest ()));

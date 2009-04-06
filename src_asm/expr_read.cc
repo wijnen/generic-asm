@@ -15,6 +15,7 @@ Expr Expr::read (Glib::ustring const &input, bool allow_params, Glib::ustring::s
 		l (" ");
 		if (expect_number)
 		{
+			dbg (l.rest ());
 			Glib::ustring word;
 			// Is this a label existance check?
 			if (l ("?%r/[A-Za-z_.][A-Za-z_.0-9]*/", word))
@@ -104,6 +105,7 @@ Expr Expr::read (Glib::ustring const &input, bool allow_params, Glib::ustring::s
 		}
 		else
 		{
+			dbg (l.rest ());
 			// Operator or closing parentheses.
 			unsigned i;
 			for (i = 0; i < num_elem (operators2); ++i)
@@ -117,6 +119,12 @@ Expr Expr::read (Glib::ustring const &input, bool allow_params, Glib::ustring::s
 			}
 			if (i != num_elem (operators2))
 				continue;
+			if (l ("?"))
+			{
+				ret.handle_oper (opers, &tri_start);
+				expect_number = true;
+				continue;
+			}
 			if (l (escape (operators3[0].name)))
 			{
 				ret.handle_oper (opers, &operators3[0]);

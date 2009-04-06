@@ -103,7 +103,7 @@ int main (int argc, char **argv)
 	}
 	// Determine labels
 	Glib::ustring line;
-	undefined_labels = 0;
+	undefined_labels = ~0;
 	writing = false;
 	while (getline (line))
 	{

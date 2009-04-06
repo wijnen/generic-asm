@@ -8,5 +8,4 @@ void write_out (Source const &s)
 		write_byte (read_expr (*i, "#"), num);
 		++num;
 	}
-	addr += num;
 }

@@ -67,7 +67,7 @@ static void run_tri (std::stack <Expr::valid_int> &stack)
 	Expr::valid_int b = do_pop (stack);
 	Expr::valid_int c = do_pop (stack);
 	Expr::valid_int r;
-	r.valid = a.valid && b.valid;
+	r.valid = c.valid && (c.value ? b.valid : a.valid);
 	r.value = c.value ? b.value : a.value;
 	stack.push (r);
 }
