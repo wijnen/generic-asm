@@ -17,7 +17,7 @@ int main (int argc, char **argv)
 	std::string defs;
 	std::string outfilename, listfilename;
 	usehex = true;
-	useobject = false;
+	bool useobject = false;
 	include_path.push_back (".");
 	shevek::args::option opts[] = {
 		shevek::args::option (0, "defs", "code definitions", false, defs),
@@ -52,6 +52,11 @@ int main (int argc, char **argv)
 		*listfile << std::hex;
 	}
 
+	// TODO: make this configurable.
+	spaces.push_back (Space ());
+	spaces.back ().start = 0;
+	spaces.back ().size = 0x10000;
+
 	input_stack.push (Input ());
 	input_stack.top ().name = defs;
 	input_stack.top ().basedir = make_base (defs);
@@ -75,19 +80,19 @@ int main (int argc, char **argv)
 			unlink (listfilename.c_str ());
 		return 1;
 	}
-	std::vector <std::string> files (args.size ());
-	if (args.empty ())
-		files.push_back ("-");
+	std::vector <std::string> in_files (args.size ());
+	if (args.size () == 0)
+		in_files.push_back ("-");
 	else for (unsigned i = 0; i < args.size (); ++i)
-		files[i] = args[i];
-	for (unsigned f = 0; f < files.size (); ++f)
+		in_files[i] = args[i];
+	for (unsigned f = 0; f < in_files.size (); ++f)
 	{
 		// Read input in memory.
 		std::vector <input_line> input;
 		input_stack.push (Input ());
 		input_stack.top ().type = Input::FILE;
 		input_stack.top ().ln = 0;
-		if (files[f] == "-")
+		if (in_files[f] == "-")
 		{
 			input_stack.top ().name = "Standard input";
 			input_stack.top ().basedir = ".";
@@ -96,8 +101,8 @@ int main (int argc, char **argv)
 		}
 		else
 		{
-			input_stack.top ().name = files[f];
-			input_stack.top ().basedir = make_base (files[f]);
+			input_stack.top ().name = in_files[f];
+			input_stack.top ().basedir = make_base (in_files[f]);
 			input_stack.top ().file = new std::ifstream
 				(input_stack.top ().name.c_str ());
 			if (!input_stack.top ().file)
@@ -176,11 +181,30 @@ int main (int argc, char **argv)
 		for (l = labels.begin (), next = l; l != labels.end (); l = next)
 		{
 			++next;
-			if (l.name[0] == '.' || l.name[0] == '@')
+			if (l->name[0] == '.' || l->name[0] == '@')
 				labels.erase (l);
 			else
-				labels.definition = NULL;
+				l->definition = NULL;
 		}
+	}
+	if (useobject)
+	{
+		std::string script ("#\xfeof\0\0\0\0", 8), code;
+		bool first = true;
+		for (std::list <File>::iterator i = files.begin (); i != files.end (); ++i)
+		{
+			if (first)
+				first = false;
+			else
+				script += "-\n";
+			i->write_object (script, code);
+		}
+		*outfile << script << '\0' << code << std::flush;
+	}
+	else
+	{
+		for (std::list <File>::iterator i = files.begin (); i != files.end (); ++i)
+			i->write_binary ();
 	}
 	if (usehex)
 		hexfile.write_s19 (*outfile);

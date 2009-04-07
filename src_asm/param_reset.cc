@@ -2,7 +2,6 @@
 
 void Param::reset ()
 {
-	for (std::map <Glib::ustring, Param>::reverse_iterator
-			i = params.rbegin (); i != params.rend (); ++i)
-		i->second.is_active = false;
+	for (std::list <Param>::iterator i = params.begin (); i != params.end (); ++i)
+		i->is_active = false;
 }

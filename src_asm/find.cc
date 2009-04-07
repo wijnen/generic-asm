@@ -1,11 +1,9 @@
 #include "asm.hh"
 
-std::map <Glib::ustring, Param>::reverse_iterator
-	Param::find (Glib::ustring const &name)
+std::list <Param>::iterator Param::find (Glib::ustring const &name)
 {
-	for (std::map <Glib::ustring, Param>::reverse_iterator
-			i = params.rbegin (); i != params.rend (); ++i)
-		if (i->first == name)
+	for (std::list <Param>::iterator i = params.begin (); i != params.end (); ++i)
+		if (i->name == name)
 			return i;
-	return params.rend ();
+	return params.end ();
 }

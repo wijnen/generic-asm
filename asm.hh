@@ -3,10 +3,11 @@
 
 #include <string>
 #include <stack>
-#include <shevek/iostring.hh>
 #include <map>
 #include <list>
 #include <vector>
+#include <shevek/iostring.hh>
+#include <shevek/error.hh>
 
 struct DefsMacro;
 
@@ -37,6 +38,7 @@ struct Expr
 	std::list <ExprElem> list;
 	valid_int compute ();
 	static Expr read (Glib::ustring const &input, bool allow_params, Glib::ustring::size_type &pos);
+	inline Glib::ustring print ();
 private:
 	void handle_oper (std::stack <Oper *> &stack, Oper *oper);
 };
@@ -47,12 +49,14 @@ struct Oper
 	Glib::ustring name;
 	int priority;
 	void (*run) (std::stack <Expr::valid_int> &stack);
-	Oper (char c, Glib::ustring const &n, int p, void (*r)(std::stack <Expr::valid_int> &))
-		: code (c), name (n), priority (p), run (r) {}
+	void (*print) (std::stack <Glib::ustring> &stack);
+	Oper (char c, Glib::ustring const &n, int p, void (*r)(std::stack <Expr::valid_int> &), void (*pr)(std::stack <Glib::ustring> &))
+		: code (c), name (n), priority (p), run (r), print (pr) {}
 };
 
 struct Param
 {
+	Glib::ustring name;
 	bool is_enum;
 	std::map <Glib::ustring, Expr::valid_int> enum_values;
 	std::list <Expr> constraints;
@@ -61,11 +65,10 @@ struct Param
 	Expr::valid_int value;
 
 	static void reset ();
-	static std::map <Glib::ustring, Param>::reverse_iterator find
-		(Glib::ustring const &name);
+	static std::list <Param>::iterator find (Glib::ustring const &name);
 };
 
-extern std::map <Glib::ustring, Param> params;
+extern std::list <Param> params;
 
 struct ExprElem
 {
@@ -73,10 +76,46 @@ struct ExprElem
 	Expr::valid_int value;
 	Oper *oper;
 	Glib::ustring label;
-	std::map <Glib::ustring, Param>::reverse_iterator param;
-	ExprElem (Type t, Expr::valid_int v, Oper *o = NULL, Glib::ustring l = Glib::ustring (), std::map <Glib::ustring, Param>::reverse_iterator p = params.rend ())
+	std::list <Param>::iterator param;
+	ExprElem (Type t, Expr::valid_int v, Oper *o = NULL, Glib::ustring l = Glib::ustring (), std::list <Param>::iterator p = params.end ())
 		: type (t), value (v), oper (o), label (l), param (p) {}
+	void print (std::stack <Glib::ustring> &stack)
+	{
+		switch (type)
+		{
+		case NUM:
+			if (!value.valid)
+				shevek_error ("unexpected invalid number");
+			stack.push (shevek::ostring ("%d", value.value));
+			break;
+		case OPER:
+			oper->print (stack);
+			break;
+		case PARAM:
+			if (param->value.valid)
+				stack.push (shevek::ostring ("[%s(%d)]", param->name, param->value.value));
+			else
+				stack.push (shevek::ostring ("[%s]", param->name));
+			break;
+		case LABEL:
+			stack.push (label);
+			break;
+		case ISLABEL:
+			stack.push ('?' + label);
+			break;
+		default:
+			shevek_error ("invalid case reached");
+		}
+	}
 };
+
+Glib::ustring Expr::print ()
+{
+	std::stack <Glib::ustring> ret;
+	for (std::list <ExprElem>::iterator i = list.begin (); i != list.end (); ++i)
+		i->print (ret);
+	return ret.top ();
+}
 
 struct Label
 {
@@ -87,8 +126,7 @@ struct Label
 
 struct Source
 {
-	std::list <std::pair <Glib::ustring, std::map <Glib::ustring, Param>
-				::reverse_iterator> > parts;
+	std::list <std::pair <Glib::ustring, std::list <Param>::iterator> > parts;
 	Glib::ustring post;
 	std::list <Glib::ustring> targets;
 };
@@ -122,10 +160,42 @@ private:
 	std::vector <int> data;
 };
 
+struct File
+{
+	struct Block
+	{
+		struct Part
+		{
+			enum type_t { IF, ELSE, ENDIF, DEFINE, BYTE, CODE, COMMENT };
+			type_t type;
+			bool have_expr;
+			Expr expr;
+			std::string name;	// or code.
+		};
+		bool absolute;
+		unsigned address;
+		std::list <Part> parts;
+		Block () : absolute (false), address (0) {}
+		void write_binary ();
+		void write_object (std::string &script, std::string &code);
+	};
+	std::list <Block> blocks;
+	void write_binary () { for (std::list <Block>::iterator i = blocks.begin (); i != blocks.end (); ++i) i->write_binary (); }
+	void write_object (std::string &script, std::string &code) { for (std::list <Block>::iterator i = blocks.begin (); i != blocks.end (); ++i) i->write_object (script, code); }
+};
+bool read_file (std::string const &filename);
+
+struct Space
+{
+	unsigned start, size;
+};
+
 extern std::list <Label> labels;
 extern std::list <Source> sources;
 extern std::list <DefsMacro> defs_macros;
 extern std::list <std::string> include_path;
+extern std::list <File> files;
+extern std::list <Space> spaces;
 
 extern std::ostream *outfile, *listfile;
 extern bool usehex;
@@ -152,6 +222,7 @@ Glib::ustring subst_args (Glib::ustring const &orig, std::vector <std::pair <Gli
 bool getline (Glib::ustring &ret);
 void read_definitions ();
 std::string read_filename (shevek::istring &args);
+void write_expr (Expr &e);
 void write_out (Source const &s);
 void write_byte (Expr::valid_int byte, int addr_offset);
 void parse (input_line &input, bool first_pass, bool report);

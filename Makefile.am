@@ -9,9 +9,11 @@ genasm_SOURCES = \
 	src_asm/parse.cc \
 	src_asm/read_definitions.cc \
 	src_asm/read_expr.cc \
+	src_asm/read_file.cc \
 	src_asm/read_filename.cc \
 	src_asm/subst_args.cc \
 	src_asm/write_byte.cc \
+	src_asm/write_expr.cc \
 	src_asm/write_out.cc \
 	src_asm/data.cc \
 	src_asm/dir_defb.cc \
@@ -33,6 +35,7 @@ genasm_SOURCES = \
 	src_asm/expr_compute.cc \
 	src_asm/expr_handle_oper.cc \
 	src_asm/expr_read.cc \
+	src_asm/file_block_write.cc \
 	src_asm/find.cc \
 	src_asm/find_label.cc \
 	src_asm/getline.cc \

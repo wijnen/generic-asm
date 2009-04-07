@@ -21,9 +21,9 @@ Expr::valid_int Expr::compute ()
 			i->oper->run (stack);
 			break;
 		case ExprElem::PARAM:
-			if (!i->param->second.is_active)
+			if (!i->param->is_active)
 			{
-				error (shevek::ostring ("inactive param %s used", i->param->first));
+				error (shevek::ostring ("inactive param %s used", i->param->name));
 				valid_int i;
 				i.valid = false;
 				i.value = 0;
@@ -31,8 +31,8 @@ Expr::valid_int Expr::compute ()
 			}
 			else
 			{
-				dbg ("computing param " << i->param->first);
-				stack.push (i->param->second.value);
+				dbg ("computing param " << i->param->name);
+				stack.push (i->param->value);
 			}
 			break;
 		case ExprElem::LABEL:

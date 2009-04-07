@@ -32,7 +32,7 @@ num: .dir
 constraint: .dir >= 0 && .dir <= 0xff
 
 num: .dir2
-constraint: .dir >= 0 && .dir <= 0xff
+constraint: .dir2 >= 0 && .dir2 <= 0xff
 
 num: .ext
 constraint: .ext >= 0 && .ext <= 0xffff
@@ -44,10 +44,10 @@ num: .aimm
 constraint: .aimm >= -0x80 && .aimm <= 0x7f
 
 num: .ix1
-constraint: .ix1 >= -0x80 && .ix1 <= 0x7f
+constraint: .ix1 >= 0 && .ix1 <= 0xff
 
 num: .ix2
-constraint: .ix2 >= -0x8000 && .ix2 <= 0x7fff
+constraint: .ix2 >= -0x8000 && .ix2 <= 0xffff	# Allow negative indices, because they wrap anyway.
 
 num: .addr
 constraint: .addr >= 0 && .addr <= 0xffff

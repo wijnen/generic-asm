@@ -19,9 +19,12 @@ void parse (input_line &input, bool first_pass, bool report)
 		if (first_pass && new_label)
 		{
 			error (shevek::ostring ("Duplicate definition of label %s", label));
-			current_stack = &new_label->definition->stack;
-			error ("Previous definition was here");
-			current_stack = &input.stack;
+			if (new_label->definition)
+			{
+				current_stack = &new_label->definition->stack;
+				error ("Previous definition was here");
+				current_stack = &input.stack;
+			}
 		}
 		if (!new_label)
 		{
@@ -84,35 +87,35 @@ void parse (input_line &input, bool first_pass, bool report)
 		l.push ();
 		// Set all params to unused.
 		Param::reset ();
-		std::list <std::pair <Glib::ustring, std::map <Glib::ustring, Param>::reverse_iterator> >::iterator p;
+		std::list <std::pair <Glib::ustring, std::list <Param>::iterator> >::iterator p;
 		for (p = s->parts.begin (); p != s->parts.end (); ++p)
 		{
-			p->second->second.is_active = true;
+			p->second->is_active = true;
 			if (!l (escape (p->first)))
 				break;
-			if (p->second->second.is_enum)
+			if (p->second->is_enum)
 			{
 				std::map <Glib::ustring, Expr::valid_int>::iterator v;
-				for (v = p->second->second.enum_values.begin (); v != p->second->second.enum_values.end (); ++v)
+				for (v = p->second->enum_values.begin (); v != p->second->enum_values.end (); ++v)
 				{
 					if (!l (escape (v->first)))
 						continue;
-					p->second->second.value = v->second;
+					p->second->value = v->second;
 					break;
 				}
-				if (v == p->second->second.enum_values.end ())
+				if (v == p->second->enum_values.end ())
 					break;
 			}
 			else
 			{
 				Glib::ustring::size_type pos = 0;
-				p->second->second.value = read_expr (l.rest (), false, pos);
+				p->second->value = read_expr (l.rest (), false, pos);
 				if (pos == Glib::ustring::npos)
 				{
 					dbg ("failed to read expression");
 					break;
 				}
-				if (!p->second->second.value.valid)
+				if (!p->second->value.valid)
 				{
 					dbg ("invalid expression found");
 					if (report)
@@ -120,15 +123,15 @@ void parse (input_line &input, bool first_pass, bool report)
 				}
 				else
 				{
-					dbg ("computing " << p->second->second.constraints.size () << " constraints");
-					for (std::list <Expr>::iterator i = p->second->second.constraints.begin (); i != p->second->second.constraints.end (); ++i)
+					dbg ("computing " << p->second->constraints.size () << " constraints");
+					for (std::list <Expr>::iterator i = p->second->constraints.begin (); i != p->second->constraints.end (); ++i)
 					{
-						dbg ("computing constraint");
+						dbg ("computing constraint " << i->print ());
 						Expr::valid_int vi = i->compute ();
 						if (!vi.valid)
 							error ("Constraint is invalid");
 						if (!vi.value)
-							error (shevek::ostring ("Given value %d fails constraint", p->second->second.value.value));
+							error (shevek::ostring ("Given value %d fails constraint", p->second->value.value));
 					}
 				}
 				l.skip (pos);

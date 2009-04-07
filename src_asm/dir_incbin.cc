@@ -12,15 +12,22 @@ void dir_incbin (shevek::istring &args, bool first, Label *current_label)
 		error (shevek::ostring ("unable to open %s", args.rest ()));
 		return;
 	}
-	char c;
-	while (file >> c)
+	std::ostringstream s;
+	s << file.rdbuf ();
+	std::string str = s.str ();
+	if (writing)
 	{
-		Expr::valid_int i;
-		i.value = c;
-		i.valid = false;
-		write_byte (i, 0);
-		++addr;
+		if (files.back ().blocks.empty ())
+			files.back ().blocks.push_back (File::Block ());
+		if (files.back ().blocks.back ().parts.empty () || files.back ().blocks.back ().parts.back ().type != File::Block::Part::CODE)
+		{
+			files.back ().blocks.back ().parts.push_back (File::Block::Part ());
+			files.back ().blocks.back ().parts.back ().type = File::Block::Part::CODE;
+			files.back ().blocks.back ().parts.back ().have_expr = false;
+		}
+		files.back ().blocks.back ().parts.back ().name += str;
 	}
+	addr += str.size ();
 	if (writing && listfile)
 		*listfile << "...\t\t";
 }

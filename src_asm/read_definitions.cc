@@ -7,7 +7,7 @@ void read_definitions ()
 	bool recording = false;
 	std::map <Glib::ustring, Expr::valid_int>::iterator current_enum;
 	int current_value = 0;
-	std::map <Glib::ustring, Param>::iterator current_param;
+	std::list <Param>::iterator current_param;
 	input_stack.top ().ln = 0;
 	Glib::ustring line;
 	while (getline (line))
@@ -34,17 +34,18 @@ void read_definitions ()
 			is_num = false;
 			is_enum = false;
 			is_source = false;
-			if (Param::find (d) != params.rend ())
+			if (Param::find (d) != params.end ())
 			{
 				error (shevek::ostring ("duplicate definition of param %s", d));
 				continue;
 			}
 			is_enum = true;
-			current_param = params.insert
-				(std::make_pair (d, Param ())).first;
-			current_param->second.is_enum = true;
-			current_param->second.is_active = false;
-			current_enum = current_param->second.enum_values.end ();
+			params.push_back (Param ());
+			current_param = --params.end ();
+			current_param->name = d;
+			current_param->is_enum = true;
+			current_param->is_active = false;
+			current_enum = current_param->enum_values.end ();
 			current_value = 0;
 		}
 		else if (l ("name: %l", d))
@@ -56,45 +57,44 @@ void read_definitions ()
 				error ("name without enum");
 				continue;
 			}
-			if (Param::find (d) != params.rend ())
+			if (Param::find (d) != params.end ())
 			{
-				error (shevek::ostring
-						("duplicate name in param: %s",
-						 d));
+				error (shevek::ostring ("duplicate name in param: %s", d));
 				continue;
 			}
 			Expr::valid_int i;
 			i.value = current_value++;
 			i.valid = true;
-			current_enum = current_param->second.enum_values.insert (std::make_pair (d, i)).first;
+			current_enum = current_param->enum_values.insert (std::make_pair (d, i)).first;
 		}
 		else if (l ("value: %l", d))
 		{
 			is_num = false;
 			is_source = false;
-			if (!is_enum || current_enum == current_param->second
-					.enum_values.end ())
+			if (!is_enum || current_enum == current_param->enum_values.end ())
 			{
 				error ("value without enum");
 				continue;
 			}
 			current_enum->second = read_expr (d, "#");
-			current_enum = current_param->second.enum_values.end ();
+			current_enum = current_param->enum_values.end ();
 		}
 		else if (l ("num: %l", d))
 		{
 			is_num = false;
 			is_enum = false;
 			is_source = false;
-			if (Param::find (d) != params.rend ())
+			if (Param::find (d) != params.end ())
 			{
 				error (shevek::ostring ("duplicate definition of param %s", d));
 				continue;
 			}
 			is_num = true;
-			current_param = params.insert (std::make_pair (d, Param ())).first;
-			current_param->second.is_enum = false;
-			current_param->second.is_active = false;
+			params.push_back (Param ());
+			current_param = --params.end ();
+			current_param->name = d;
+			current_param->is_enum = false;
+			current_param->is_active = false;
 		}
 		else if (l ("constraint:"))
 		{
@@ -107,7 +107,7 @@ void read_definitions ()
 			}
 			Glib::ustring::size_type pos = 0;
 			Param::reset ();
-			current_param->second.is_active = true;
+			current_param->is_active = true;
 			Expr e = Expr::read (l.rest (), true, pos);
 			if (pos == Glib::ustring::npos)
 			{
@@ -120,7 +120,14 @@ void read_definitions ()
 				error (shevek::ostring ("junk after constraint: %s", l.rest ()));
 				continue;
 			}
-			current_param->second.constraints.push_back (e);
+			current_param->constraints.push_back (e);
+			for (std::list <Param>::iterator i = params.begin (); i != params.end (); ++i)
+			{
+				dbg ("constraints for " << i->name << ":");
+				for (std::list <Expr>::iterator j = i->constraints.begin (); j != i->constraints.end (); ++j)
+					dbg (j->print ());
+			}
+			dbg ("done");
 		}
 		else if (l ("source: %l", d))
 		{
@@ -133,15 +140,10 @@ void read_definitions ()
 			{
 				// find next param
 				Glib::ustring::size_type first = d.size ();
-				std::map <Glib::ustring, Param>::reverse_iterator
-					firstp;
-				for (std::map <Glib::ustring, Param>
-						::reverse_iterator
-						i = params.rbegin ();
-						i != params.rend (); ++i)
+				std::list <Param>::iterator firstp;
+				for (std::list <Param>::iterator i = params.begin (); i != params.end (); ++i)
 				{
-					Glib::ustring::size_type
-						p = d.find (i->first, pos);
+					Glib::ustring::size_type p = d.find (i->name, pos);
 					if (p < first)
 					{
 						first = p;
@@ -153,7 +155,7 @@ void read_definitions ()
 				sources.back ().parts.push_back
 					(std::make_pair (d.substr
 						 (pos, first - pos), firstp));
-				pos = first + firstp->first.size ();
+				pos = first + firstp->name.size ();
 			}
 			sources.back ().post = d.substr (pos);
 		}

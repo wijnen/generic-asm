@@ -7,8 +7,8 @@ Expr Expr::read (Glib::ustring const &input, bool allow_params, Glib::ustring::s
 	shevek::istring l (input.substr (pos));
 	bool expect_number = true;
 	std::stack <Oper *> opers;
-	Oper open ('(', "(", -3, NULL), close (')', ")", -2, NULL);
-	Oper tri_start ('?', "?", -1, NULL);
+	Oper open ('(', "(", -3, NULL, NULL), close (')', ")", -2, NULL, NULL);
+	Oper tri_start ('?', "?", -1, NULL, NULL);
 	int correction = 0;
 	while (true)
 	{
@@ -50,14 +50,14 @@ Expr Expr::read (Glib::ustring const &input, bool allow_params, Glib::ustring::s
 				// Param
 				if (allow_params)
 				{
-					std::map <Glib::ustring, Param>::reverse_iterator i;
-					for (i = params.rbegin (); i != params.rend (); ++i)
+					std::list <Param>::iterator i;
+					for (i = params.begin (); i != params.end (); ++i)
 					{
-						if (!i->second.is_active)
+						if (!i->is_active)
 						{
 							continue;
 						}
-						if (word != i->first)
+						if (word != i->name)
 						{
 							continue;
 						}
@@ -68,7 +68,7 @@ Expr Expr::read (Glib::ustring const &input, bool allow_params, Glib::ustring::s
 						expect_number = false;
 						break;
 					}
-					if (i != params.rend ())
+					if (i != params.end ())
 						continue;
 				}
 				// Label (may be defined later)

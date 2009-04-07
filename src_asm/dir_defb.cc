@@ -1,13 +1,13 @@
 #include "asm.hh"
 
-static std::list <Expr::valid_int> defb_expr (shevek::istring &args)
+static std::list <Expr> defb_expr (shevek::istring &args)
 {
-	std::list <Expr::valid_int> ret;
+	std::list <Expr> ret;
 	args (" ");
 	if (args.rest ().empty ())
 	{
 		error ("empty expression in defb");
-		return std::list <Expr::valid_int> ();
+		return std::list <Expr> ();
 	}
 	Glib::ustring r = args.rest ();
 	if (r[0] == '\'' || r[0] == '"')
@@ -15,30 +15,32 @@ static std::list <Expr::valid_int> defb_expr (shevek::istring &args)
 		Glib::ustring::size_type p = 1;
 		while (p < r.size () && r[p] != r[0])
 		{
-			Expr::valid_int i;
-			i.valid = true;
-			i.value = r[p];
-			ret.push_back (i);
+			Expr e;
+			Expr::valid_int v;
+			v.valid = true;
+			v.value = r[p];
+			e.list.push_back (ExprElem (ExprElem::NUM, v));
+			ret.push_back (e);
 			++p;
 		}
 		if (p >= r.size ())
 		{
 			error ("unterminated string in defb");
-			return std::list <Expr::valid_int> ();
+			return std::list <Expr> ();
 		}
 		args.skip (p + 1);
 	}
 	else
 	{
 		Glib::ustring::size_type pos = 0;
-		Expr::valid_int v = read_expr (args.rest (), false, pos);
+		Expr e = Expr::read (args.rest (), false, pos);
 		if (pos == Glib::ustring::npos)
 		{
 			error ("incorrect expression in defb");
-			return std::list <Expr::valid_int> ();
+			return std::list <Expr> ();
 		}
 		args.skip (pos);
-		ret.push_back (v);
+		ret.push_back (e);
 	}
 	return ret;
 }
@@ -50,14 +52,16 @@ void dir_defb (shevek::istring &args, bool first, Label *current_label)
 	unsigned s = 0;
 	while (true)
 	{
-		std::list <Expr::valid_int> v = defb_expr (args);
-		if (v.empty ())
+		std::list <Expr> e = defb_expr (args);
+		if (e.empty ())
 			break;
-		std::list <Expr::valid_int>::iterator i;
+		std::list <Expr>::iterator i;
 		unsigned p;
-		for (i = v.begin (), p = 0; i != v.end (); ++i, ++p)
-			write_byte (*i, s + p);
-		s += v.size ();
+		for (i = e.begin (), p = 0; i != e.end (); ++i, ++p)
+		{
+			write_expr (*i);
+		}
+		s += e.size ();
 		if (!args (" ,"))
 			break;
 	}
