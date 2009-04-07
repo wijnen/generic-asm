@@ -103,7 +103,7 @@ int main (int argc, char **argv)
 	}
 	// Determine labels
 	Glib::ustring line;
-	undefined_labels = ~0;
+	undefined_labels = 0;
 	writing = false;
 	while (getline (line))
 	{
@@ -121,9 +121,10 @@ int main (int argc, char **argv)
 			unlink (listfilename.c_str ());
 		return 1;
 	}
-	while (undefined_labels != 0)
+	unsigned last_undefined_labels = ~0;
+	while (undefined_labels != last_undefined_labels)
 	{
-		unsigned last_undefined_labels = undefined_labels;
+		last_undefined_labels = undefined_labels;
 		addr = 0;
 		undefined_labels = 0;
 		for (unsigned t = 0; t < input.size (); ++t)
@@ -131,23 +132,23 @@ int main (int argc, char **argv)
 			parse (input[t], false, false);
 		}
 		dbg ("undefined labels: " << undefined_labels);
-		if (undefined_labels == last_undefined_labels)
-		{
-			for (unsigned t = 0; t < input.size (); ++t)
-			{
-				parse (input[t], false, true);
-			}
-			if (!outfilename.empty ())
-			{
-				delete outfile;
-				unlink (outfilename.c_str ());
-			}
-			if (listfile)
-				unlink (listfilename.c_str ());
-			return 1;
-		}
 		if (errors)
 			return 1;
+	}
+	if (undefined_labels != 0)
+	{
+		for (unsigned t = 0; t < input.size (); ++t)
+		{
+			parse (input[t], false, true);
+		}
+		if (!outfilename.empty ())
+		{
+			delete outfile;
+			unlink (outfilename.c_str ());
+		}
+		if (listfile)
+			unlink (listfilename.c_str ());
+		return 1;
 	}
 	// Write output
 	writing = true;
