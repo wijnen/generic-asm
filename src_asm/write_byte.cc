@@ -4,7 +4,7 @@
 void write_byte (Expr::valid_int byte, int addr_offset)
 {
 	if (!byte.valid)
-		++undefined_labels;
+		++undefined_locals;
 	if (!writing)
 		return;
 	if ((byte.value < -0x80) || (byte.value >= 0x100))

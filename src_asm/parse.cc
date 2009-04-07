@@ -136,9 +136,11 @@ void parse (input_line &input, bool first_pass, bool report)
 		}
 		if (p != s->parts.end () || !l (escape (s->post)) || (!l (" %") && !l (" ;")))
 			continue;
-		if (make_label)
+		if (make_label && old_label.valid)
 		{
-			if (old_label.valid && (!new_label->value.valid || new_label->value.value != old_label.value))
+			if (!new_label->value.valid)
+				error (shevek::ostring ("Value of label %s changed from 0x%x to invalid", new_label->name, old_label.value));
+			else if (new_label->value.value != old_label.value)
 				error (shevek::ostring ("Value of label %s changed from 0x%x to 0x%x", new_label->name, old_label.value, new_label->value.value));
 		}
 		if (writing && listfile)

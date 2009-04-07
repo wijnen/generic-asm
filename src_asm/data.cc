@@ -5,7 +5,7 @@ bool usehex;
 Hex hexfile;
 unsigned addr;
 unsigned errors;
-unsigned undefined_labels;
+unsigned undefined_locals;
 bool writing;
 
 std::stack <Input> input_stack;

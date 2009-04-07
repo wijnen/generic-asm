@@ -17,25 +17,21 @@ int main (int argc, char **argv)
 	std::string defs;
 	std::string outfilename, listfilename;
 	usehex = true;
+	useobject = false;
 	include_path.push_back (".");
 	shevek::args::option opts[] = {
-		shevek::args::option
-			(0, "defs", "code definitions", false, defs),
-		shevek::args::option ('o', "output",
-				"output file", false, outfilename),
-		shevek::args::option ('L', "list",
-				"list file", false, listfilename),
-		shevek::args::option ('h', "hex",
-				"s19 hexfile output format", usehex, true),
-		shevek::args::option ('b', "binary",
-				"binary output format", usehex, false),
-		shevek::args::option ('I', "includedir",
-				"add directory to include path", include_path),
+		shevek::args::option (0, "defs", "code definitions", false, defs),
+		shevek::args::option ('o', "output", "output file", false, outfilename),
+		shevek::args::option ('L', "list", "list file", false, listfilename),
+		shevek::args::option ('b', "binary", "binary output format", usehex, false),
+		shevek::args::option ('O', "object", "object output format", useobject, true),
+		shevek::args::option ('I', "includedir", "add directory to include path", include_path),
 	};
-	shevek::args args
-		(argc, argv, opts, 0, 1, "Generic assembler", "2008");
+	shevek::args args (argc, argv, opts, 0, 1, "Generic assembler", "2008");
 	if (defs.empty ())
 		shevek_error ("you must specify a definitions file");
+	if (!usehex && useobject)
+		shevek_error ("specify only one type of output file");
 	if (outfilename.empty ())
 		outfile = &std::cout;
 	else
@@ -79,94 +75,112 @@ int main (int argc, char **argv)
 			unlink (listfilename.c_str ());
 		return 1;
 	}
-	// Read input in memory.
-	std::vector <input_line> input;
-	input_stack.push (Input ());
-	input_stack.top ().type = Input::FILE;
-	input_stack.top ().ln = 0;
-	if (args.size () == 0 || args[0] == "-")
+	std::vector <std::string> files (args.size ());
+	if (args.empty ())
+		files.push_back ("-");
+	else for (unsigned i = 0; i < args.size (); ++i)
+		files[i] = args[i];
+	for (unsigned f = 0; f < files.size (); ++f)
 	{
-		input_stack.top ().name = "Standard input";
-		input_stack.top ().basedir = ".";
-		input_stack.top ().file = &std::cin;
-		input_stack.top ().must_delete = false;
-	}
-	else
-	{
-		input_stack.top ().name = args[0];
-		input_stack.top ().basedir = make_base (args[0]);
-		input_stack.top ().file = new std::ifstream
-			(input_stack.top ().name.c_str ());
-		if (!input_stack.top ().file)
-			shevek_error_errno (shevek::ostring ("unable to open input file %s", Glib::ustring (input_stack.top ().name)));
-		input_stack.top ().must_delete = true;
-	}
-	// Determine labels
-	Glib::ustring line;
-	undefined_labels = 0;
-	writing = false;
-	while (getline (line))
-	{
-		input.push_back (input_line (line));
-		parse (input.back (), true, false);
-	}
-	if (errors)
-	{
-		if (!outfilename.empty ())
+		// Read input in memory.
+		std::vector <input_line> input;
+		input_stack.push (Input ());
+		input_stack.top ().type = Input::FILE;
+		input_stack.top ().ln = 0;
+		if (files[f] == "-")
 		{
-			delete outfile;
-			unlink (outfilename.c_str ());
+			input_stack.top ().name = "Standard input";
+			input_stack.top ().basedir = ".";
+			input_stack.top ().file = &std::cin;
+			input_stack.top ().must_delete = false;
 		}
-		if (listfile)
-			unlink (listfilename.c_str ());
-		return 1;
-	}
-	unsigned last_undefined_labels = ~0;
-	while (undefined_labels != last_undefined_labels)
-	{
-		last_undefined_labels = undefined_labels;
+		else
+		{
+			input_stack.top ().name = files[f];
+			input_stack.top ().basedir = make_base (files[f]);
+			input_stack.top ().file = new std::ifstream
+				(input_stack.top ().name.c_str ());
+			if (!input_stack.top ().file)
+				shevek_error_errno (shevek::ostring ("unable to open input file %s", Glib::ustring (input_stack.top ().name)));
+			input_stack.top ().must_delete = true;
+		}
+		// Determine labels
+		Glib::ustring line;
+		undefined_locals = 0;
+		writing = false;
+		while (getline (line))
+		{
+			input.push_back (input_line (line));
+			parse (input.back (), true, false);
+		}
+		if (errors)
+		{
+			if (!outfilename.empty ())
+			{
+				delete outfile;
+				unlink (outfilename.c_str ());
+			}
+			if (listfile)
+				unlink (listfilename.c_str ());
+			return 1;
+		}
+		unsigned last_undefined_locals = ~0;
+		while (undefined_locals != last_undefined_locals)
+		{
+			last_undefined_locals = undefined_locals;
+			addr = 0;
+			undefined_locals = 0;
+			for (unsigned t = 0; t < input.size (); ++t)
+			{
+				parse (input[t], false, false);
+			}
+			dbg ("undefined local labels: " << undefined_locals);
+			if (errors)
+				return 1;
+		}
+		if (undefined_locals != 0)
+		{
+			for (unsigned t = 0; t < input.size (); ++t)
+			{
+				parse (input[t], false, true);
+			}
+			if (!outfilename.empty ())
+			{
+				delete outfile;
+				unlink (outfilename.c_str ());
+			}
+			if (listfile)
+				unlink (listfilename.c_str ());
+			return 1;
+		}
+		// Write output to internal object representation
+		writing = true;
 		addr = 0;
-		undefined_labels = 0;
 		for (unsigned t = 0; t < input.size (); ++t)
 		{
 			parse (input[t], false, false);
 		}
-		dbg ("undefined labels: " << undefined_labels);
 		if (errors)
+		{
+			if (!outfilename.empty ())
+			{
+				delete outfile;
+				unlink (outfilename.c_str ());
+			}
+			if (listfile)
+				unlink (listfilename.c_str ());
 			return 1;
-	}
-	if (undefined_labels != 0)
-	{
-		for (unsigned t = 0; t < input.size (); ++t)
-		{
-			parse (input[t], false, true);
 		}
-		if (!outfilename.empty ())
+		// Clean up
+		std::list <Label>::iterator l, next;
+		for (l = labels.begin (), next = l; l != labels.end (); l = next)
 		{
-			delete outfile;
-			unlink (outfilename.c_str ());
+			++next;
+			if (l.name[0] == '.' || l.name[0] == '@')
+				labels.erase (l);
+			else
+				labels.definition = NULL;
 		}
-		if (listfile)
-			unlink (listfilename.c_str ());
-		return 1;
-	}
-	// Write output
-	writing = true;
-	addr = 0;
-	for (unsigned t = 0; t < input.size (); ++t)
-	{
-		parse (input[t], false, false);
-	}
-	if (errors)
-	{
-		if (!outfilename.empty ())
-		{
-			delete outfile;
-			unlink (outfilename.c_str ());
-		}
-		if (listfile)
-			unlink (listfilename.c_str ());
-		return 1;
 	}
 	if (usehex)
 		hexfile.write_s19 (*outfile);

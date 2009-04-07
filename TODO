@@ -1,0 +1,54 @@
+Plans:
+
+- create a disassembler from the definitions file
+- create object file output and a linker
+- implement all directives
+
+For object files, a file format is needed.  Here it is:
+
+* All numbers are little endian.
+* String indexes which must be numbers are pointers to expressions.
+
+- 4B Magic: "#" "\xfe" "of" (object file)
+- 4B file format version: 0.
+- 4B number of blocks NB
+- NB times:
+  - 4B size of block S
+  - 4B string index: linker script
+  - 4B type of block
+  - 4B Extra data; meaning depends on type.
+  - 4B number of computed fields NC
+  - NC times:
+    - 4B length of code block before computed field
+    - 4B string index: linker script.
+  - Rest of the S bytes: Code
+  - 0-3 bytes alignment padding (not included in S).
+- 4B number of strings NS
+- NS times:
+  - 4B size of string SS
+  - SSB string data
+
+string 0 is executed as a linker script at load time.
+the block linker script is executed as a first step of parsing a block.
+the computed field linker script is executed after the code before the field has been added.
+
+Block types:
+0 = absolute code.  extra data is start address.
+1 = relative code.  must be placed by linker.  extra data is ignored.
+
+linker script commands (all end with newline, '\x0a'):
+?expression		if expression is non-zero
+	commands	do commands
+:expression		else if expression is empty or non-zero
+	commands	do commands
+:expression		else if...
+	commands
+;			end if
+
+name=expression		define a symbol.  If name starts with '.', it is local to this script; if it starts with '@', it is local to this file.
++expression		add a byte to the file.  expression must be between -0x80 and +0xff.
+!name			add a byte to the file.  When all input is used, it will get the value of the named symbol.
+>expression		add expression bytes from Code to the file.
+
+special symbols:
+$	current position, counted from start of output file.  In case data is added with this expression, the value is taken before the operation.

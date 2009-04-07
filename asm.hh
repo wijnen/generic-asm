@@ -23,7 +23,7 @@ struct Input
 
 struct input_line
 {
-	// This is a list because it must be fifo.
+	// This is a list because it must be output fifo in error messages.
 	std::list <std::pair <unsigned, Glib::ustring> > stack;
 	Glib::ustring data;
 	input_line (Glib::ustring d);
@@ -134,7 +134,7 @@ extern unsigned addr;
 extern unsigned errors;
 extern std::stack <Input> input_stack;
 extern std::list <std::pair <unsigned, Glib::ustring> > *current_stack;
-extern unsigned undefined_labels;
+extern unsigned undefined_locals;
 extern bool writing;
 
 extern Oper operators1[3];
