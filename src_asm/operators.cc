@@ -16,9 +16,9 @@ template <typename _T> static _T do_pop (std::stack <_T> &stack)
 		r.value = oper a.value; \
 		stack.push (r); \
 	} \
-	static void print_##name (std::stack <Glib::ustring> &stack) \
+	static void print_##name (std::stack <std::string> &stack) \
 	{ \
-		Glib::ustring a = do_pop (stack); \
+		std::string a = do_pop (stack); \
 		stack.push (#oper + a); \
 	}
 
@@ -32,10 +32,10 @@ template <typename _T> static _T do_pop (std::stack <_T> &stack)
 		r.value = b.value oper a.value; \
 		stack.push (r); \
 	} \
-	static void print_##name (std::stack <Glib::ustring> &stack) \
+	static void print_##name (std::stack <std::string> &stack) \
 	{ \
-		Glib::ustring a = do_pop (stack); \
-		Glib::ustring b = do_pop (stack); \
+		std::string a = do_pop (stack); \
+		std::string b = do_pop (stack); \
 		stack.push ('(' + b + " " #oper " " + a + ')'); \
 	}
 
@@ -71,10 +71,10 @@ static void run_xor (std::stack <Expr::valid_int> &stack)
 	r.value = !b.value ^ !a.value;
 	stack.push (r);
 }
-static void print_xor (std::stack <Glib::ustring> &stack)
+static void print_xor (std::stack <std::string> &stack)
 {
-	Glib::ustring a = do_pop (stack);
-	Glib::ustring b = do_pop (stack);
+	std::string a = do_pop (stack);
+	std::string b = do_pop (stack);
 	stack.push ('(' + b + " ^^ " + a + ')');
 }
 
@@ -88,11 +88,11 @@ static void run_tri (std::stack <Expr::valid_int> &stack)
 	r.value = c.value ? b.value : a.value;
 	stack.push (r);
 }
-static void print_tri (std::stack <Glib::ustring> &stack)
+static void print_tri (std::stack <std::string> &stack)
 {
-	Glib::ustring a = do_pop (stack);
-	Glib::ustring b = do_pop (stack);
-	Glib::ustring c = do_pop (stack);
+	std::string a = do_pop (stack);
+	std::string b = do_pop (stack);
+	std::string c = do_pop (stack);
 	stack.push ('(' + c + " ? " + b + " : " + a + ')');
 }
 
@@ -102,10 +102,10 @@ Oper operators1[3] = {
 	Oper ('_', "-", 12, &run_minus1, &print_minus1)
 };
 Oper operators2[19] = {
+	Oper ('+', "+", 10, &run_plus, &print_plus),
 	Oper ('*', "*", 11, &run_mul, &print_mul),
 	Oper ('/', "/", 11, &run_div, &print_div),
 	Oper ('%', "%", 11, &run_mod, &print_mod),
-	Oper ('+', "+", 10, &run_plus, &print_plus),
 	Oper ('-', "-", 10, &run_minus, &print_minus),
 	Oper ('{', "<<", 9, &run_lshift, &print_lshift),
 	Oper ('}', ">>", 9, &run_rshift, &print_rshift),
@@ -122,6 +122,7 @@ Oper operators2[19] = {
 	Oper ('|', "|", 5, &run_bitor, &print_bitor),
 	Oper ('^', "^", 4, &run_bitxor, &print_bitxor)
 };
+Oper *plus_oper = &operators2[0];
 
 Oper operators3[1] = {
 	Oper (':', ":", 0, &run_tri, &print_tri)

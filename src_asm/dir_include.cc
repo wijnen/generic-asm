@@ -1,7 +1,7 @@
 #include "asm.hh"
 #include <fstream>
 
-void dir_include (shevek::istring &args, bool first, Label *current_label)
+void dir_include (shevek::ristring &args, bool first, std::list <Label>::iterator current_label)
 {
 	(void)current_label;
 	if (writing && listfile)
@@ -40,8 +40,7 @@ void dir_include (shevek::istring &args, bool first, Label *current_label)
 		}
 		if (!file)
 		{
-			error (shevek::ostring ("unable to open %s",
-						Glib::ustring (name)));
+			error (shevek::rostring ("unable to open %s", std::string (name)));
 			return;
 		}
 	}

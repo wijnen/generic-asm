@@ -1,7 +1,9 @@
 Plans:
 
+- fix bugs with respect to linking multiple files
+- allow setting a region for placement of a block of code
+- check constraints
 - create a disassembler from the definitions file
-- create object file output and a linker
 - implement all directives
 
 For object files, a file format is needed.  Here it is:
@@ -27,7 +29,7 @@ name=expression		Define a symbol.  If name starts with '.', it is local to this 
 +expression		Add a byte to the file.  expression must be between -0x80 and +0xff.
 <expression		Set new origin for positioned block.  In case of overlapping absolute blocks, the last block's values are written.  If expression is empty, let linker determine position.
 -			Act as if a new file starts.
->expression		Add expression bytes from Code to the file.  This cannot be used inside an if statement.
+>expression		Add expression bytes from Code to the file.  If used inside an if statement, the bytes are skipped if this command is skipped.
 #comment		Ignored.
 
 special symbols:

@@ -1,8 +1,8 @@
 #include "asm.hh"
 
-Glib::ustring escape (Glib::ustring const &in)
+std::string escape (std::string const &in)
 {
-	Glib::ustring out;
+	std::string out;
 	for (unsigned i = 0; i < in.size (); ++i)
 	{
 		if (in[i] == '%')

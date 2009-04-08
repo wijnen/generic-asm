@@ -1,7 +1,7 @@
 #include "asm.hh"
 #include <fstream>
 
-void dir_incbin (shevek::istring &args, bool first, Label *current_label)
+void dir_incbin (shevek::ristring &args, bool first, std::list <Label>::iterator current_label)
 {
 	(void)first;
 	(void)current_label;
@@ -9,7 +9,7 @@ void dir_incbin (shevek::istring &args, bool first, Label *current_label)
 	std::ifstream file (filename.c_str ());
 	if (!file)
 	{
-		error (shevek::ostring ("unable to open %s", args.rest ()));
+		error (shevek::rostring ("unable to open %s", args.rest ()));
 		return;
 	}
 	std::ostringstream s;

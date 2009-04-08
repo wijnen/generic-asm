@@ -1,18 +1,17 @@
 #include "asm.hh"
-#include <shevek/debug.hh>
 
 void read_definitions ()
 {
 	bool is_enum = false, is_num = false, is_source = false;
 	bool recording = false;
-	std::map <Glib::ustring, Expr::valid_int>::iterator current_enum;
+	std::map <std::string, Expr::valid_int>::iterator current_enum;
 	int current_value = 0;
 	std::list <Param>::iterator current_param;
 	input_stack.top ().ln = 0;
-	Glib::ustring line;
+	std::string line;
 	while (getline (line))
 	{
-		shevek::istring l (line);
+		shevek::ristring l (line);
 		l (" ");
 		if (l.rest ().empty () || l ("#"))
 			continue;
@@ -28,7 +27,7 @@ void read_definitions ()
 			defs_macros.back ().code.push_back (line);
 			continue;
 		}
-		Glib::ustring d, n;
+		std::string d, n;
 		if (l ("enum: %s %", d))
 		{
 			is_num = false;
@@ -36,7 +35,7 @@ void read_definitions ()
 			is_source = false;
 			if (Param::find (d) != params.end ())
 			{
-				error (shevek::ostring ("duplicate definition of param %s", d));
+				error (shevek::rostring ("duplicate definition of param %s", d));
 				continue;
 			}
 			is_enum = true;
@@ -59,13 +58,10 @@ void read_definitions ()
 			}
 			if (Param::find (d) != params.end ())
 			{
-				error (shevek::ostring ("duplicate name in param: %s", d));
+				error (shevek::rostring ("duplicate name in param: %s", d));
 				continue;
 			}
-			Expr::valid_int i;
-			i.value = current_value++;
-			i.valid = true;
-			current_enum = current_param->enum_values.insert (std::make_pair (d, i)).first;
+			current_enum = current_param->enum_values.insert (std::make_pair (d, Expr::valid_int (current_value++))).first;
 		}
 		else if (l ("value: %l", d))
 		{
@@ -86,7 +82,7 @@ void read_definitions ()
 			is_source = false;
 			if (Param::find (d) != params.end ())
 			{
-				error (shevek::ostring ("duplicate definition of param %s", d));
+				error (shevek::rostring ("duplicate definition of param %s", d));
 				continue;
 			}
 			is_num = true;
@@ -105,11 +101,11 @@ void read_definitions ()
 				error ("constraint without num");
 				continue;
 			}
-			Glib::ustring::size_type pos = 0;
+			std::string::size_type pos = 0;
 			Param::reset ();
 			current_param->is_active = true;
 			Expr e = Expr::read (l.rest (), true, pos);
-			if (pos == Glib::ustring::npos)
+			if (pos == std::string::npos)
 			{
 				error ("invalid constraint expression: " + l.rest ());
 				continue;
@@ -117,7 +113,7 @@ void read_definitions ()
 			l.skip (pos);
 			if (!l (" %") && !l (" #"))
 			{
-				error (shevek::ostring ("junk after constraint: %s", l.rest ()));
+				error (shevek::rostring ("junk after constraint: %s", l.rest ()));
 				continue;
 			}
 			current_param->constraints.push_back (e);
@@ -135,15 +131,15 @@ void read_definitions ()
 			is_enum = false;
 			is_source = true;
 			sources.push_back (Source ());
-			Glib::ustring::size_type pos = 0;
+			std::string::size_type pos = 0;
 			while (true)
 			{
 				// find next param
-				Glib::ustring::size_type first = d.size ();
+				std::string::size_type first = d.size ();
 				std::list <Param>::iterator firstp;
 				for (std::list <Param>::iterator i = params.begin (); i != params.end (); ++i)
 				{
-					Glib::ustring::size_type p = d.find (i->name, pos);
+					std::string::size_type p = d.find (i->name, pos);
 					if (p < first)
 					{
 						first = p;
@@ -179,7 +175,7 @@ void read_definitions ()
 			defs_macros.back ().name = d;
 			while (l (" %s", d))
 				defs_macros.back ().args.push_back
-					(std::make_pair (d, Glib::ustring ()));
+					(std::make_pair (d, std::string ()));
 			recording = true;
 		}
 		else if (l ("directive: %s %s", d, n))
@@ -234,7 +230,7 @@ void read_definitions ()
 			}
 			if (i != defs_macros.end ())
 				continue;
-			error (shevek::ostring ("syntax error trying to parse `%s'", line));
+			error (shevek::rostring ("syntax error trying to parse `%s'", line));
 		}
 	}
 }

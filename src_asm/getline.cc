@@ -1,6 +1,6 @@
 #include "asm.hh"
 
-bool getline (Glib::ustring &ret)
+bool getline (std::string &ret)
 {
 	while (!input_stack.empty ())
 	{
@@ -20,14 +20,12 @@ bool getline (Glib::ustring &ret)
 			break;
 		}
 		case Input::MACRO:
-			if (input_stack.top ().ln >= input_stack.top ()
-					.macro->code.size ())
+			if (input_stack.top ().ln >= input_stack.top ().macro->code.size ())
 			{
 				input_stack.pop ();
 				continue;
 			}
-			ret = input_stack.top ().macro->code
-				[input_stack.top ().ln];
+			ret = input_stack.top ().macro->code[input_stack.top ().ln];
 			ret = subst_args (ret, input_stack.top ().macro->args);
 			break;
 		default:

@@ -1,11 +1,12 @@
 #include "asm.hh"
 
-Label *find_label (Glib::ustring name)
+std::list <Label>::iterator find_label (std::string name)
 {
-	for (std::list <Label>::iterator i = labels.begin (); i != labels.end (); ++i)
+	std::list <Label>::iterator i;
+	for (i = labels.begin (); i != labels.end (); ++i)
 	{
 		if (i->name == name)
-			return &*i;
+			break;
 	}
-	return NULL;
+	return i;
 }

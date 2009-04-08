@@ -1,19 +1,17 @@
 #include "asm.hh"
-#include <shevek/debug.hh>
 
-void dir_equ (shevek::istring &args, bool first, Label *current_label)
+void dir_equ (shevek::ristring &args, bool first, std::list <Label>::iterator current_label)
 {
 	startfunc;
-	(void)first;
-	(void)current_label;
-	if (!current_label)
+	if (current_label == labels.end ())
 	{
 		error ("equ used without a label");
 		return;
 	}
-	Glib::ustring::size_type pos = 0;
-	current_label->value = read_expr (args.rest (), false, pos);
-	if (pos == Glib::ustring::npos)
+	std::string::size_type pos = 0;
+	if (first)
+		current_label->value = Expr::read (args.rest (), false, pos);
+	if (pos == std::string::npos)
 	{
 		error ("incorrect expression in equ");
 		return;
@@ -21,7 +19,7 @@ void dir_equ (shevek::istring &args, bool first, Label *current_label)
 	args.skip (pos);
 	args (" ");
 	if (!args (";") && !args.rest ().empty ())
-		error (shevek::ostring ("junk at end of expression: %s", args.rest ()));
+		error (shevek::rostring ("junk at end of expression: %s", args.rest ()));
 	if (writing && listfile)
 		*listfile << "\t\t\t";
 }

@@ -1,24 +1,21 @@
 #include "asm.hh"
-#include <shevek/debug.hh>
 
-void parse (input_line &input, bool first_pass, bool report)
+void parse (input_line &input)
 {
 	current_stack = &input.stack;
 	bool make_label = false;
-	Glib::ustring label;
-	Label *new_label = NULL;
+	std::string label;
+	std::list <Label>::iterator new_label = labels.end ();
 	Expr::valid_int old_label;
-	old_label.value = 0;
-	old_label.valid = false;
-	shevek::istring l (input.data);
+	shevek::ristring l (input.data);
 	if (l (" %r/[a-zA-Z_.][a-zA-Z_.0-9]*/:", label))
 	{
 		dbg ("found label " << label);
 		make_label = true;
 		new_label = find_label (label);
-		if (first_pass && new_label)
+		if (first_pass && new_label != labels.end ())
 		{
-			error (shevek::ostring ("Duplicate definition of label %s", label));
+			error (shevek::rostring ("Duplicate definition of label %s", label));
 			if (new_label->definition)
 			{
 				current_stack = &new_label->definition->stack;
@@ -26,19 +23,32 @@ void parse (input_line &input, bool first_pass, bool report)
 				current_stack = &input.stack;
 			}
 		}
-		if (!new_label)
+		if (new_label == labels.end ())
 		{
 			labels.push_back (Label ());
-			new_label = &labels.back ();
+			new_label = --labels.end ();
 			new_label->name = label;
 			new_label->definition = &input;
-			new_label->value.value = addr;
-			new_label->value.valid = true;
+			if (absolute_addr)
+				new_label->value.list.push_back (ExprElem (ExprElem::NUM, Expr::valid_int (addr)));
+			else
+			{
+				new_label->value.list.push_back (ExprElem (ExprElem::NUM, Expr::valid_int (addr)));
+				new_label->value.list.push_back (ExprElem (ExprElem::LABEL, Expr::valid_int (), NULL, "$"));
+				new_label->value.list.push_back (ExprElem (ExprElem::OPER, Expr::valid_int (), plus_oper));
+			}
+			if (files.back ().blocks.empty ())
+				files.back ().blocks.push_back (File::Block ());
+			if (files.back ().blocks.back ().parts.empty ())
+				files.back ().blocks.back ().parts.push_back (File::Block::Part ());
+			files.back ().blocks.back ().parts.back ().type = File::Block::Part::DEFINE;
+			files.back ().blocks.back ().parts.back ().have_expr = false;
+			files.back ().blocks.back ().parts.back ().label = new_label;
 			dbg ("Label " << label << " defined at " << addr);
 		}
 		else
 		{
-			old_label = new_label->value;
+			old_label = new_label->value.compute ();
 		}
 	}
 	l (" ");
@@ -57,7 +67,7 @@ void parse (input_line &input, bool first_pass, bool report)
 	unsigned i;
 	for (i = 0; i < num_elem (directives); ++i)
 	{
-		std::list <Glib::ustring>::iterator k;
+		std::list <std::string>::iterator k;
 		for (k = directives[i].nick.begin ();
 				k != directives[i].nick.end (); ++k)
 		{
@@ -70,7 +80,7 @@ void parse (input_line &input, bool first_pass, bool report)
 						<< addr << ' ';
 				}
 				unsigned lineno = input.stack.back ().first;
-				Glib::ustring line = input.data;
+				std::string line = input.data;
 				directives[i].function (l, first_pass, new_label);
 				if (writing && listfile)
 				{
@@ -87,7 +97,7 @@ void parse (input_line &input, bool first_pass, bool report)
 		l.push ();
 		// Set all params to unused.
 		Param::reset ();
-		std::list <std::pair <Glib::ustring, std::list <Param>::iterator> >::iterator p;
+		std::list <std::pair <std::string, std::list <Param>::iterator> >::iterator p;
 		for (p = s->parts.begin (); p != s->parts.end (); ++p)
 		{
 			p->second->is_active = true;
@@ -95,12 +105,14 @@ void parse (input_line &input, bool first_pass, bool report)
 				break;
 			if (p->second->is_enum)
 			{
-				std::map <Glib::ustring, Expr::valid_int>::iterator v;
+				std::map <std::string, Expr::valid_int>::iterator v;
 				for (v = p->second->enum_values.begin (); v != p->second->enum_values.end (); ++v)
 				{
 					if (!l (escape (v->first)))
 						continue;
-					p->second->value = v->second;
+					Expr e;
+					e.list.push_back (ExprElem (ExprElem::NUM, v->second));
+					p->second->value = e;
 					break;
 				}
 				if (v == p->second->enum_values.end ())
@@ -108,13 +120,15 @@ void parse (input_line &input, bool first_pass, bool report)
 			}
 			else
 			{
-				Glib::ustring::size_type pos = 0;
-				p->second->value = read_expr (l.rest (), false, pos);
-				if (pos == Glib::ustring::npos)
+				std::string::size_type pos = 0;
+				p->second->value = Expr::read (l.rest (), false, pos);
+				if (pos == std::string::npos)
 				{
 					dbg ("failed to read expression");
 					break;
 				}
+				// TODO: check constraints
+#if 0
 				if (!p->second->value.valid)
 				{
 					dbg ("invalid expression found");
@@ -131,9 +145,10 @@ void parse (input_line &input, bool first_pass, bool report)
 						if (!vi.valid)
 							error ("Constraint is invalid");
 						if (!vi.value)
-							error (shevek::ostring ("Given value %d fails constraint", p->second->value.value));
+							error (shevek::rostring ("Given value %d fails constraint", p->second->value.value));
 					}
 				}
+#endif
 				l.skip (pos);
 			}
 		}
@@ -141,10 +156,11 @@ void parse (input_line &input, bool first_pass, bool report)
 			continue;
 		if (make_label && old_label.valid)
 		{
-			if (!new_label->value.valid)
-				error (shevek::ostring ("Value of label %s changed from 0x%x to invalid", new_label->name, old_label.value));
-			else if (new_label->value.value != old_label.value)
-				error (shevek::ostring ("Value of label %s changed from 0x%x to 0x%x", new_label->name, old_label.value, new_label->value.value));
+			Expr::valid_int vi = new_label->value.compute ();
+			if (!vi.valid)
+				error (shevek::rostring ("Value of label %s changed from 0x%x to invalid", new_label->name, old_label.value));
+			else if (vi.value != old_label.value)
+				error (shevek::rostring ("Value of label %s changed from 0x%x to 0x%x", new_label->name, old_label.value, vi.value));
 		}
 		if (writing && listfile)
 			*listfile << std::setw (4) << std::setfill ('0') << addr << ' ';
@@ -153,10 +169,10 @@ void parse (input_line &input, bool first_pass, bool report)
 		{
 			int size = 5 + 3 * s->targets.size ();
 			int numtabs = (31 - size) / 8;
-			*listfile << Glib::ustring (numtabs, '\t') << shevek::ostring ("%6d  %s\n", input.stack.back ().first, input.data);
+			*listfile << std::string (numtabs, '\t') << shevek::rostring ("%6d  %s\n", input.stack.back ().first, input.data);
 		}
 		addr += s->targets.size ();
 		return;
 	}
-	error (shevek::ostring ("Syntax error: %s", l.rest ()));
+	error (shevek::rostring ("Syntax error: %s", l.rest ()));
 }

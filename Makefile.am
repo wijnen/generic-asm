@@ -4,17 +4,6 @@ bin_PROGRAMS = genasm
 dist_bin_SCRIPTS = asm-z80 asm-hc08
 
 genasm_SOURCES = \
-	src_asm/operators.cc \
-	src_asm/param_reset.cc \
-	src_asm/parse.cc \
-	src_asm/read_definitions.cc \
-	src_asm/read_expr.cc \
-	src_asm/read_file.cc \
-	src_asm/read_filename.cc \
-	src_asm/subst_args.cc \
-	src_asm/write_byte.cc \
-	src_asm/write_expr.cc \
-	src_asm/write_out.cc \
 	src_asm/data.cc \
 	src_asm/dir_defb.cc \
 	src_asm/dir_comment.cc \
@@ -33,15 +22,30 @@ genasm_SOURCES = \
 	src_asm/error.cc \
 	src_asm/escape.cc \
 	src_asm/expr_compute.cc \
+	src_asm/expr_check.cc \
 	src_asm/expr_handle_oper.cc \
+	src_asm/expr_print.cc \
 	src_asm/expr_read.cc \
+	src_asm/expr_simplify.cc \
 	src_asm/file_block_write.cc \
+	src_asm/file_clean.cc \
 	src_asm/find.cc \
 	src_asm/find_label.cc \
 	src_asm/getline.cc \
 	src_asm/hex.cc \
 	src_asm/input_line.cc \
 	src_asm/main.cc \
+	src_asm/operators.cc \
+	src_asm/param_reset.cc \
+	src_asm/parse.cc \
+	src_asm/read_definitions.cc \
+	src_asm/read_expr.cc \
+	src_asm/read_file.cc \
+	src_asm/read_filename.cc \
+	src_asm/subst_args.cc \
+	src_asm/write_byte.cc \
+	src_asm/write_expr.cc \
+	src_asm/write_out.cc \
 	asm.hh
 genasm_CPPFLAGS = $(SHEVEK_CFLAGS) -I. -Wall -Werror -Wextra -Wmissing-declarations -Wredundant-decls -O -Wunused
 genasm_LDADD = $(SHEVEK_LIBS)

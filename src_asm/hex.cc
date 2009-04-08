@@ -48,7 +48,7 @@ namespace
 		line_t () : addr (0) {}
 	};
 
-	line_t rd_intel_line (Glib::ustring const &line, unsigned &linear,
+	line_t rd_intel_line (std::string const &line, unsigned &linear,
 			unsigned &segment, bool &eof)
 	{
 		line_t result;
@@ -103,8 +103,7 @@ namespace
 		case 2: // extended segment address
 			if (result.data.size () != 2)
 			{
-				shevek_error
-					("invalid extended segment record");
+				shevek_error ("invalid extended segment record");
 				result.data.clear ();
 				return result;
 			}
@@ -115,8 +114,7 @@ namespace
 		case 4: // extended linear address
 			if (result.data.size () != 2)
 			{
-				shevek_error
-					("invalid extended linear record");
+				shevek_error ("invalid extended linear record");
 				result.data.clear ();
 				return result;
 			}
@@ -130,14 +128,13 @@ namespace
 			result.data.clear ();
 			return result;
 		default:
-			shevek_error (shevek::ostring
-					("invalid record type %d", type));
+			shevek_error (shevek::ostring ("invalid record type %d", type));
 			result.data.clear ();
 			return result;
 		}
 	}
 
-	line_t rd_s19_line (Glib::ustring const &line, bool &eof)
+	line_t rd_s19_line (std::string const &line, bool &eof)
 	{
 		line_t result;
 		if (line.size () < 6)
@@ -149,7 +146,7 @@ namespace
 		unsigned len = rd_byte (&line.data ()[2]);
 		if ((len + 2) * 2 != line.size ())
 		{
-			shevek_error (shevek::ostring ("line has incorrect length in S19 file: %s", line));
+			shevek_error (shevek::ostring ("line has incorrect length in S19 file: %s", Glib::ustring (line)));
 			return result;
 		}
 		switch (line[1])
@@ -189,7 +186,7 @@ namespace
 		if (eof)
 		{
 			if (len != addrsize + 1)
-				shevek_error (shevek::ostring ("invalid EOF record: %s", line));
+				shevek_error (shevek::ostring ("invalid EOF record: %s", Glib::ustring (line)));
 			return result;
 		}
 		unsigned a = 0;
@@ -199,7 +196,7 @@ namespace
 			int n = rd_byte (&line.data ()[4 + i * 2]);
 			if (n < 0)
 			{
-				shevek_error (shevek::ostring ("invalid address in %d", line));
+				shevek_error (shevek::ostring ("invalid address in %s", Glib::ustring (line)));
 				return result;
 			}
 			a += n << ((addrsize - i - 1) * 8);
@@ -221,13 +218,13 @@ namespace
 		if (((checksum ^ rd_byte (&line.data ()[8 + 2 * len])) & 0xff)
 				!= 0xff)
 		{
-			shevek_error (shevek::ostring ("incorrect checksum on line: %s", line));
+			shevek_error (shevek::ostring ("incorrect checksum on line: %s", Glib::ustring (line)));
 			return result;
 		}
 		return result;
 	}
 
-	line_t rd_line (Glib::ustring const &line, unsigned &linear,
+	line_t rd_line (std::string const &line, unsigned &linear,
 			unsigned &segment, bool &eof)
 	{
 		switch (line[0])
@@ -307,7 +304,7 @@ namespace
 	void write_record_s19 (std::ostream &file, std::string const &data,
 			int addr)
 	{
-		Glib::ustring a;
+		std::string a;
 		file << 'S';
 		unsigned checksum;
 		if (addr < 1 << 16)

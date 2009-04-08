@@ -1,10 +1,9 @@
 #include "asm.hh"
-#include <shevek/debug.hh>
 
-Expr Expr::read (Glib::ustring const &input, bool allow_params, Glib::ustring::size_type &pos)
+Expr Expr::read (std::string const &input, bool allow_params, std::string::size_type &pos)
 {
 	Expr ret;
-	shevek::istring l (input.substr (pos));
+	shevek::ristring l (input.substr (pos));
 	bool expect_number = true;
 	std::stack <Oper *> opers;
 	Oper open ('(', "(", -3, NULL, NULL), close (')', ")", -2, NULL, NULL);
@@ -16,14 +15,11 @@ Expr Expr::read (Glib::ustring const &input, bool allow_params, Glib::ustring::s
 		if (expect_number)
 		{
 			dbg (l.rest ());
-			Glib::ustring word;
+			std::string word;
 			// Is this a label existance check?
 			if (l ("?%r/[A-Za-z_.][A-Za-z_.0-9]*/", word))
 			{
-				valid_int i;
-				i.valid = false;
-				i.value = 0;
-				ret.list.push_back (ExprElem (ExprElem::ISLABEL, i, NULL, word));
+				ret.list.push_back (ExprElem (ExprElem::ISLABEL, valid_int (), NULL, word));
 				expect_number = false;
 				continue;
 			}
@@ -45,8 +41,9 @@ Expr Expr::read (Glib::ustring const &input, bool allow_params, Glib::ustring::s
 				opers.push (&open);
 				continue;
 			}
-			if (l ("%r/[A-Za-z_.][A-Za-z_.0-9]*/", word))
+			if (l ("%r/[A-Za-z_.@][A-Za-z_.@0-9]*/", word))
 			{
+				dbg ("checking word " << word);
 				// Param
 				if (allow_params)
 				{
@@ -57,14 +54,14 @@ Expr Expr::read (Glib::ustring const &input, bool allow_params, Glib::ustring::s
 						{
 							continue;
 						}
+						dbg ("is " << i->name << "?");
 						if (word != i->name)
 						{
 							continue;
 						}
-						valid_int vi;
-						vi.value = 0;
-						vi.valid = false;
-						ret.list.push_back (ExprElem (ExprElem::PARAM, vi, NULL, Glib::ustring (), i));
+						std::list <Expr> e = i->constraints;
+						e.push_back (i->value);
+						ret.list.push_back (ExprElem (ExprElem::PARAM, valid_int (), NULL, std::string (), e));
 						expect_number = false;
 						break;
 					}
@@ -72,20 +69,21 @@ Expr Expr::read (Glib::ustring const &input, bool allow_params, Glib::ustring::s
 						continue;
 				}
 				// Label (may be defined later)
-				valid_int i;
-				i.value = 0;
-				i.valid = false;
-				ret.list.push_back (ExprElem (ExprElem::LABEL, i, NULL, word));
+				ret.list.push_back (ExprElem (ExprElem::LABEL, valid_int (), NULL, word));
 				expect_number = false;
 				continue;
 			}
 			// The special number "$"
 			if (l ("$"))
 			{
-				valid_int i;
-				i.value = addr;
-				i.valid = true;
-				ret.list.push_back (ExprElem (ExprElem::NUM, i));
+				if (absolute_addr)
+					ret.list.push_back (ExprElem (ExprElem::NUM, valid_int (addr)));
+				else
+				{
+					ret.list.push_back (ExprElem (ExprElem::NUM, Expr::valid_int (addr)));
+					ret.list.push_back (ExprElem (ExprElem::LABEL, Expr::valid_int (), NULL, "$"));
+					ret.list.push_back (ExprElem (ExprElem::OPER, Expr::valid_int (), plus_oper));
+				}
 				expect_number = false;
 				continue;
 			}
@@ -94,13 +92,10 @@ Expr Expr::read (Glib::ustring const &input, bool allow_params, Glib::ustring::s
 			if (!l ("%i", n))
 			{
 				dbg ("Not a number");
-				pos = Glib::ustring::npos;
+				pos = std::string::npos;
 				return Expr ();
 			}
-			valid_int vi;
-			vi.value = n;
-			vi.valid = true;
-			ret.list.push_back (ExprElem (ExprElem::NUM, vi));
+			ret.list.push_back (ExprElem (ExprElem::NUM, valid_int (n)));
 			expect_number = false;
 		}
 		else
@@ -132,7 +127,7 @@ Expr Expr::read (Glib::ustring const &input, bool allow_params, Glib::ustring::s
 				if (opers.empty () || opers.top () != &tri_start)
 				{
 					dbg (": without ?");
-					pos = Glib::ustring::npos;
+					pos = std::string::npos;
 					return Expr ();
 				}
 				opers.pop ();	// The ?
@@ -163,22 +158,20 @@ Expr Expr::read (Glib::ustring const &input, bool allow_params, Glib::ustring::s
 		if (opers.top () == &open)
 		{
 			dbg ("too many open parentheses");
-			pos = Glib::ustring::npos;
+			pos = std::string::npos;
 			return Expr ();
 		}
 		if (opers.top () == &tri_start)
 		{
 			dbg ("unfinished ?: operator");
-			pos = Glib::ustring::npos;
+			pos = std::string::npos;
 			return Expr ();
 		}
 		dbg ("pushing pending operator " << opers.top ()->name);
-		valid_int i;
-		i.valid = false;
-		i.value = 0;
-		ret.list.push_back (ExprElem (ExprElem::OPER, i, opers.top ()));
+		ret.list.push_back (ExprElem (ExprElem::OPER, valid_int (), opers.top ()));
 		opers.pop ();
 	}
 	pos = input.size () - l.rest ().size () - correction;
+	ret.simplify ();
 	return ret;
 }

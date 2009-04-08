@@ -118,8 +118,6 @@ bool read_file (std::string const &filename)
 			Expr::valid_int i = read_expr (expr, false, p);
 			if (!i.valid || p != expr.size ())
 				shevek_error ("invalid code expression " + expr + " in " + filename);
-			if (num_if != 0)
-				shevek_error ("conditional use of data is not allowed in " + filename);
 			if (i.value + current > code.size ())
 				shevek_error ("trying to use more than available data in " + filename);
 			if (files.back ().blocks.empty ())

@@ -1,7 +1,5 @@
 #include "asm.hh"
 #include <shevek/args.hh>
-#include <shevek/error.hh>
-#include <iostream>
 #include <fstream>
 
 static std::string make_base (std::string const &file)
@@ -27,7 +25,7 @@ int main (int argc, char **argv)
 		shevek::args::option ('O', "object", "object output format", useobject, true),
 		shevek::args::option ('I', "includedir", "add directory to include path", include_path),
 	};
-	shevek::args args (argc, argv, opts, 0, 1, "Generic assembler", "2008");
+	shevek::args args (argc, argv, opts, 0, -1, "Generic assembler", "2008");
 	if (defs.empty ())
 		shevek_error ("you must specify a definitions file");
 	if (!usehex && useobject)
@@ -66,7 +64,7 @@ int main (int argc, char **argv)
 	if (!*input_stack.top ().file)
 	{
 		delete input_stack.top ().file;
-		shevek_error_errno (shevek::ostring ("unable to open definitions file %s", Glib::ustring (defs)));
+		shevek_error_errno (shevek::rostring ("unable to open definitions file %s", std::string (defs)));
 	}
 	read_definitions ();
 	if (errors)
@@ -87,6 +85,7 @@ int main (int argc, char **argv)
 		in_files[i] = args[i];
 	for (unsigned f = 0; f < in_files.size (); ++f)
 	{
+		files.push_back (File ());
 		// Read input in memory.
 		std::vector <input_line> input;
 		input_stack.push (Input ());
@@ -103,20 +102,23 @@ int main (int argc, char **argv)
 		{
 			input_stack.top ().name = in_files[f];
 			input_stack.top ().basedir = make_base (in_files[f]);
-			input_stack.top ().file = new std::ifstream
-				(input_stack.top ().name.c_str ());
+			input_stack.top ().file = new std::ifstream (input_stack.top ().name.c_str ());
 			if (!input_stack.top ().file)
-				shevek_error_errno (shevek::ostring ("unable to open input file %s", Glib::ustring (input_stack.top ().name)));
+				shevek_error_errno (shevek::rostring ("unable to open input file %s", std::string (input_stack.top ().name)));
 			input_stack.top ().must_delete = true;
 		}
 		// Determine labels
-		Glib::ustring line;
+		std::string line;
 		undefined_locals = 0;
+		absolute_addr = false;
+		addr = 0;
 		writing = false;
+		first_pass = true;
+		report_labels = false;
 		while (getline (line))
 		{
 			input.push_back (input_line (line));
-			parse (input.back (), true, false);
+			parse (input.back ());
 		}
 		if (errors)
 		{
@@ -129,15 +131,17 @@ int main (int argc, char **argv)
 				unlink (listfilename.c_str ());
 			return 1;
 		}
+		first_pass = false;
 		unsigned last_undefined_locals = ~0;
 		while (undefined_locals != last_undefined_locals)
 		{
 			last_undefined_locals = undefined_locals;
+			absolute_addr = false;
 			addr = 0;
 			undefined_locals = 0;
 			for (unsigned t = 0; t < input.size (); ++t)
 			{
-				parse (input[t], false, false);
+				parse (input[t]);
 			}
 			dbg ("undefined local labels: " << undefined_locals);
 			if (errors)
@@ -145,9 +149,12 @@ int main (int argc, char **argv)
 		}
 		if (undefined_locals != 0)
 		{
+			report_labels = true;
+			absolute_addr = false;
+			addr = 0;
 			for (unsigned t = 0; t < input.size (); ++t)
 			{
-				parse (input[t], false, true);
+				parse (input[t]);
 			}
 			if (!outfilename.empty ())
 			{
@@ -160,10 +167,11 @@ int main (int argc, char **argv)
 		}
 		// Write output to internal object representation
 		writing = true;
+		absolute_addr = false;
 		addr = 0;
 		for (unsigned t = 0; t < input.size (); ++t)
 		{
-			parse (input[t], false, false);
+			parse (input[t]);
 		}
 		if (errors)
 		{
@@ -177,15 +185,21 @@ int main (int argc, char **argv)
 			return 1;
 		}
 		// Clean up
-		std::list <Label>::iterator l, next;
-		for (l = labels.begin (), next = l; l != labels.end (); l = next)
+		files.back ().clean ();
+	}
+	// All files are done; do final cleanup.
+	for (std::list <Label>::iterator l = labels.begin (); l != labels.end (); ++l)
+	{
+		for (std::list <ExprElem>::iterator e = l->value.list.begin (); e != l->value.list.end (); ++e)
 		{
-			++next;
-			if (l->name[0] == '.' || l->name[0] == '@')
-				labels.erase (l);
-			else
-				l->definition = NULL;
+			if (e->type != ExprElem::ISLABEL)
+				continue;
+			e->type = ExprElem::NUM;
+			e->value.valid = true;
+			e->value.value = find_label (e->label) != labels.end ();
+			e->label.clear ();
 		}
+		l->value.simplify ();
 	}
 	if (useobject)
 	{
@@ -206,7 +220,7 @@ int main (int argc, char **argv)
 		for (std::list <File>::iterator i = files.begin (); i != files.end (); ++i)
 			i->write_binary ();
 	}
-	if (usehex)
+	if (!useobject && usehex)
 		hexfile.write_s19 (*outfile);
 	if (!outfilename.empty ())
 		delete outfile;

@@ -1,6 +1,6 @@
 #include "asm.hh"
 
-static std::list <Expr> defb_expr (shevek::istring &args)
+static std::list <Expr> defb_expr (shevek::ristring &args)
 {
 	std::list <Expr> ret;
 	args (" ");
@@ -9,17 +9,14 @@ static std::list <Expr> defb_expr (shevek::istring &args)
 		error ("empty expression in defb");
 		return std::list <Expr> ();
 	}
-	Glib::ustring r = args.rest ();
+	std::string r = args.rest ();
 	if (r[0] == '\'' || r[0] == '"')
 	{
-		Glib::ustring::size_type p = 1;
+		std::string::size_type p = 1;
 		while (p < r.size () && r[p] != r[0])
 		{
 			Expr e;
-			Expr::valid_int v;
-			v.valid = true;
-			v.value = r[p];
-			e.list.push_back (ExprElem (ExprElem::NUM, v));
+			e.list.push_back (ExprElem (ExprElem::NUM, Expr::valid_int (r[p])));
 			ret.push_back (e);
 			++p;
 		}
@@ -32,9 +29,9 @@ static std::list <Expr> defb_expr (shevek::istring &args)
 	}
 	else
 	{
-		Glib::ustring::size_type pos = 0;
+		std::string::size_type pos = 0;
 		Expr e = Expr::read (args.rest (), false, pos);
-		if (pos == Glib::ustring::npos)
+		if (pos == std::string::npos)
 		{
 			error ("incorrect expression in defb");
 			return std::list <Expr> ();
@@ -45,7 +42,7 @@ static std::list <Expr> defb_expr (shevek::istring &args)
 	return ret;
 }
 
-void dir_defb (shevek::istring &args, bool first, Label *current_label)
+void dir_defb (shevek::ristring &args, bool first, std::list <Label>::iterator current_label)
 {
 	(void)first;
 	(void)current_label;
@@ -72,6 +69,6 @@ void dir_defb (shevek::istring &args, bool first, Label *current_label)
 		int numtabs = (31 - size) / 8;
 		if (numtabs <= 0)
 			numtabs = 1;
-		*listfile << Glib::ustring (numtabs, '\t');
+		*listfile << std::string (numtabs, '\t');
 	}
 }
