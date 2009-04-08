@@ -28,7 +28,7 @@ template <typename _T> static _T do_pop (std::stack <_T> &stack)
 		Expr::valid_int a = do_pop (stack); \
 		Expr::valid_int b = do_pop (stack); \
 		Expr::valid_int r; \
-		r.valid = a.valid && b.valid; \
+		r.valid = b.valid && a.valid; \
 		r.value = b.value oper a.value; \
 		stack.push (r); \
 	} \
@@ -36,7 +36,7 @@ template <typename _T> static _T do_pop (std::stack <_T> &stack)
 	{ \
 		std::string a = do_pop (stack); \
 		std::string b = do_pop (stack); \
-		stack.push ('(' + b + " " #oper " " + a + ')'); \
+		stack.push ('(' + b + #oper + a + ')'); \
 	}
 
 run1 (not, !)
@@ -67,7 +67,7 @@ static void run_xor (std::stack <Expr::valid_int> &stack)
 	Expr::valid_int a = do_pop (stack);
 	Expr::valid_int b = do_pop (stack);
 	Expr::valid_int r;
-	r.valid = a.valid && b.valid;
+	r.valid = b.valid && a.valid;
 	r.value = !b.value ^ !a.value;
 	stack.push (r);
 }
@@ -75,7 +75,7 @@ static void print_xor (std::stack <std::string> &stack)
 {
 	std::string a = do_pop (stack);
 	std::string b = do_pop (stack);
-	stack.push ('(' + b + " ^^ " + a + ')');
+	stack.push ('(' + b + "^^" + a + ')');
 }
 
 static void run_tri (std::stack <Expr::valid_int> &stack)
@@ -93,7 +93,7 @@ static void print_tri (std::stack <std::string> &stack)
 	std::string a = do_pop (stack);
 	std::string b = do_pop (stack);
 	std::string c = do_pop (stack);
-	stack.push ('(' + c + " ? " + b + " : " + a + ')');
+	stack.push ('(' + c + "?" + b + ":" + a + ')');
 }
 
 Oper operators1[3] = {

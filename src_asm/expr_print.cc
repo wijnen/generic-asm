@@ -5,11 +5,13 @@ void ExprElem::print (std::stack <std::string> &stack)
 	switch (type)
 	{
 	case NUM:
+		dbg ("printing " << value.value);
 		if (!value.valid)
 			shevek_error ("unexpected invalid number");
 		stack.push (shevek::rostring ("%d", value.value));
 		break;
 	case OPER:
+		dbg ("printing " << oper->name);
 		oper->print (stack);
 		break;
 	case PARAM:
@@ -18,6 +20,7 @@ void ExprElem::print (std::stack <std::string> &stack)
 		stack.push (param.back ().print ()); // TODO: use constraints.
 		break;
 	case LABEL:
+		dbg ("printing " << label);
 		stack.push (label);
 		break;
 	case ISLABEL:
