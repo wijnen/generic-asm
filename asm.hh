@@ -48,6 +48,7 @@ struct Expr
 	valid_int compute () const;
 	static Expr read (std::string const &input, bool allow_params, std::string::size_type &pos);
 	std::string print ();
+	std::string dump ();
 	void simplify ();
 	void check (bool file);
 private:
@@ -92,6 +93,7 @@ struct ExprElem
 		: type (t), value (v), oper (o), label (l), param (p) {}
 	void compute (std::stack <Expr::valid_int> &stack) const;
 	void print (std::stack <std::string> &stack);
+	std::string dump ();
 };
 
 struct Label

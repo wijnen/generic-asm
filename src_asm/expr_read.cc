@@ -172,6 +172,8 @@ Expr Expr::read (std::string const &input, bool allow_params, std::string::size_
 		opers.pop ();
 	}
 	pos = input.size () - l.rest ().size () - correction;
+	dbg (ret.dump ());
 	ret.simplify ();
+	dbg (ret.dump ());
 	return ret;
 }

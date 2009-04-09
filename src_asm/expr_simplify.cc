@@ -26,7 +26,7 @@ void Expr::simplify ()
 			std::list <element> c;
 			while (ret.size () >= stack.size ())
 			{
-				c.push_back (ret.back ());
+				c.push_front (ret.back ());
 				ret.pop_back ();
 			}
 			ret.push_back (*i);
