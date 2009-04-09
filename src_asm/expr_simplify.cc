@@ -30,6 +30,26 @@ void Expr::simplify ()
 				ret.pop_back ();
 			}
 			ret.push_back (*i);
+			if (i->code == '+')
+			{
+				std::list <element>::iterator j, next;
+				for (j = c.begin (), next = j; j != c.end (); j = next, ++next)
+				{
+					if (j->type != ExprElem::NUM || !j->value.valid || j->value.value != 0)
+						continue;
+					c.erase (j); // TODO: remove operator.
+				}
+			}
+			if (i->code == '*')
+			{
+				std::list <element>::iterator j, next;
+				for (j = c.begin (), next = j; j != c.end (); j = next, ++next)
+				{
+					if (j->type != ExprElem::NUM || !j->value.valid || j->value.value != 1)
+						continue;
+					c.erase (j); // TODO: remove operator.
+				}
+			}
 			ret.back ().children = c;
 			break;
 		}
