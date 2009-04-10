@@ -17,7 +17,7 @@ void File::Block::write_binary ()
 		for (std::list <Part>::iterator i = parts.begin (); i != parts.end (); ++i)
 		{
 			unsigned num_true = 0, num_false = 0;
-			Expr::valid_int vi;
+			Expr::valid_int vi ("!!");
 			switch (i->type)
 			{
 			case Part::IF:

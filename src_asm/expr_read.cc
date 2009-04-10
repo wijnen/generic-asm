@@ -19,7 +19,7 @@ Expr Expr::read (std::string const &input, bool allow_params, std::string::size_
 			// Is this a label existance check?
 			if (l ("?%r/[A-Za-z_.][A-Za-z_.0-9]*/", word))
 			{
-				ret.list.push_back (ExprElem (ExprElem::ISLABEL, valid_int (), NULL, word));
+				ret.list.push_back (ExprElem (ExprElem::ISLABEL, valid_int ("?"), NULL, word));
 				expect_number = false;
 				continue;
 			}
@@ -39,6 +39,37 @@ Expr Expr::read (std::string const &input, bool allow_params, std::string::size_
 			if (l ("("))
 			{
 				opers.push (&open);
+				continue;
+			}
+			// Param
+			if (l ("["))
+			{
+				l.push ();
+				std::string r = l.rest ();
+				std::string::size_type p = 0;
+				std::list <Expr> lst;
+				while (true)
+				{
+					Expr e = Expr::read (r, false, p);
+					if (p == std::string::npos || p >= r.size ())
+					{
+						pos = std::string::npos;
+						return Expr ();
+					}
+					lst.push_back (e);
+					if (r[p] != ';')
+						break;
+					++p;
+				}
+				l.skip (p);
+				if (!l ("]"))
+				{
+					dbg ("missing ']' after param");
+					pos = std::string::npos;
+					return Expr ();
+				}
+				ret.list.push_back (ExprElem (ExprElem::PARAM, Expr::valid_int ("#"), NULL, std::string (), lst));
+				expect_number = false;
 				continue;
 			}
 			if (l ("%r/[A-Za-z_.@][A-Za-z_.@0-9]*/", word))
@@ -61,7 +92,7 @@ Expr Expr::read (std::string const &input, bool allow_params, std::string::size_
 						}
 						std::list <Expr> e = i->constraints;
 						e.push_back (i->value);
-						ret.list.push_back (ExprElem (ExprElem::PARAM, valid_int (), NULL, std::string (), e));
+						ret.list.push_back (ExprElem (ExprElem::PARAM, valid_int ("##"), NULL, std::string (), e));
 						expect_number = false;
 						break;
 					}
@@ -69,7 +100,7 @@ Expr Expr::read (std::string const &input, bool allow_params, std::string::size_
 						continue;
 				}
 				// Label (may be defined later)
-				ret.list.push_back (ExprElem (ExprElem::LABEL, valid_int (), NULL, word));
+				ret.list.push_back (ExprElem (ExprElem::LABEL, valid_int ('!' + word), NULL, word));
 				expect_number = false;
 				continue;
 			}
@@ -81,8 +112,8 @@ Expr Expr::read (std::string const &input, bool allow_params, std::string::size_
 				else
 				{
 					ret.list.push_back (ExprElem (ExprElem::NUM, Expr::valid_int (addr)));
-					ret.list.push_back (ExprElem (ExprElem::LABEL, Expr::valid_int (), NULL, "$"));
-					ret.list.push_back (ExprElem (ExprElem::OPER, Expr::valid_int (), plus_oper));
+					ret.list.push_back (ExprElem (ExprElem::LABEL, Expr::valid_int ("!$"), NULL, "$"));
+					ret.list.push_back (ExprElem (ExprElem::OPER, Expr::valid_int ("$+"), plus_oper));
 				}
 				expect_number = false;
 				continue;
@@ -168,7 +199,7 @@ Expr Expr::read (std::string const &input, bool allow_params, std::string::size_
 			return Expr ();
 		}
 		dbg ("pushing pending operator " << opers.top ()->name);
-		ret.list.push_back (ExprElem (ExprElem::OPER, valid_int (), opers.top ()));
+		ret.list.push_back (ExprElem (ExprElem::OPER, valid_int ("*"), opers.top ()));
 		opers.pop ();
 	}
 	pos = input.size () - l.rest ().size () - correction;

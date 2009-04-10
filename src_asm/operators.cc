@@ -11,8 +11,9 @@ template <typename _T> static _T do_pop (std::stack <_T> &stack)
 	static void run_##name (std::stack <Expr::valid_int> &stack) \
 	{ \
 		Expr::valid_int a = do_pop (stack); \
-		Expr::valid_int r; \
+		Expr::valid_int r ("!" #name); \
 		r.valid = a.valid; \
+		r.invalid = a.invalid; \
 		r.value = oper a.value; \
 		stack.push (r); \
 	} \
@@ -27,9 +28,12 @@ template <typename _T> static _T do_pop (std::stack <_T> &stack)
 	{ \
 		Expr::valid_int a = do_pop (stack); \
 		Expr::valid_int b = do_pop (stack); \
-		Expr::valid_int r; \
+		Expr::valid_int r ("!" #name); \
 		r.valid = b.valid && a.valid; \
 		r.value = b.value oper a.value; \
+		r.invalid = a.invalid; \
+		for (std::list <std::string>::iterator i = b.invalid.begin (); i != b.invalid.end (); ++i) \
+			r.invalid.push_back (*i); \
 		stack.push (r); \
 	} \
 	static void print_##name (std::stack <std::string> &stack) \
@@ -66,8 +70,11 @@ static void run_xor (std::stack <Expr::valid_int> &stack)
 {
 	Expr::valid_int a = do_pop (stack);
 	Expr::valid_int b = do_pop (stack);
-	Expr::valid_int r;
+	Expr::valid_int r ("!xor");
 	r.valid = b.valid && a.valid;
+	r.invalid = a.invalid;
+	for (std::list <std::string>::iterator i = b.invalid.begin (); i != b.invalid.end (); ++i)
+		r.invalid.push_back (*i);
 	r.value = !b.value ^ !a.value;
 	stack.push (r);
 }
@@ -83,8 +90,14 @@ static void run_tri (std::stack <Expr::valid_int> &stack)
 	Expr::valid_int a = do_pop (stack);
 	Expr::valid_int b = do_pop (stack);
 	Expr::valid_int c = do_pop (stack);
-	Expr::valid_int r;
+	Expr::valid_int r ("!tri");
 	r.valid = c.valid && (c.value ? b.valid : a.valid);
+	if (!c.valid)
+		r.invalid = c.invalid;
+	else if (!c.value)
+		r.invalid = a.invalid;
+	else
+		r.invalid = b.invalid;
 	r.value = c.value ? b.value : a.value;
 	stack.push (r);
 }

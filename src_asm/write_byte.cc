@@ -3,8 +3,9 @@
 
 void write_byte (Expr::valid_int byte, int addr_offset)
 {
+	startfunc;
 	if (!byte.valid)
-		++undefined_locals;
+		shevek_error ("trying to write invalid byte");
 	if (!writing)
 		return;
 	if ((byte.value < -0x80) || (byte.value >= 0x100))

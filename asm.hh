@@ -39,10 +39,10 @@ struct Expr
 	struct valid_int
 	{
 		bool valid;
-		bool invalid_local;
+		std::list <std::string> invalid;	// invalid labels which are used in this value.
 		int value;
-		valid_int () : valid (false), invalid_local (false), value (0) {}
-		valid_int (int v) : valid (true), invalid_local (false), value (v) {}
+		valid_int (std::string const &label) : valid (false), value (0) { invalid.push_back (label); }
+		valid_int (int v) : valid (true), value (v) {}
 	};
 	std::list <ExprElem> list;
 	valid_int compute () const;
@@ -152,6 +152,7 @@ struct File
 			Expr::valid_int value;
 			Expr expr;
 			std::string name;	// or code.
+			Part () : value ("&") {}
 		};
 		bool absolute;
 		unsigned address;

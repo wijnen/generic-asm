@@ -15,10 +15,19 @@ void ExprElem::print (std::stack <std::string> &stack)
 		oper->print (stack);
 		break;
 	case PARAM:
+	{
 		if (param.empty ())
-			abort ();
-		stack.push (param.back ().print ()); // TODO: use constraints.
+			shevek_error ("BUG: printing empty parameter");
+		std::string ret;
+		std::string sep;
+		for (std::list <Expr>::iterator i = param.begin (); i != param.end (); ++i)
+		{
+			ret += sep + i->print ();
+			sep = ";";
+		}
+		stack.push ('[' + ret + ']');
 		break;
+	}
 	case LABEL:
 		dbg ("printing " << label);
 		stack.push (label);

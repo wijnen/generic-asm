@@ -6,7 +6,7 @@ void parse (input_line &input)
 	bool make_label = false;
 	std::string label;
 	std::list <Label>::iterator new_label = labels.end ();
-	Expr::valid_int old_label;
+	Expr::valid_int old_label ("<>");
 	shevek::ristring l (input.data);
 	if (l (" %r/[a-zA-Z_.][a-zA-Z_.0-9]*/:", label))
 	{
@@ -34,8 +34,8 @@ void parse (input_line &input)
 			else
 			{
 				new_label->value.list.push_back (ExprElem (ExprElem::NUM, Expr::valid_int (addr)));
-				new_label->value.list.push_back (ExprElem (ExprElem::LABEL, Expr::valid_int (), NULL, "$"));
-				new_label->value.list.push_back (ExprElem (ExprElem::OPER, Expr::valid_int (), plus_oper));
+				new_label->value.list.push_back (ExprElem (ExprElem::LABEL, Expr::valid_int ("$!"), NULL, "$"));
+				new_label->value.list.push_back (ExprElem (ExprElem::OPER, Expr::valid_int ("+$"), plus_oper));
 			}
 			if (files.back ().blocks.empty ())
 				files.back ().blocks.push_back (File::Block ());
@@ -127,15 +127,7 @@ void parse (input_line &input)
 					dbg ("failed to read expression");
 					break;
 				}
-				// TODO: check constraints
-#if 0
-				if (!p->second->value.valid)
-				{
-					dbg ("invalid expression found");
-					if (report)
-						error ("undefined or recursively defined label");
-				}
-				else
+				if (p->second->value.compute ().valid)
 				{
 					dbg ("computing " << p->second->constraints.size () << " constraints");
 					for (std::list <Expr>::iterator i = p->second->constraints.begin (); i != p->second->constraints.end (); ++i)
@@ -145,22 +137,36 @@ void parse (input_line &input)
 						if (!vi.valid)
 							error ("Constraint is invalid");
 						if (!vi.value)
-							error (shevek::rostring ("Given value %d fails constraint", p->second->value.value));
+							error (shevek::rostring ("Given value %d fails constraint", p->second->value.compute ().value));
 					}
 				}
-#endif
+				else
+				{
+					++undefined_locals; // TODO: This isn't only about locals.
+					if (report_labels)
+						error ("undefined label used in expression");
+				}
 				l.skip (pos);
 			}
 		}
 		if (p != s->parts.end () || !l (escape (s->post)) || (!l (" %") && !l (" ;")))
 			continue;
-		if (make_label && old_label.valid)
+		if (make_label)
 		{
+			dbg ("invalid?");
 			Expr::valid_int vi = new_label->value.compute ();
 			if (!vi.valid)
-				error (shevek::rostring ("Value of label %s changed from 0x%x to invalid", new_label->name, old_label.value));
-			else if (vi.value != old_label.value)
-				error (shevek::rostring ("Value of label %s changed from 0x%x to 0x%x", new_label->name, old_label.value, vi.value));
+			{
+				dbg ("invalid!");
+				++undefined_locals; // TODO: this is not only about locals.
+			}
+			if (old_label.valid)
+			{
+				if (!vi.valid)
+					error (shevek::rostring ("Value of label %s changed from 0x%x to invalid", new_label->name, old_label.value));
+				else if (vi.value != old_label.value)
+					error (shevek::rostring ("Value of label %s changed from 0x%x to 0x%x", new_label->name, old_label.value, vi.value));
+			}
 		}
 		if (writing && listfile)
 			*listfile << std::setw (4) << std::setfill ('0') << addr << ' ';

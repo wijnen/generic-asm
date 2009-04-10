@@ -29,27 +29,83 @@ void Expr::simplify ()
 				c.push_front (ret.back ());
 				ret.pop_back ();
 			}
+			if (i->oper->code == '-')
+			{
+				if (c.back ().type == ExprElem::NUM && c.back ().value.valid)
+				{
+					i->oper = plus_oper;
+					c.back ().value.value = -c.back ().value.value;
+				}
+			}
+			if (i->oper->code == '+')
+			{
+				element *f = &c.front ();
+				element *b = &c.back ();
+				if (f->type == ExprElem::NUM && f->value.valid && f->value.value == 0)
+				{
+					*i = c.back ();
+					c.clear ();
+				}
+				else if (b->type == ExprElem::NUM && b->value.valid && b->value.value == 0)
+				{
+					*i = c.front ();
+					c.clear ();
+				}
+				else if (b->type == ExprElem::NUM && b->value.valid)
+				{
+					element e = c.front ();
+					c.front () = c.back ();
+					c.back () = e;
+				}
+				else if (b->type == ExprElem::OPER && b->oper->code == '+' && b->children.front ().type == ExprElem::NUM && b->children.front ().value.valid)
+				{
+					if (f->type == ExprElem::NUM && f->value.valid)
+					{
+						c.front ().value.value += c.back ().children.front ().value.value;
+						c.back () = c.back ().children.back ();
+					}
+					else
+					{
+						element e = c.front ();
+						c.front () = c.back ().children.front ();
+						c.back ().children.front () = e;
+					}
+				}
+			}
+			else if (i->oper->code == '*')
+			{
+				if (c.front ().type == ExprElem::NUM && c.front ().value.valid && c.front ().value.value == 1)
+				{
+					*i = c.back ();
+					c.clear ();
+				}
+				else if (c.back ().type == ExprElem::NUM && c.back ().value.valid && c.back ().value.value == 1)
+				{
+					*i = c.front ();
+					c.clear ();
+				}
+				else if (c.back ().type == ExprElem::NUM && c.back ().value.valid)
+				{
+					element e = c.front ();
+					c.front () = c.back ();
+					c.back () = e;
+				}
+				else if (c.back ().type == ExprElem::OPER && c.back ().oper->code == '*' && c.back ().children.front ().type == ExprElem::NUM && c.back ().children.front ().value.valid)
+				{
+					if (c.front ().type == ExprElem::NUM && c.front ().value.valid)
+					{
+						c.front ().value.value *= c.back ().children.front ().value.value;
+						c.back () = c.back ().children.back ();
+					}
+					else
+					{
+						element e = c.front ();
+						c.front () = c.back ().children.front ();
+						c.back ().children.front () = e;
+					}
+				}
+			}
 			ret.push_back (*i);
-			if (i->code == '+')
-			{
-				std::list <element>::iterator j, next;
-				for (j = c.begin (), next = j; j != c.end (); j = next, ++next)
-				{
-					if (j->type != ExprElem::NUM || !j->value.valid || j->value.value != 0)
-						continue;
-					c.erase (j); // TODO: remove operator.
-				}
-			}
-			if (i->code == '*')
-			{
-				std::list <element>::iterator j, next;
-				for (j = c.begin (), next = j; j != c.end (); j = next, ++next)
-				{
-					if (j->type != ExprElem::NUM || !j->value.valid || j->value.value != 1)
-						continue;
-					c.erase (j); // TODO: remove operator.
-				}
-			}
 			ret.back ().children = c;
 			break;
 		}
