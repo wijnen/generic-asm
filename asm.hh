@@ -45,7 +45,7 @@ struct Expr
 		valid_int (int v) : valid (true), value (v) {}
 	};
 	std::list <ExprElem> list;
-	valid_int compute () const;
+	valid_int compute (valid_int self) const;
 	static Expr read (std::string const &input, bool allow_params, std::string::size_type &pos);
 	std::string print ();
 	std::string dump ();
@@ -91,7 +91,7 @@ struct ExprElem
 	std::list <Expr> param; // The last is the value, the rest are constraints.
 	ExprElem (Type t, Expr::valid_int v, Oper *o = NULL, std::string l = std::string (), std::list <Expr> p = std::list <Expr> ())
 		: type (t), value (v), oper (o), label (l), param (p) {}
-	void compute (std::stack <Expr::valid_int> &stack) const;
+	void compute (std::stack <Expr::valid_int> &stack, Expr::valid_int self) const;
 	void print (std::stack <std::string> &stack);
 	std::string dump ();
 };

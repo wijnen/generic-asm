@@ -26,8 +26,6 @@ int main (int argc, char **argv)
 		shevek::args::option ('I', "includedir", "add directory to include path", include_path),
 	};
 	shevek::args args (argc, argv, opts, 0, -1, "Generic assembler", "2008");
-	if (defs.empty ())
-		shevek_error ("you must specify a definitions file");
 	if (!usehex && useobject)
 		shevek_error ("specify only one type of output file");
 	if (outfilename.empty ())
@@ -40,11 +38,15 @@ int main (int argc, char **argv)
 	}
 	if (!listfilename.empty ())
 	{
-		listfile = new std::ofstream (listfilename.c_str ());
+		if (listfilename == "-")
+			listfile = &std::cout;
+		else
+			listfile = new std::ofstream (listfilename.c_str ());
 		if (!*listfile)
 		{
-			shevek_warning_errno ("unable to open list file");
-			delete listfile;
+			shevek_warning_errno ("unable to open list file " + Glib::filename_to_utf8 (listfilename));
+			if (listfile != &std::cout)
+				delete listfile;
 			listfile = NULL;
 		}
 		*listfile << std::hex;
@@ -55,28 +57,34 @@ int main (int argc, char **argv)
 	spaces.back ().start = 0;
 	spaces.back ().size = 0x10000;
 
-	input_stack.push (Input ());
-	input_stack.top ().name = defs;
-	input_stack.top ().basedir = make_base (defs);
-	input_stack.top ().type = Input::FILE;
-	input_stack.top ().file = new std::ifstream (defs.c_str ());
-	input_stack.top ().must_delete = true;
-	if (!*input_stack.top ().file)
+	if (!defs.empty ())
 	{
-		delete input_stack.top ().file;
-		shevek_error_errno (shevek::rostring ("unable to open definitions file %s", std::string (defs)));
-	}
-	read_definitions ();
-	if (errors)
-	{
-		if (!outfilename.empty ())
+		input_stack.push (Input ());
+		input_stack.top ().name = defs;
+		input_stack.top ().basedir = make_base (defs);
+		input_stack.top ().type = Input::FILE;
+		input_stack.top ().file = new std::ifstream (defs.c_str ());
+		input_stack.top ().must_delete = true;
+		if (!*input_stack.top ().file)
 		{
-			delete outfile;
-			unlink (outfilename.c_str ());
+			delete input_stack.top ().file;
+			shevek_error_errno (shevek::rostring ("unable to open definitions file %s", std::string (defs)));
 		}
-		if (listfile)
-			unlink (listfilename.c_str ());
-		return 1;
+		read_definitions ();
+		if (errors)
+		{
+			if (!outfilename.empty ())
+			{
+				delete outfile;
+				unlink (outfilename.c_str ());
+			}
+			if (listfile && listfile != &std::cout)
+			{
+				unlink (listfilename.c_str ());
+				delete listfile;
+			}
+			return 1;
+		}
 	}
 	std::vector <std::string> in_files (args.size ());
 	if (args.size () == 0)
@@ -85,6 +93,27 @@ int main (int argc, char **argv)
 		in_files[i] = args[i];
 	for (unsigned f = 0; f < in_files.size (); ++f)
 	{
+		if (read_file (in_files[f]))
+			continue;
+		if (errors)
+		{
+			if (!outfilename.empty ())
+			{
+				delete outfile;
+				unlink (outfilename.c_str ());
+			}
+			if (listfile && listfile != &std::cout)
+			{
+				unlink (listfilename.c_str ());
+				delete listfile;
+			}
+			return 1;
+		}
+		if (defs.empty ())
+		{
+			error ("Without a definitions file, only object files are allowed at input (not " + in_files[f] + ")");
+			continue;
+		}
 		files.push_back (File ());
 		// Read input in memory.
 		std::vector <input_line> input;
@@ -127,8 +156,11 @@ int main (int argc, char **argv)
 				delete outfile;
 				unlink (outfilename.c_str ());
 			}
-			if (listfile)
+			if (listfile && listfile != &std::cout)
+			{
 				unlink (listfilename.c_str ());
+				delete listfile;
+			}
 			return 1;
 		}
 		first_pass = false;
@@ -161,18 +193,26 @@ int main (int argc, char **argv)
 				delete outfile;
 				unlink (outfilename.c_str ());
 			}
-			if (listfile)
+			if (listfile && listfile != &std::cout)
+			{
 				unlink (listfilename.c_str ());
+				delete listfile;
+			}
 			return 1;
 		}
-		// Write output to internal object representation
+		// Write output to internal object representation.
 		writing = true;
+		if (listfile)
+			*listfile << "# Asm source file: " << in_files[f] << '\n';
 		absolute_addr = false;
 		addr = 0;
 		for (unsigned t = 0; t < input.size (); ++t)
 		{
 			parse (input[t]);
 		}
+		// Clean up.
+		files.back ().clean ();
+		// Don't continue if there are errors.
 		if (errors)
 		{
 			if (!outfilename.empty ())
@@ -180,12 +220,15 @@ int main (int argc, char **argv)
 				delete outfile;
 				unlink (outfilename.c_str ());
 			}
-			if (listfile)
+			if (listfile && listfile != &std::cout)
+			{
 				unlink (listfilename.c_str ());
+				delete listfile;
+			}
 			return 1;
 		}
-		// Clean up
-		files.back ().clean ();
+		if (listfile)
+			*listfile << "# End of asm source file: " << in_files[f] << '\n';
 	}
 	// All files are done; do final cleanup.
 	for (std::list <Label>::iterator l = labels.begin (); l != labels.end (); ++l)
@@ -217,14 +260,35 @@ int main (int argc, char **argv)
 	}
 	else
 	{
+		errors = 0;
 		for (std::list <File>::iterator i = files.begin (); i != files.end (); ++i)
 			i->write_binary ();
+		if (errors)
+		{
+			if (!outfilename.empty ())
+			{
+				delete outfile;
+				unlink (outfilename.c_str ());
+			}
+			if (listfile && listfile != &std::cout)
+			{
+				unlink (listfilename.c_str ());
+				delete listfile;
+			}
+			return 1;
+		}
 	}
 	if (!useobject && usehex)
 		hexfile.write_s19 (*outfile);
+	if (listfile)
+	{
+		*listfile << "\n# List of labels:\n";
+		for (std::list <Label>::iterator l = labels.begin (); l != labels.end (); ++l)
+			*listfile << l->name << ":\tequ 0x" << l->value.compute (Expr::valid_int (">>")).value << '\n';
+	}
 	if (!outfilename.empty ())
 		delete outfile;
-	if (listfile)
+	if (listfile && listfile != &std::cout)
 		delete listfile;
 	return 0;
 }

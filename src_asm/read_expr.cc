@@ -31,7 +31,7 @@ Expr::valid_int read_expr (std::string const &expr, bool allow_params, std::stri
 	}
 	std::cerr << std::endl;
 #endif
-	return e.compute ();
+	return e.compute (Expr::valid_int ("<"));
 }
 
 Expr::valid_int read_expr (std::string const &expr, std::string const &comment)

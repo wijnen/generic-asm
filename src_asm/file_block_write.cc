@@ -21,7 +21,7 @@ void File::Block::write_binary ()
 			switch (i->type)
 			{
 			case Part::IF:
-				vi = i->expr.compute ();
+				vi = i->expr.compute (Expr::valid_int (">"));
 				if (!vi.valid)
 					shevek_error ("invalid if expression");
 				if (num_false == 0 && vi.value)
@@ -56,7 +56,7 @@ void File::Block::write_binary ()
 			case Part::BYTE:
 				if (!num_false)
 				{
-					write_byte (i->expr.compute (), 0);
+					write_byte (i->expr.compute (Expr::valid_int ("}")), 0);
 					++addr;
 				}
 				break;
@@ -122,6 +122,7 @@ void File::Block::write_object (std::string &script, std::string &code)
 	script += '\n';
 	for (std::list <Part>::iterator i = parts.begin (); i != parts.end (); ++i)
 	{
+		dbg (i->type);
 		switch (i->type)
 		{
 		case Part::IF:

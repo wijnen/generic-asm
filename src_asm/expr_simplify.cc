@@ -12,13 +12,14 @@ struct element : public ExprElem
 	}
 };
 
-void Expr::simplify ()
+static element make_tree (Expr &e)
 {
-	std::stack <valid_int> stack;
+	std::stack <Expr::valid_int> stack;
 	std::list <element> ret;
-	for (std::list <ExprElem>::iterator i = list.begin (); i != list.end (); ++i)
+	for (std::list <ExprElem>::iterator i = e.list.begin (); i != e.list.end (); ++i)
 	{
-		i->compute (stack);
+		dbg ("tree part: " << i->type);
+		i->compute (stack, Expr::valid_int (","));
 		switch (i->type)
 		{
 		case ExprElem::OPER:
@@ -105,23 +106,52 @@ void Expr::simplify ()
 					}
 				}
 			}
+			dbg ("adding operator");
 			ret.push_back (*i);
 			ret.back ().children = c;
 			break;
 		}
-		case ExprElem::NUM:
 		case ExprElem::LABEL:
+		{
+			std::list <Label>::iterator l = find_label (i->label);
+			if (l == labels.end ())
+			{
+				dbg ("adding undefined label");
+				ret.push_back (*i);
+				break;
+			}
+			Expr::valid_int vi = l->value.compute (Expr::valid_int (":-:"));
+			if (vi.valid)
+			{
+				dbg ("adding valid label");
+				ret.push_back (*i);
+				break;
+			}
+			dbg ("adding label subtree");
+			ret.push_back (make_tree (l->value));
+			break;
+		}
+		case ExprElem::NUM:
 		case ExprElem::ISLABEL:
 		case ExprElem::PARAM:
+			dbg ("adding thing to tree: " << i->type);
 			ret.push_back (*i);
 			break;
 		}
 		if (stack.top ().valid)
 		{
+			dbg ("replacing last element with number");
 			ret.pop_back ();
 			ret.push_back (ExprElem (ExprElem::NUM, stack.top ()));
 		}
 	}
+	dbg ("done making tree");
+	return ret.front ();
+}
+
+void Expr::simplify ()
+{
+	element tree = make_tree (*this);
 	list.clear ();
-	ret.front ().add (list);
+	tree.add (list);
 }

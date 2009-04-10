@@ -5,9 +5,12 @@ void write_byte (Expr::valid_int byte, int addr_offset)
 {
 	startfunc;
 	if (!byte.valid)
-		shevek_error ("trying to write invalid byte");
-	if (!writing)
+	{
+		for (std::list <std::string>::iterator i = byte.invalid.begin (); i != byte.invalid.end (); ++i)
+			std::cerr << "use of undefined label " << *i << std::endl;
+		++errors;
 		return;
+	}
 	if ((byte.value < -0x80) || (byte.value >= 0x100))
 		error (shevek::rostring ("byte %x out of range", byte.value));
 	if (usehex)

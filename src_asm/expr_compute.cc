@@ -1,6 +1,6 @@
 #include "asm.hh"
 
-void ExprElem::compute (std::stack <Expr::valid_int> &stack) const
+void ExprElem::compute (std::stack <Expr::valid_int> &stack, Expr::valid_int self) const
 {
 	std::list <Label>::iterator l;
 	switch (type)
@@ -18,7 +18,7 @@ void ExprElem::compute (std::stack <Expr::valid_int> &stack) const
 		if (param.empty ())
 			stack.push (Expr::valid_int ("[#]"));
 		else
-			stack.push (param.back ().compute ());	// Constraints don't need to be checked here; it's done in parse and print.
+			stack.push (param.back ().compute (self));	// Constraints don't need to be checked here; it's done in parse and print.
 		break;
 	case ExprElem::LABEL:
 		dbg ("computing label " << label);
@@ -31,7 +31,10 @@ void ExprElem::compute (std::stack <Expr::valid_int> &stack) const
 		else
 		{
 			dbg ("possibly valid");
-			stack.push (l->value.compute ());
+			Expr::valid_int vi = l->value.compute (Expr::valid_int (":"));
+			if (!vi.valid)
+				vi.invalid.push_back (l->name);
+			stack.push (vi);
 		}
 		break;
 	case ExprElem::ISLABEL:
@@ -49,14 +52,14 @@ void ExprElem::compute (std::stack <Expr::valid_int> &stack) const
 	}
 }
 
-Expr::valid_int Expr::compute () const
+Expr::valid_int Expr::compute (valid_int self) const
 {
 	dbg ("computing");
 	if (list.empty ())
-		return Expr::valid_int ("[]");
+		return self;
 	std::stack <valid_int> stack;
 	for (std::list <ExprElem>::const_iterator i = list.begin (); i != list.end (); ++i)
-		i->compute (stack);
+		i->compute (stack, self);
 	if (stack.size () != 1)
 	{
 		dbg (stack.size ());

@@ -8,7 +8,7 @@ void parse (input_line &input)
 	std::list <Label>::iterator new_label = labels.end ();
 	Expr::valid_int old_label ("<>");
 	shevek::ristring l (input.data);
-	if (l (" %r/[a-zA-Z_.][a-zA-Z_.0-9]*/:", label))
+	if (l (" %r/[a-zA-Z_.@][a-zA-Z_.@0-9]*/:", label))
 	{
 		dbg ("found label " << label);
 		make_label = true;
@@ -44,11 +44,12 @@ void parse (input_line &input)
 			files.back ().blocks.back ().parts.back ().type = File::Block::Part::DEFINE;
 			files.back ().blocks.back ().parts.back ().have_expr = false;
 			files.back ().blocks.back ().parts.back ().label = new_label;
+			files.back ().blocks.back ().parts.back ().name = label;
 			dbg ("Label " << label << " defined at " << addr);
 		}
 		else
 		{
-			old_label = new_label->value.compute ();
+			old_label = new_label->value.compute (Expr::valid_int ("::"));
 		}
 	}
 	l (" ");
@@ -127,24 +128,35 @@ void parse (input_line &input)
 					dbg ("failed to read expression");
 					break;
 				}
-				if (p->second->value.compute ().valid)
+				Expr::valid_int pvi = p->second->value.compute (Expr::valid_int ("=="));
+				if (pvi.valid)
 				{
 					dbg ("computing " << p->second->constraints.size () << " constraints");
 					for (std::list <Expr>::iterator i = p->second->constraints.begin (); i != p->second->constraints.end (); ++i)
 					{
 						dbg ("computing constraint " << i->print ());
-						Expr::valid_int vi = i->compute ();
+						Expr::valid_int vi = i->compute (pvi);
 						if (!vi.valid)
-							error ("Constraint is invalid");
+						{
+							error ("Constraint is invalid, because of:");
+							for (std::list <std::string>::iterator i = vi.invalid.begin (); i != vi.invalid.end (); ++i)
+								error ("\tThis label: " + *i);
+						}
 						if (!vi.value)
-							error (shevek::rostring ("Given value %d fails constraint", p->second->value.compute ().value));
+							error (shevek::rostring ("Given value %d fails constraint", pvi.value));
 					}
 				}
 				else
 				{
-					++undefined_locals; // TODO: This isn't only about locals.
-					if (report_labels)
-						error ("undefined label used in expression");
+					for (std::list <std::string>::iterator iv = pvi.invalid.begin (); iv != pvi.invalid.end (); ++iv)
+					{
+						if ((*iv)[0] == '.')
+						{
+							++undefined_locals;
+							if (report_labels)
+								error ("use of undefined local label: " + *iv);
+						}
+					}
 				}
 				l.skip (pos);
 			}
@@ -154,12 +166,7 @@ void parse (input_line &input)
 		if (make_label)
 		{
 			dbg ("invalid?");
-			Expr::valid_int vi = new_label->value.compute ();
-			if (!vi.valid)
-			{
-				dbg ("invalid!");
-				++undefined_locals; // TODO: this is not only about locals.
-			}
+			Expr::valid_int vi = new_label->value.compute (Expr::valid_int ("?:"));
 			if (old_label.valid)
 			{
 				if (!vi.valid)
