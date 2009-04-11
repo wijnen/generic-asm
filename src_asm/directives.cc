@@ -1,8 +1,8 @@
 #include "asm.hh"
 
 Directive directives[13] = {
+	Directive ("defb", &dir_defb), // must be the first one.
 	Directive ("org", &dir_org),
-	Directive ("defb", &dir_defb),
 	Directive ("equ", &dir_equ),
 	Directive ("include", &dir_include),
 	Directive ("incbin", &dir_incbin),

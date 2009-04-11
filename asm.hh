@@ -214,7 +214,10 @@ void write_expr (Expr &e);
 void write_out (Source const &s);
 void write_byte (Expr::valid_int byte, int addr_offset);
 void parse (input_line &input);
+std::string make_base (std::string const &file);
 int main (int argc, char **argv);
+void assemble (std::vector <std::string> &in_files);
+void disassemble (std::istream &in);
 
 void dir_org (shevek::ristring &args, bool first, std::list <Label>::iterator current_label);
 void dir_defb (shevek::ristring &args, bool first, std::list <Label>::iterator current_label);

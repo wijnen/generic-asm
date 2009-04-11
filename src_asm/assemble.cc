@@ -1,0 +1,130 @@
+#include "asm.hh"
+#include <fstream>
+
+std::string make_base (std::string const &file)
+{
+	std::string::size_type pos = file.find_last_of ("/");
+	if (pos == std::string::npos)
+		return ".";
+	return file.substr (0, pos);
+}
+
+void assemble (std::vector <std::string> &in_files)
+{
+	// TODO: make this configurable.
+	spaces.push_back (Space ());
+	spaces.back ().start = 0;
+	spaces.back ().size = 0x10000;
+
+	for (unsigned f = 0; f < in_files.size (); ++f)
+	{
+		if (read_file (in_files[f]))
+			continue;
+		if (errors)
+			return;
+		if (sources.empty ())
+		{
+			error ("Without definitions, only object files are allowed at input (not " + in_files[f] + ")");
+			continue;
+		}
+		files.push_back (File ());
+		// Read input in memory.
+		std::vector <input_line> input;
+		input_stack.push (Input ());
+		input_stack.top ().type = Input::FILE;
+		input_stack.top ().ln = 0;
+		if (in_files[f] == "-")
+		{
+			input_stack.top ().name = "Standard input";
+			input_stack.top ().basedir = ".";
+			input_stack.top ().file = &std::cin;
+			input_stack.top ().must_delete = false;
+		}
+		else
+		{
+			input_stack.top ().name = in_files[f];
+			input_stack.top ().basedir = make_base (in_files[f]);
+			input_stack.top ().file = new std::ifstream (input_stack.top ().name.c_str ());
+			if (!input_stack.top ().file)
+				shevek_error_errno (shevek::rostring ("unable to open input file %s", std::string (input_stack.top ().name)));
+			input_stack.top ().must_delete = true;
+		}
+		// Determine labels
+		std::string line;
+		undefined_locals = 0;
+		absolute_addr = false;
+		addr = 0;
+		writing = false;
+		first_pass = true;
+		report_labels = false;
+		while (getline (line))
+		{
+			input.push_back (input_line (line));
+			parse (input.back ());
+		}
+		if (errors)
+			return;
+		first_pass = false;
+		unsigned last_undefined_locals = ~0;
+		while (undefined_locals != last_undefined_locals)
+		{
+			last_undefined_locals = undefined_locals;
+			absolute_addr = false;
+			addr = 0;
+			undefined_locals = 0;
+			for (unsigned t = 0; t < input.size (); ++t)
+			{
+				parse (input[t]);
+			}
+			dbg ("undefined local labels: " << undefined_locals);
+			if (errors)
+				return;
+		}
+		if (undefined_locals != 0)
+		{
+			report_labels = true;
+			absolute_addr = false;
+			addr = 0;
+			for (unsigned t = 0; t < input.size (); ++t)
+				parse (input[t]);
+			return;
+		}
+		// Write output to internal object representation.
+		writing = true;
+		if (listfile)
+			*listfile << "# Asm source file: " << in_files[f] << '\n';
+		absolute_addr = false;
+		addr = 0;
+		for (unsigned t = 0; t < input.size (); ++t)
+		{
+			parse (input[t]);
+		}
+		// Clean up.
+		files.back ().clean ();
+		// Don't continue if there are errors.
+		if (errors)
+			return;
+		if (listfile)
+			*listfile << "# End of asm source file: " << in_files[f] << '\n';
+	}
+	// All files are done; do final cleanup.
+	for (std::list <Label>::iterator l = labels.begin (); l != labels.end (); ++l)
+	{
+		for (std::list <ExprElem>::iterator e = l->value.list.begin (); e != l->value.list.end (); ++e)
+		{
+			if (e->type != ExprElem::ISLABEL)
+				continue;
+			e->type = ExprElem::NUM;
+			e->value.valid = true;
+			e->value.value = find_label (e->label) != labels.end ();
+			e->label.clear ();
+		}
+		l->value.simplify ();
+	}
+	if (listfile)
+	{
+		*listfile << "\n# List of labels:\n";
+		for (std::list <Label>::iterator l = labels.begin (); l != labels.end (); ++l)
+			*listfile << l->name << ":\tequ 0x" << l->value.compute (Expr::valid_int (">>")).value << '\n';
+	}
+}

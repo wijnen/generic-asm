@@ -4,6 +4,7 @@ bin_PROGRAMS = genasm
 dist_bin_SCRIPTS = asm-z80 asm-hc08
 
 genasm_SOURCES = \
+	src_asm/assemble.cc \
 	src_asm/data.cc \
 	src_asm/dir_defb.cc \
 	src_asm/dir_comment.cc \
@@ -19,6 +20,7 @@ genasm_SOURCES = \
 	src_asm/dir_org.cc \
 	src_asm/dir_seek.cc \
 	src_asm/directives.cc \
+	src_asm/disassemble.cc \
 	src_asm/error.cc \
 	src_asm/escape.cc \
 	src_asm/expr_compute.cc \
