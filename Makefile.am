@@ -25,7 +25,7 @@ genasm_SOURCES = \
 	src_asm/escape.cc \
 	src_asm/expr_compute.cc \
 	src_asm/expr_check.cc \
-	src_asm/expr_handle_oper.cc \
+	src_asm/expr_clean_islabel.cc \
 	src_asm/expr_print.cc \
 	src_asm/expr_read.cc \
 	src_asm/expr_simplify.cc \

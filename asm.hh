@@ -33,7 +33,6 @@ struct input_line
 };
 
 struct Oper;
-struct ExprElem;
 struct Expr
 {
 	struct valid_int
@@ -44,26 +43,35 @@ struct Expr
 		valid_int (std::string const &label) : valid (false), value (0) { invalid.push_back (label); }
 		valid_int (int v) : valid (true), value (v) {}
 	};
-	std::list <ExprElem> list;
+
+	enum Type { NUM, PARAM, LABEL, ISLABEL, OPER } type;
+	valid_int value;
+	Oper *oper;
+	std::list <Expr> children;
+	std::string label;
+	std::list <Expr> param; // The last is the value, the rest are constraints.
+	Expr (Type t = NUM, valid_int v = valid_int ("{}"), Oper *o = NULL, std::list <Expr> const &c = std::list <Expr> (), std::string const &l = std::string (), std::list <Expr> const &p = std::list <Expr> ())
+		: type (t), value (v), oper (o), children (c), label (l), param (p) {}
+
 	valid_int compute (valid_int self) const;
 	static Expr read (std::string const &input, bool allow_params, std::string::size_type &pos);
 	std::string print ();
 	std::string dump ();
 	void simplify ();
 	void check (bool file);
-private:
-	void handle_oper (std::stack <Oper *> &stack, Oper *oper);
+	void clean_islabel ();
 };
 
 struct Oper
 {
+	unsigned num;	// number of children.
 	char code;
 	std::string name;
 	int priority;
-	void (*run) (std::stack <Expr::valid_int> &stack);
-	void (*print) (std::stack <std::string> &stack);
-	Oper (char c, std::string const &n, int p, void (*r)(std::stack <Expr::valid_int> &), void (*pr)(std::stack <std::string> &))
-		: code (c), name (n), priority (p), run (r), print (pr) {}
+	Expr::valid_int (*run) (std::list <Expr::valid_int> &children);
+	std::string (*print) (std::list <Expr> &children);
+	Oper (unsigned N, char c, std::string const &n, int p, Expr::valid_int (*r)(std::list <Expr::valid_int> &), std::string (*pr)(std::list <Expr> &))
+		: num (N), code (c), name (n), priority (p), run (r), print (pr) {}
 };
 
 struct Param
@@ -81,20 +89,6 @@ struct Param
 };
 
 extern std::list <Param> params;
-
-struct ExprElem
-{
-	enum Type { NUM, PARAM, LABEL, ISLABEL, OPER } type;
-	Expr::valid_int value;
-	Oper *oper;
-	std::string label;
-	std::list <Expr> param; // The last is the value, the rest are constraints.
-	ExprElem (Type t, Expr::valid_int v, Oper *o = NULL, std::string l = std::string (), std::list <Expr> p = std::list <Expr> ())
-		: type (t), value (v), oper (o), label (l), param (p) {}
-	void compute (std::stack <Expr::valid_int> &stack, Expr::valid_int self) const;
-	void print (std::stack <std::string> &stack);
-	std::string dump ();
-};
 
 struct Label
 {

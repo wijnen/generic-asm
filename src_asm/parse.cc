@@ -30,12 +30,13 @@ void parse (input_line &input)
 			new_label->name = label;
 			new_label->definition = &input;
 			if (absolute_addr)
-				new_label->value.list.push_back (ExprElem (ExprElem::NUM, Expr::valid_int (addr)));
+				new_label->value = Expr (Expr::NUM, Expr::valid_int (addr));
 			else
 			{
-				new_label->value.list.push_back (ExprElem (ExprElem::NUM, Expr::valid_int (addr)));
-				new_label->value.list.push_back (ExprElem (ExprElem::LABEL, Expr::valid_int ("$!"), NULL, "$"));
-				new_label->value.list.push_back (ExprElem (ExprElem::OPER, Expr::valid_int ("+$"), plus_oper));
+				std::list <Expr> c;
+				c.push_back (Expr (Expr::NUM, Expr::valid_int (addr)));
+				c.push_back (Expr (Expr::LABEL, Expr::valid_int ("$!"), NULL, std::list <Expr> (), "$"));
+				new_label->value = (Expr (Expr::OPER, Expr::valid_int ("+$"), plus_oper, c));
 			}
 			if (files.back ().blocks.empty ())
 				files.back ().blocks.push_back (File::Block ());
@@ -111,9 +112,7 @@ void parse (input_line &input)
 				{
 					if (!l (escape (v->first)))
 						continue;
-					Expr e;
-					e.list.push_back (ExprElem (ExprElem::NUM, v->second));
-					p->second->value = e;
+					p->second->value = Expr (Expr::NUM, v->second);
 					break;
 				}
 				if (v == p->second->enum_values.end ())

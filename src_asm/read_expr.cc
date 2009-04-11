@@ -5,32 +5,6 @@ Expr::valid_int read_expr (std::string const &expr, bool allow_params, std::stri
 	Expr e = Expr::read (expr, allow_params, pos);
 	if (pos == std::string::npos)
 		return Expr::valid_int ("??");
-#if 0
-	std::cerr << "Expression successfully read:";
-	for (std::list <ExprElem>::iterator i = e.list.begin (); i != e.list.end (); ++i)
-	{
-		std::cerr << " ";
-		switch (i->type)
-		{
-		case ExprElem::NUM:
-			std::cerr << i->value;
-			break;
-		case ExprElem::OPER:
-			std::cerr << i->oper->name;
-			break;
-		case ExprElem::PARAM:
-			std::cerr << i->param->first << '=' << i->param->second.value;
-			break;
-		case ExprElem::LABEL:
-			std::cerr << i->label;
-			break;
-		default:
-			std::cerr << "huh!";
-			break;
-		}
-	}
-	std::cerr << std::endl;
-#endif
 	return e.compute (Expr::valid_int ("<"));
 }
 

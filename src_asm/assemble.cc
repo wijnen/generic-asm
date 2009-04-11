@@ -110,15 +110,7 @@ void assemble (std::vector <std::string> &in_files)
 	// All files are done; do final cleanup.
 	for (std::list <Label>::iterator l = labels.begin (); l != labels.end (); ++l)
 	{
-		for (std::list <ExprElem>::iterator e = l->value.list.begin (); e != l->value.list.end (); ++e)
-		{
-			if (e->type != ExprElem::ISLABEL)
-				continue;
-			e->type = ExprElem::NUM;
-			e->value.valid = true;
-			e->value.value = find_label (e->label) != labels.end ();
-			e->label.clear ();
-		}
+		l->value.clean_islabel ();
 		l->value.simplify ();
 	}
 	if (listfile)

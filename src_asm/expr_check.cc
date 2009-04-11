@@ -1,25 +1,29 @@
 #include "asm.hh"
 
+static void fill_check (Expr &e, bool file)
+{
+	for (std::list <Expr>::iterator i = e.children.begin (); i != e.children.end (); ++i)
+		fill_check (*i, file);
+	if (e.type == Expr::ISLABEL && (e.label[0] == '.' || (file && e.label[0] == '@')))
+	{
+		e.type = Expr::NUM;
+		e.value.valid = true;
+		e.value.value = find_label (e.label) != labels.end ();
+		e.label.clear ();
+	}
+}
+
+static void undefined_check (Expr &e, bool file)
+{
+	for (std::list <Expr>::iterator i = e.children.begin (); i != e.children.end (); ++i)
+		undefined_check (*i, file);
+	if (e.type == Expr::LABEL && (e.label[0] == '.' || (file && e.label[0] == '@')))
+		error ("undefined local label " + e.label);
+}
+
 void Expr::check (bool file)
 {
-	for (std::list <ExprElem>::iterator i = list.begin (); i != list.end (); ++i)
-	{
-		if (i->type != ExprElem::ISLABEL)
-			continue;
-		if (i->label[0] != '.' && (!file || i->label[0] != '@'))
-			continue;
-		i->type = ExprElem::NUM;
-		i->value.valid = true;
-		i->value.value = find_label (i->label) != labels.end ();
-		i->label.clear ();
-	}
+	fill_check (*this, file);
 	simplify ();
-	for (std::list <ExprElem>::iterator i = list.begin (); i != list.end (); ++i)
-	{
-		if (i->type != ExprElem::LABEL)
-			continue;
-		if (i->label[0] != '.' && (!file || i->label[0] != '@'))
-			continue;
-		error ("undefined local label " + i->label);
-	}
+	undefined_check (*this, file);
 }

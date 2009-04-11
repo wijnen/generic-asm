@@ -15,9 +15,7 @@ static std::list <Expr> defb_expr (shevek::ristring &args)
 		std::string::size_type p = 1;
 		while (p < r.size () && r[p] != r[0])
 		{
-			Expr e;
-			e.list.push_back (ExprElem (ExprElem::NUM, Expr::valid_int (r[p])));
-			ret.push_back (e);
+			ret.push_back (Expr (Expr::NUM, Expr::valid_int (r[p])));
 			++p;
 		}
 		if (p >= r.size ())

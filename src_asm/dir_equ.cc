@@ -11,10 +11,8 @@ void dir_equ (shevek::ristring &args, bool first, std::list <Label>::iterator cu
 	std::string::size_type pos = 0;
 	if (first)
 	{
-		Expr e;
-		e.list.push_back (ExprElem (ExprElem::NUM, Expr::valid_int (current_label->name)));
-		current_label->value = e;
-		e = Expr::read (args.rest (), false, pos);
+		current_label->value = Expr (Expr::NUM, Expr::valid_int (current_label->name));
+		Expr e = Expr::read (args.rest (), false, pos);
 		if (pos == std::string::npos)
 		{
 			error ("incorrect expression in equ");

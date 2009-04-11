@@ -6,9 +6,9 @@ void write_expr (Expr &e)
 		return;
 	if (files.back ().blocks.empty ())
 		files.back ().blocks.push_back (File::Block ());
-	if (e.list.size () == 1 && e.list.front ().type == ExprElem::NUM)
+	if (e.type == Expr::NUM)
 	{
-		Expr::valid_int v = e.list.front ().value;
+		Expr::valid_int v = e.value;
 		if (!v.valid)
 			error ("invalid value in expression");
 		if (v.value < -0x80 || v.value > 0xff)
