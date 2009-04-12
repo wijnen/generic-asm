@@ -13,7 +13,7 @@ void parse (input_line &input)
 		dbg ("found label " << label);
 		make_label = true;
 		new_label = find_label (label);
-		if (first_pass && new_label != labels.end ())
+		if (stage == 1 && new_label != labels.end ())
 		{
 			error (shevek::rostring ("Duplicate definition of label %s", label));
 			if (new_label->definition)
@@ -38,14 +38,11 @@ void parse (input_line &input)
 				c.push_back (Expr (Expr::LABEL, Expr::valid_int ("$!"), NULL, std::list <Expr> (), "$"));
 				new_label->value = (Expr (Expr::OPER, Expr::valid_int ("+$"), plus_oper, c));
 			}
-			if (files.back ().blocks.empty ())
-				files.back ().blocks.push_back (File::Block ());
-			if (files.back ().blocks.back ().parts.empty ())
-				files.back ().blocks.back ().parts.push_back (File::Block::Part ());
-			files.back ().blocks.back ().parts.back ().type = File::Block::Part::DEFINE;
-			files.back ().blocks.back ().parts.back ().have_expr = false;
-			files.back ().blocks.back ().parts.back ().label = new_label;
-			files.back ().blocks.back ().parts.back ().name = label;
+			blocks.back ().parts.push_back (Block::Part ());
+			blocks.back ().parts.back ().type = Block::Part::DEFINE;
+			blocks.back ().parts.back ().have_expr = false;
+			blocks.back ().parts.back ().label = new_label;
+			blocks.back ().parts.back ().name = label;
 			dbg ("Label " << label << " defined at " << addr);
 		}
 		else
@@ -83,7 +80,7 @@ void parse (input_line &input)
 				}
 				unsigned lineno = input.stack.back ().first;
 				std::string line = input.data;
-				directives[i].function (l, first_pass, new_label);
+				directives[i].function (l, stage == 1, new_label);
 				if (writing && listfile)
 				{
 					*listfile << std::dec << std::setw (6) << std::setfill (' ') << lineno << std::hex << "  " << line << '\n';

@@ -22,9 +22,9 @@ bool read_file (std::string const &filename)
 		error ("object file doesn't contain separator");
 	shevek::ristring script (str.substr (8, pos - 8));
 	std::string code = str.substr (pos + 1);
-	files.push_back (File ());
 	unsigned num_if = 0;
 	unsigned current = 0;
+	blocks.push_back (Block ());
 	while (!script.rest ().empty ())
 	{
 		std::string name, expr;
@@ -35,12 +35,10 @@ bool read_file (std::string const &filename)
 			if (p != expr.size ())
 				error ("error in if expression " + expr + " in " + filename);
 			++num_if;
-			if (files.back ().blocks.empty ())
-				files.back ().blocks.push_back (File::Block ());
-			files.back ().blocks.back ().parts.push_back (File::Block::Part ());
-			files.back ().blocks.back ().parts.back ().type = File::Block::Part::IF;
-			files.back ().blocks.back ().parts.back ().have_expr = true;
-			files.back ().blocks.back ().parts.back ().expr = e;
+			blocks.back ().parts.push_back (Block::Part ());
+			blocks.back ().parts.back ().type = Block::Part::IF;
+			blocks.back ().parts.back ().have_expr = true;
+			blocks.back ().parts.back ().expr = e;
 			if (listfile)
 				*listfile << "if " << e.print () << '\n';
 			continue;
@@ -49,11 +47,9 @@ bool read_file (std::string const &filename)
 		{
 			if (num_if == 0)
 				error ("else without if in " + filename);
-			if (files.back ().blocks.empty ())
-				files.back ().blocks.push_back (File::Block ());
-			files.back ().blocks.back ().parts.push_back (File::Block::Part ());
-			files.back ().blocks.back ().parts.back ().type = File::Block::Part::ELSE;
-			files.back ().blocks.back ().parts.back ().have_expr = false;
+			blocks.back ().parts.push_back (Block::Part ());
+			blocks.back ().parts.back ().type = Block::Part::ELSE;
+			blocks.back ().parts.back ().have_expr = false;
 			if (listfile)
 				*listfile << "else\n";
 			continue;
@@ -63,11 +59,9 @@ bool read_file (std::string const &filename)
 			if (num_if == 0)
 				error ("endif without if in " + filename);
 			--num_if;
-			if (files.back ().blocks.empty ())
-				files.back ().blocks.push_back (File::Block ());
-			files.back ().blocks.back ().parts.push_back (File::Block::Part ());
-			files.back ().blocks.back ().parts.back ().type = File::Block::Part::ENDIF;
-			files.back ().blocks.back ().parts.back ().have_expr = false;
+			blocks.back ().parts.push_back (Block::Part ());
+			blocks.back ().parts.back ().type = Block::Part::ENDIF;
+			blocks.back ().parts.back ().have_expr = false;
 			if (listfile)
 				*listfile << "endif\n";
 			continue;
@@ -90,14 +84,12 @@ bool read_file (std::string const &filename)
 			labels.back ().name = name;
 			labels.back ().definition = NULL;
 			labels.back ().value = e;
-			if (files.back ().blocks.empty ())
-				files.back ().blocks.push_back (File::Block ());
-			files.back ().blocks.back ().parts.push_back (File::Block::Part ());
-			files.back ().blocks.back ().parts.back ().type = File::Block::Part::DEFINE;
-			files.back ().blocks.back ().parts.back ().have_expr = true;
-			files.back ().blocks.back ().parts.back ().expr = e;
-			files.back ().blocks.back ().parts.back ().name = name;
-			files.back ().blocks.back ().parts.back ().label = --labels.end ();
+			blocks.back ().parts.push_back (Block::Part ());
+			blocks.back ().parts.back ().type = Block::Part::DEFINE;
+			blocks.back ().parts.back ().have_expr = true;
+			blocks.back ().parts.back ().expr = e;
+			blocks.back ().parts.back ().name = name;
+			blocks.back ().parts.back ().label = --labels.end ();
 			if (listfile)
 				*listfile << name << '=' << e.print () << '\n';
 			continue;
@@ -108,43 +100,34 @@ bool read_file (std::string const &filename)
 			Expr e = Expr::read (expr, false, p);
 			if (p != expr.size ())
 				error ("invalid add expression " + expr + " in " + filename);
-			if (files.back ().blocks.empty ())
-				files.back ().blocks.push_back (File::Block ());
-			files.back ().blocks.back ().parts.push_back (File::Block::Part ());
-			files.back ().blocks.back ().parts.back ().type = File::Block::Part::BYTE;
-			files.back ().blocks.back ().parts.back ().have_expr = true;
-			files.back ().blocks.back ().parts.back ().expr = e;
+			blocks.back ().parts.push_back (Block::Part ());
+			blocks.back ().parts.back ().type = Block::Part::BYTE;
+			blocks.back ().parts.back ().have_expr = true;
+			blocks.back ().parts.back ().expr = e;
 			if (listfile)
 				*listfile << "defb " << e.print () << '\n';
 			continue;
 		}
 		if (script ("<%r/[^\n]*/\n", expr))
 		{
-			files.back ().blocks.push_back (File::Block ());
+			blocks.push_back (Block ());
 			if (expr.empty ())
 			{
-				files.back ().blocks.back ().absolute = false;
+				blocks.back ().absolute = false;
 				if (listfile)
 					*listfile << "org relative\n";
 			}
 			else
 			{
-				files.back ().blocks.back ().absolute = true;
+				blocks.back ().absolute = true;
 				std::string::size_type p = 0;
 				Expr::valid_int i = read_expr (expr, false, p);
 				if (!i.valid || p != expr.size ())
 					error ("invalid org expression in " + filename);
-				files.back ().blocks.back ().address = i.value;
+				blocks.back ().address = i.value;
 				if (listfile)
 					*listfile << "org 0x" << i.value << '\n';
 			}
-			continue;
-		}
-		if (script ("-\n"))
-		{
-			files.push_back (File ());
-			if (listfile)
-				*listfile << "-- File separator --\n";
 			continue;
 		}
 		if (script (">%r/[^\n]*/\n", expr))
@@ -155,12 +138,10 @@ bool read_file (std::string const &filename)
 				error ("invalid code expression " + expr + " in " + filename);
 			if (i.value + current > code.size ())
 				error ("trying to use more than available data in " + filename);
-			if (files.back ().blocks.empty ())
-				files.back ().blocks.push_back (File::Block ());
-			files.back ().blocks.back ().parts.push_back (File::Block::Part ());
-			files.back ().blocks.back ().parts.back ().type = File::Block::Part::CODE;
-			files.back ().blocks.back ().parts.back ().have_expr = false;
-			files.back ().blocks.back ().parts.back ().name = code.substr (current, i.value);
+			blocks.back ().parts.push_back (Block::Part ());
+			blocks.back ().parts.back ().type = Block::Part::CODE;
+			blocks.back ().parts.back ().have_expr = false;
+			blocks.back ().parts.back ().name = code.substr (current, i.value);
 			current += i.value;
 			if (listfile)
 				*listfile << "using 0x" << i.value << " bytes of code\n";
@@ -168,12 +149,10 @@ bool read_file (std::string const &filename)
 		}
 		if (script ("#%r/[^\n]*/\n", name))
 		{
-			if (files.back ().blocks.empty ())
-				files.back ().blocks.push_back (File::Block ());
-			files.back ().blocks.back ().parts.push_back (File::Block::Part ());
-			files.back ().blocks.back ().parts.back ().type = File::Block::Part::COMMENT;
-			files.back ().blocks.back ().parts.back ().have_expr = false;
-			files.back ().blocks.back ().parts.back ().name = name;
+			blocks.back ().parts.push_back (Block::Part ());
+			blocks.back ().parts.back ().type = Block::Part::COMMENT;
+			blocks.back ().parts.back ().have_expr = false;
+			blocks.back ().parts.back ().name = name;
 			if (listfile)
 				*listfile << "# comment: " << name << '\n';
 			continue;

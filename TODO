@@ -1,10 +1,11 @@
 Plans:
 
-- fix bugs with respect to linking multiple files
 - allow setting a region for placement of a block of code
-- check constraints
 - create a disassembler from the definitions file
 - implement all directives
+
+
+
 
 For object files, a file format is needed.  Here it is:
 
@@ -25,14 +26,24 @@ linker script commands (all end with newline, '\x0a'):
 	commands	do commands
 	;		end if
 
-name=expression		Define a symbol.  If name starts with '.', it is local to this block; if it starts with '@', it is local to this file.
+name=expression		Define a symbol.  name must not start with '.' or '@'.
 +expression		Add a byte to the file.  expression must be between -0x80 and +0xff.
-<expression		Set new origin for positioned block.  In case of overlapping absolute blocks, the last block's values are written.  If expression is empty, let linker determine position.
--			Act as if a new file starts.
+<expression		Set new origin for positioned block.  In case of overlapping absolute blocks in a hex file, the last block's values are written.  If expression is empty, let linker determine position.  For binary output, all blocks are output sequencially.  The origin is only important for determining labels.
 >expression		Add expression bytes from Code to the file.  If used inside an if statement, the bytes are skipped if this command is skipped.
 #comment		Ignored.
 
-special symbols:
-$	current position, counted from start of output file.  When data is added with this expression, the value used is that before the operation.
+special symbol:
+$	start of current block.  This is not to be confused with the expression
+	"$", which is the current address.  For non-absolute blocks, this
+	expression is converted into the linker expression "addr+$" (where addr
+	is the address within the current block)
 
-The linker positions blocks at < or - commands, and at the end of the script.  The remaining code (in string 1) is added to the last block.
+The linker positions blocks after reading all input.  It places each absolute
+block at the given address, without checking for overlap.  Relative blocks are
+placed in the first valid position where it doesn't overlap with a previous
+relative or absolute block.  If relative blocks should not overlap with
+absolute blocks at all, the absolute blocks must be passed to the linker first.
+
+The code after the script string should be exactly the size needed by the
+script.  If there is data left after the script is finished, the results are
+undefined.

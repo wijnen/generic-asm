@@ -1,19 +1,23 @@
 #include "asm.hh"
 
-void File::Block::write_binary ()
+#define error(x) do { std::cerr << "Error: " << (x) << '\n'; ++errors; } while (0)
+
+void Block::lock ()
 {
 	std::list <Space>::iterator si = spaces.begin ();
 	unsigned size;
-	unsigned old_addr = addr;
+	absolute_addr = true;	// This is true, because we place the blocks at their final address here.
 	while (true)
 	{
-		addr = old_addr;
 		if (!absolute)
 		{
 			if (si == spaces.end ())
-				shevek_error ("out of memory");
+				error ("out of memory");
 			address = si->start;
+			dbg ("trying address " << address);
 		}
+		addr = address;
+		size = 0;
 		for (std::list <Part>::iterator i = parts.begin (); i != parts.end (); ++i)
 		{
 			unsigned num_true = 0, num_false = 0;
@@ -23,7 +27,7 @@ void File::Block::write_binary ()
 			case Part::IF:
 				vi = i->expr.compute (Expr::valid_int (">"));
 				if (!vi.valid)
-					shevek_error ("invalid if expression");
+					error ("invalid if expression");
 				if (num_false == 0 && vi.value)
 					++num_true;
 				else
@@ -51,36 +55,35 @@ void File::Block::write_binary ()
 					--num_true;
 				break;
 			case Part::DEFINE:
-				// Definitions are not written to binary output.
+				if (i->have_expr)
+					i->expr.simplify (true);
+				if (i->label != labels.end ())
+					i->label->value.simplify (true);
 				break;
 			case Part::BYTE:
 				if (!num_false)
 				{
-					write_byte (i->expr.compute (Expr::valid_int ("}")), 0);
-					++addr;
+					Expr::valid_int vi = i->expr.compute (Expr::valid_int ("}{"));
+					if (!vi.valid)
+					{
+						for (std::list <std::string>::iterator j = vi.invalid.begin (); j != vi.invalid.end (); ++j)
+							error ("use of undefined label " + *j);
+					}
+					++size;
 				}
 				break;
 			case Part::CODE:
 				if (!num_false)
-				{
-					for (unsigned t = 0; t < i->name.size (); ++t)
-					{
-						vi.valid = true;
-						vi.value = i->name[t];
-						write_byte (vi, t);
-					}
-				}
-				addr += i->name.size ();
+					size += i->name.size ();
 				break;
 			case Part::COMMENT:
 				break;
 			default:
-				shevek_error ("invalid case reached");
+				error ("invalid case reached");
 			}
 		}
 		// Clean up.
-		files.back ().blocks.back ().clean (false);
-		size = addr - old_addr;
+		blocks.back ().clean (false);
 		if (!absolute && size > si->size)
 		{
 			// It doesn't fit, try next chunk.
@@ -114,7 +117,79 @@ void File::Block::write_binary ()
 	}
 }
 
-void File::Block::write_object (std::string &script, std::string &code)
+void Block::write_binary ()
+{
+	absolute_addr = true;	// This is true, because the blocks have been placed.
+	addr = address;
+	unsigned offset = 0;
+	for (std::list <Part>::iterator i = parts.begin (); i != parts.end (); ++i)
+	{
+		unsigned num_true = 0, num_false = 0;
+		Expr::valid_int vi ("!!");
+		switch (i->type)
+		{
+		case Part::IF:
+			vi = i->expr.compute (Expr::valid_int (">"));
+			if (!vi.valid)
+				error ("invalid if expression");
+			if (num_false == 0 && vi.value)
+				++num_true;
+			else
+				++num_false;
+			break;
+		case Part::ELSE:
+			switch (num_false)
+			{
+			case 0:
+				++num_true;
+				--num_false;
+				break;
+			case 1:
+				--num_true;
+				++num_false;
+				break;
+			default:
+				break;
+			}
+			break;
+		case Part::ENDIF:
+			if (num_false)
+				--num_false;
+			else
+				--num_true;
+			break;
+		case Part::DEFINE:
+			// Definitions are not written to binary output.
+			break;
+		case Part::BYTE:
+			if (!num_false)
+			{
+				dbg ("computing");
+				Expr::valid_int vi = i->expr.compute (Expr::valid_int ("}"));
+				dbg (vi.valid << ',' << vi.value);
+				write_byte (vi, offset++);
+			}
+			break;
+		case Part::CODE:
+			if (!num_false)
+			{
+				for (unsigned t = 0; t < i->name.size (); ++t)
+				{
+					vi.valid = true;
+					vi.value = i->name[t];
+					write_byte (vi, offset++);
+				}
+			}
+			break;
+		case Part::COMMENT:
+			break;
+		default:
+			error ("invalid case reached");
+		}
+	}
+}
+
+void Block::write_object (std::string &script, std::string &code)
 {
 	script += '<';
 	if (absolute)
@@ -151,7 +226,7 @@ void File::Block::write_object (std::string &script, std::string &code)
 			script += shevek::rostring ("#%s\n", i->name);
 			break;
 		default:
-			shevek_error ("invalid case reached");
+			error ("invalid case reached");
 		}
 	}
 }

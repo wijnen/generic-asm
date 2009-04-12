@@ -8,7 +8,7 @@ bool absolute_addr;
 unsigned errors;
 unsigned undefined_locals;
 bool writing;
-bool first_pass;
+unsigned stage;
 bool report_labels;
 
 std::stack <Input> input_stack;
@@ -19,5 +19,5 @@ std::list <Label> labels;
 std::list <Source> sources;
 std::list <DefsMacro> defs_macros;
 std::list <std::string> include_path;
-std::list <File> files;
+std::list <Block> blocks;
 std::list <Space> spaces;

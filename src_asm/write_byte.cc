@@ -12,7 +12,11 @@ void write_byte (Expr::valid_int byte, int addr_offset)
 		return;
 	}
 	if ((byte.value < -0x80) || (byte.value >= 0x100))
-		error (shevek::rostring ("byte %x out of range", byte.value));
+	{
+		std::cerr << shevek::rostring ("byte %x out of range", byte.value);
+		++errors;
+		return;
+	}
 	if (usehex)
 		hexfile.set (addr + addr_offset, byte.value);
 	else

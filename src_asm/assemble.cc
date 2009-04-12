@@ -27,7 +27,7 @@ void assemble (std::vector <std::string> &in_files)
 			error ("Without definitions, only object files are allowed at input (not " + in_files[f] + ")");
 			continue;
 		}
-		files.push_back (File ());
+		blocks.push_back (Block ());
 		// Read input in memory.
 		std::vector <input_line> input;
 		input_stack.push (Input ());
@@ -55,7 +55,7 @@ void assemble (std::vector <std::string> &in_files)
 		absolute_addr = false;
 		addr = 0;
 		writing = false;
-		first_pass = true;
+		stage = 1;
 		report_labels = false;
 		while (getline (line))
 		{
@@ -64,7 +64,7 @@ void assemble (std::vector <std::string> &in_files)
 		}
 		if (errors)
 			return;
-		first_pass = false;
+		stage = 2;
 		unsigned last_undefined_locals = ~0;
 		while (undefined_locals != last_undefined_locals)
 		{
@@ -100,7 +100,8 @@ void assemble (std::vector <std::string> &in_files)
 			parse (input[t]);
 		}
 		// Clean up.
-		files.back ().clean ();
+		for (std::list <Block>::iterator i = blocks.begin (); i != blocks.end (); ++i)
+			i->clean (true);
 		// Don't continue if there are errors.
 		if (errors)
 			return;
@@ -112,11 +113,5 @@ void assemble (std::vector <std::string> &in_files)
 	{
 		l->value.clean_islabel ();
 		l->value.simplify ();
-	}
-	if (listfile)
-	{
-		*listfile << "\n# List of labels:\n";
-		for (std::list <Label>::iterator l = labels.begin (); l != labels.end (); ++l)
-			*listfile << l->name << ":\tequ 0x" << l->value.compute (Expr::valid_int (">>")).value << '\n';
 	}
 }

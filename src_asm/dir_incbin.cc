@@ -17,15 +17,15 @@ void dir_incbin (shevek::ristring &args, bool first, std::list <Label>::iterator
 	std::string str = s.str ();
 	if (writing)
 	{
-		if (files.back ().blocks.empty ())
-			files.back ().blocks.push_back (File::Block ());
-		if (files.back ().blocks.back ().parts.empty () || files.back ().blocks.back ().parts.back ().type != File::Block::Part::CODE)
+		if (blocks.empty ())
+			blocks.push_back (Block ());
+		if (blocks.back ().parts.empty () || blocks.back ().parts.back ().type != Block::Part::CODE)
 		{
-			files.back ().blocks.back ().parts.push_back (File::Block::Part ());
-			files.back ().blocks.back ().parts.back ().type = File::Block::Part::CODE;
-			files.back ().blocks.back ().parts.back ().have_expr = false;
+			blocks.back ().parts.push_back (Block::Part ());
+			blocks.back ().parts.back ().type = Block::Part::CODE;
+			blocks.back ().parts.back ().have_expr = false;
 		}
-		files.back ().blocks.back ().parts.back ().name += str;
+		blocks.back ().parts.back ().name += str;
 	}
 	addr += str.size ();
 	if (writing && listfile)

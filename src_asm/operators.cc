@@ -17,7 +17,7 @@ template <typename _T> static _T do_pop (std::stack <_T> &stack)
 		r.value = oper a.value; \
 		return r; \
 	} \
-	static std::string print_##name (std::list <Expr> &children) \
+	static std::string print_##name (std::list <Expr> const &children) \
 	{ \
 		return #oper + children.front ().print (); \
 	}
@@ -28,14 +28,14 @@ template <typename _T> static _T do_pop (std::stack <_T> &stack)
 		Expr::valid_int a = children.front (); \
 		Expr::valid_int b = children.back (); \
 		Expr::valid_int r ("!" #name); \
-		r.valid = b.valid && a.valid; \
-		r.value = b.value oper a.value; \
+		r.valid = a.valid && b.valid; \
+		r.value = a.value oper b.value; \
 		r.invalid = a.invalid; \
 		for (std::list <std::string>::iterator i = b.invalid.begin (); i != b.invalid.end (); ++i) \
 			r.invalid.push_back (*i); \
 		return r; \
 	} \
-	static std::string print_##name (std::list <Expr> &children) \
+	static std::string print_##name (std::list <Expr> const &children) \
 	{ \
 		return '(' + children.front ().print () + #oper + children.back ().print () + ')'; \
 	}
@@ -72,10 +72,10 @@ static Expr::valid_int run_xor (std::list <Expr::valid_int> &children)
 	r.invalid = a.invalid;
 	for (std::list <std::string>::iterator i = b.invalid.begin (); i != b.invalid.end (); ++i)
 		r.invalid.push_back (*i);
-	r.value = !b.value ^ !a.value;
+	r.value = !a.value ^ !b.value;
 	return r;
 }
-static std::string print_xor (std::list <Expr> &children)
+static std::string print_xor (std::list <Expr> const &children)
 {
 	return '(' + children.front ().print () + "^^" + children.back ().print () + ')';
 }
@@ -96,7 +96,7 @@ static Expr::valid_int run_tri (std::list <Expr::valid_int> &children)
 	r.value = a.value ? b.value : c.value;
 	return r;
 }
-static std::string print_tri (std::list <Expr> &children)
+static std::string print_tri (std::list <Expr> const &children)
 {
 	return '(' + children.front ().print () + "?" + (++children.begin ())->print () + ":" + children.back ().print () + ')';
 }

@@ -91,7 +91,6 @@ Expr Expr::read (std::string const &input, bool allow_params, std::string::size_
 			}
 			if (l ("%r/[A-Za-z_.@][A-Za-z_.@0-9]*/", word))
 			{
-				dbg ("checking word " << word);
 				// Param
 				if (allow_params)
 				{
@@ -99,17 +98,19 @@ Expr Expr::read (std::string const &input, bool allow_params, std::string::size_
 					for (i = params.begin (); i != params.end (); ++i)
 					{
 						if (!i->is_active)
-						{
 							continue;
-						}
-						dbg ("is " << i->name << "?");
 						if (word != i->name)
-						{
 							continue;
+						if (stage == 0)
+						{
+							result.push (Expr (PARAM, valid_int ("#>")));
 						}
-						std::list <Expr> e = i->constraints;
-						e.push_back (i->value);
-						result.push (Expr (PARAM, valid_int ("##"), NULL, std::list <Expr> (), std::string (), e));
+						else
+						{
+							std::list <Expr> e = i->constraints;
+							e.push_back (i->value);
+							result.push (Expr (PARAM, valid_int ("##"), NULL, std::list <Expr> (), std::string (), e));
+						}
 						expect_number = false;
 						break;
 					}

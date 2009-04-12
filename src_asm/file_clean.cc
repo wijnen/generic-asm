@@ -1,6 +1,6 @@
 #include "asm.hh"
 
-void File::Block::clean (bool file)
+void Block::clean (bool file)
 {
 	for (std::list <Part>::iterator i = parts.begin (); i != parts.end (); ++i)
 	{
@@ -21,6 +21,7 @@ void File::Block::clean (bool file)
 		if (i->name[0] != '.' && (!file || i->name[0] != '@'))
 			continue;
 		i->expr = i->label->value;
+		i->have_expr = true;
 		i->expr.check (file);
 		labels.erase (i->label);
 		i->label = labels.end ();
@@ -32,10 +33,4 @@ void File::Block::clean (bool file)
 		if (i->type == Part::DEFINE && (i->name[0] == '.' || (file && i->name[0] == '@')))
 			parts.erase (i);
 	}
-}
-
-void File::clean ()
-{
-	for (std::list <Block>::iterator b = blocks.begin (); b != blocks.end (); ++b)
-		b->clean (true);
 }

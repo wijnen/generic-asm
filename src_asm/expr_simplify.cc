@@ -12,7 +12,8 @@ static void simplify_oper (Expr &self, int zero)
 	}
 	if (f->type == Expr::NUM && f->value.valid && f->value.value == zero)
 	{
-		self = self.children.back ();
+		Expr e = self.children.back ();
+		self = e;
 		return;
 	}
 	if (b->type == Expr::OPER && b->oper->code == self.oper->code && b->children.front ().type == Expr::NUM && b->children.front ().value.valid)
@@ -23,7 +24,8 @@ static void simplify_oper (Expr &self, int zero)
 				self.children.front ().value.value += self.children.back ().children.front ().value.value;
 			else
 				self.children.front ().value.value *= self.children.back ().children.front ().value.value;
-			self.children.back () = self.children.back ().children.back ();
+			Expr e = self.children.back ().children.back ();
+			self.children.back () = e;
 		}
 		else
 		{
@@ -34,11 +36,11 @@ static void simplify_oper (Expr &self, int zero)
 	}
 }
 
-void Expr::simplify ()
+void Expr::simplify (bool set_addr)
 {
 	if (type == NUM)
 		return;
-	valid_int i = compute (valid_int (">?<"));
+	valid_int i = compute (valid_int (set_addr ? "$=" : "$?"));
 	if (i.valid)
 	{
 		*this = Expr (NUM, i.value);

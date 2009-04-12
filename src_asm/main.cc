@@ -43,6 +43,7 @@ int main (int argc, char **argv)
 			delete input_stack.top ().file;
 			shevek_error_errno (shevek::rostring ("unable to open definitions file %s", std::string (defs)));
 		}
+		stage = 0;
 		read_definitions ();
 	}
 
@@ -78,22 +79,26 @@ int main (int argc, char **argv)
 				if (useobject)
 				{
 					std::string script ("#\xfeof\0\0\0\0", 8), code;
-					bool first = true;
-					for (std::list <File>::iterator i = files.begin (); i != files.end (); ++i)
-					{
-						if (first)
-							first = false;
-						else
-							script += "-\n";
+					for (std::list <Block>::iterator i = blocks.begin (); i != blocks.end (); ++i)
 						i->write_object (script, code);
-					}
 					*outfile << script << '\0' << code << std::flush;
 				}
 				else
 				{
 					errors = 0;
-					for (std::list <File>::iterator i = files.begin (); i != files.end (); ++i)
-						i->write_binary ();
+					for (std::list <Block>::iterator i = blocks.begin (); i != blocks.end (); ++i)
+						i->lock ();
+					if (!errors)
+					{
+						for (std::list <Block>::iterator i = blocks.begin (); i != blocks.end (); ++i)
+							i->write_binary ();
+						if (!errors && listfile)
+						{
+							*listfile << "\n# List of labels:\n";
+							for (std::list <Label>::iterator l = labels.begin (); l != labels.end (); ++l)
+								*listfile << l->name << ":\tequ 0x" << l->value.compute (Expr::valid_int (">>")).value << '\n';
+						}
+					}
 				}
 				if (!errors && !useobject && usehex)
 					hexfile.write_s19 (*outfile);

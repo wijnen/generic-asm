@@ -55,9 +55,8 @@ struct Expr
 
 	valid_int compute (valid_int self) const;
 	static Expr read (std::string const &input, bool allow_params, std::string::size_type &pos);
-	std::string print ();
-	std::string dump ();
-	void simplify ();
+	std::string print () const;
+	void simplify (bool set_addr = false);
 	void check (bool file);
 	void clean_islabel ();
 };
@@ -69,8 +68,8 @@ struct Oper
 	std::string name;
 	int priority;
 	Expr::valid_int (*run) (std::list <Expr::valid_int> &children);
-	std::string (*print) (std::list <Expr> &children);
-	Oper (unsigned N, char c, std::string const &n, int p, Expr::valid_int (*r)(std::list <Expr::valid_int> &), std::string (*pr)(std::list <Expr> &))
+	std::string (*print) (std::list <Expr> const &children);
+	Oper (unsigned N, char c, std::string const &n, int p, Expr::valid_int (*r)(std::list <Expr::valid_int> &), std::string (*pr)(std::list <Expr> const &))
 		: num (N), code (c), name (n), priority (p), run (r), print (pr) {}
 };
 
@@ -133,33 +132,27 @@ private:
 	std::vector <int> data;
 };
 
-struct File
+struct Block
 {
-	struct Block
+	struct Part
 	{
-		struct Part
-		{
-			enum type_t { IF, ELSE, ENDIF, DEFINE, BYTE, CODE, COMMENT };
-			type_t type;
-			bool have_expr;
-			std::list <Label>::iterator label;
-			Expr::valid_int value;
-			Expr expr;
-			std::string name;	// or code.
-			Part () : value ("&") {}
-		};
-		bool absolute;
-		unsigned address;
-		std::list <Part> parts;
-		Block () : absolute (false), address (0) {}
-		void write_binary ();
-		void write_object (std::string &script, std::string &code);
-		void clean (bool file);
+		enum type_t { IF, ELSE, ENDIF, DEFINE, BYTE, CODE, COMMENT };
+		type_t type;
+		bool have_expr;
+		std::list <Label>::iterator label;
+		Expr::valid_int value;
+		Expr expr;
+		std::string name;	// or code.
+		Part () : value ("&") {}
 	};
-	std::list <Block> blocks;
-	void write_binary () { for (std::list <Block>::iterator i = blocks.begin (); i != blocks.end (); ++i) i->write_binary (); }
-	void write_object (std::string &script, std::string &code) { for (std::list <Block>::iterator i = blocks.begin (); i != blocks.end (); ++i) i->write_object (script, code); }
-	void clean ();
+	bool absolute;
+	unsigned address;
+	std::list <Part> parts;
+	Block () : absolute (false), address (0) {}
+	void lock ();
+	void write_binary ();
+	void write_object (std::string &script, std::string &code);
+	void clean (bool file);
 };
 bool read_file (std::string const &filename);
 
@@ -172,7 +165,7 @@ extern std::list <Label> labels;
 extern std::list <Source> sources;
 extern std::list <DefsMacro> defs_macros;
 extern std::list <std::string> include_path;
-extern std::list <File> files;
+extern std::list <Block> blocks;
 extern std::list <Space> spaces;
 
 extern std::ostream *outfile, *listfile;
@@ -185,7 +178,7 @@ extern std::stack <Input> input_stack;
 extern std::list <std::pair <unsigned, std::string> > *current_stack;
 extern unsigned undefined_locals;
 extern bool writing;
-extern bool first_pass;
+extern unsigned stage;
 extern bool report_labels;
 
 extern Oper operators1[3];
