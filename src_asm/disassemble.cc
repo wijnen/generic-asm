@@ -14,6 +14,7 @@ static bool fit (int ch, Expr expr, std::list <std::list <Param>::iterator> &par
 
 void disassemble (std::istream &in)
 {
+	*outfile << std::hex;
 	std::string defb;
 	if (directives[0].nick.empty ())
 	{
@@ -36,8 +37,12 @@ void disassemble (std::istream &in)
 		{
 			char c;
 			in >> c;
+			if (!in)
+				break;
 			buffer += c;
 		}
+		if (buffer.empty ())
+			break;
 		std::list <Source>::iterator s;
 		for (s = sources.begin (); s != sources.end (); ++s)
 		{
@@ -56,7 +61,11 @@ void disassemble (std::istream &in)
 			}
 			if (t == s->targets.end ())
 			{
-				// TODO: print output
+				*outfile << '\t';
+				for (std::list <std::pair <std::string, std::list <Param>::iterator> >::iterator pi = s->parts.begin (); pi != s->parts.end (); ++pi)
+					*outfile << pi->first << "0x" << pi->second->value.print ();
+				*outfile << s->post << '\n';
+				buffer = buffer.substr (s->targets.size ());
 				break;
 			}
 		}
