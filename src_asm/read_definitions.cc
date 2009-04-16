@@ -44,6 +44,7 @@ void read_definitions ()
 			current_param->name = d;
 			current_param->is_enum = true;
 			current_param->is_active = false;
+			current_param->mask = 0;
 			current_enum = current_param->enum_values.end ();
 			current_value = 0;
 		}
@@ -73,6 +74,12 @@ void read_definitions ()
 				continue;
 			}
 			current_enum->second = read_expr (d, "#");
+			if (!current_enum->second.valid)
+			{
+				error ("invalid value for enum");
+				continue;
+			}
+			current_param->mask |= current_enum->second.value;
 			current_enum = current_param->enum_values.end ();
 		}
 		else if (l ("num: %l", d))
@@ -91,6 +98,24 @@ void read_definitions ()
 			current_param->name = d;
 			current_param->is_enum = false;
 			current_param->is_active = false;
+			current_param->mask = ~0;
+		}
+		else if (l ("mask: %l", d))
+		{
+			is_enum = false;
+			is_source = false;
+			if (!is_num)
+			{
+				error ("mask without num");
+				continue;
+			}
+			Expr::valid_int i = read_expr (d, "#");
+			if (!i.valid)
+			{
+				error ("invalid mask");
+				continue;
+			}
+			current_param->mask &= i.value;
 		}
 		else if (l ("constraint:"))
 		{

@@ -12,11 +12,11 @@ std::string Expr::print () const
 		return oper->print (children);
 	case PARAM:
 	{
-		if (param.empty ())
-			return "#";
+		if (children.empty ())
+			return shevek::rostring ("#%x#", param->mask);
 		std::string ret;
 		std::string sep;
-		for (std::list <Expr>::const_iterator i = param.begin (); i != param.end (); ++i)
+		for (std::list <Expr>::const_iterator i = children.begin (); i != children.end (); ++i)
 		{
 			ret += sep + i->print ();
 			sep = ";";

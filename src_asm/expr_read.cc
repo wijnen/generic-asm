@@ -85,7 +85,9 @@ Expr Expr::read (std::string const &input, bool allow_params, std::string::size_
 					pos = std::string::npos;
 					return Expr ();
 				}
-				result.push (Expr (PARAM, valid_int ("#"), NULL, std::list <Expr> (), std::string (), lst));
+				if (lst.size () < 2)
+					error ("invalid constraint in expression");
+				result.push (Expr (PARAM, valid_int ("#"), NULL, lst));
 				expect_number = false;
 				continue;
 			}
@@ -104,12 +106,15 @@ Expr Expr::read (std::string const &input, bool allow_params, std::string::size_
 						if (stage == 0)
 						{
 							result.push (Expr (PARAM, valid_int ("#>")));
+							result.top ().param = &*i;
 						}
 						else
 						{
 							std::list <Expr> e = i->constraints;
+							e.push_back (Expr (Expr::NUM, Expr::valid_int (i->mask)));
 							e.push_back (i->value);
-							result.push (Expr (PARAM, valid_int ("##"), NULL, std::list <Expr> (), std::string (), e));
+							result.push (Expr (PARAM, valid_int ("##"), NULL, e));
+							result.top ().param = &*i;
 						}
 						expect_number = false;
 						break;

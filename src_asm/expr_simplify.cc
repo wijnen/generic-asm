@@ -10,7 +10,7 @@ static void simplify_oper (Expr &self, int zero)
 		self.children.front () = self.children.back ();
 		self.children.back () = e;
 	}
-	if (f->type == Expr::NUM && f->value.valid && f->value.value == zero)
+	if (zero >= 0 && f->type == Expr::NUM && f->value.valid && f->value.value == zero)
 	{
 		Expr e = self.children.back ();
 		self = e;
@@ -20,10 +20,26 @@ static void simplify_oper (Expr &self, int zero)
 	{
 		if (f->type == Expr::NUM && f->value.valid)
 		{
-			if (self.oper->code == '+')
+			switch (self.oper->code)
+			{
+			case '+':
 				self.children.front ().value.value += self.children.back ().children.front ().value.value;
-			else
+				break;
+			case '*':
 				self.children.front ().value.value *= self.children.back ().children.front ().value.value;
+				break;
+			case '&':
+				self.children.front ().value.value &= self.children.back ().children.front ().value.value;
+				break;
+			case '|':
+				self.children.front ().value.value |= self.children.back ().children.front ().value.value;
+				break;
+			case '^':
+				self.children.front ().value.value ^= self.children.back ().children.front ().value.value;
+				break;
+			default:
+				shevek_error ("BUG: invalid case reached");
+			}
 			Expr e = self.children.back ().children.back ();
 			self.children.back () = e;
 		}
@@ -66,6 +82,12 @@ void Expr::simplify (bool set_addr)
 			simplify_oper (*this, 0);
 		else if (oper->code == '*')
 			simplify_oper (*this, 1);
+		else if (oper->code == '&')
+			simplify_oper (*this, -1);
+		else if (oper->code == '|')
+			simplify_oper (*this, -1);
+		else if (oper->code == '^')
+			simplify_oper (*this, -1);
 		break;
 	}
 	case LABEL:

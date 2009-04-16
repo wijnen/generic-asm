@@ -9,6 +9,7 @@ int main (int argc, char **argv)
 	usehex = true;
 	bool useobject = false;
 	bool disasm = false;
+	addr = 0;
 	include_path.push_back (".");
 	shevek::args::option opts[] = {
 		shevek::args::option (0, "defs", "code definitions", false, defs),
@@ -18,6 +19,7 @@ int main (int argc, char **argv)
 		shevek::args::option ('O', "object", "object output format", useobject, true),
 		shevek::args::option ('I', "includedir", "add directory to include path", include_path),
 		shevek::args::option ('d', "disasm", "disassemle binary input file", disasm, true),
+		shevek::args::option ('a', "addr", "start address for disassembly", true, addr),
 	};
 	shevek::args args (argc, argv, opts, 0, -1, "Generic assembler", "2008");
 	if (!usehex && useobject)

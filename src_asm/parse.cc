@@ -127,6 +127,8 @@ void parse (input_line &input)
 				Expr::valid_int pvi = p->second->value.compute (Expr::valid_int ("=="));
 				if (pvi.valid)
 				{
+					if (pvi.value & ~p->second->mask)
+						error (shevek::rostring ("Value 0x%x fails mask 0x%x", pvi.value, p->second->mask));
 					dbg ("computing " << p->second->constraints.size () << " constraints");
 					for (std::list <Expr>::iterator i = p->second->constraints.begin (); i != p->second->constraints.end (); ++i)
 					{

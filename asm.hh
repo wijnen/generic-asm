@@ -33,6 +33,7 @@ struct input_line
 };
 
 struct Oper;
+struct Param;
 struct Expr
 {
 	struct valid_int
@@ -47,10 +48,10 @@ struct Expr
 	enum Type { NUM, PARAM, LABEL, ISLABEL, OPER } type;
 	valid_int value;
 	Oper *oper;
-	std::list <Expr> children;
+	std::list <Expr> children; // For params, the last is the value, the rest are constraints.
 	std::string label;
-	std::list <Expr> param; // The last is the value, the rest are constraints.
-	Expr (Type t = NUM, valid_int v = valid_int ("{}"), Oper *o = NULL, std::list <Expr> const &c = std::list <Expr> (), std::string const &l = std::string (), std::list <Expr> const &p = std::list <Expr> ())
+	Param *param;
+	Expr (Type t = NUM, valid_int v = valid_int ("{}"), Oper *o = NULL, std::list <Expr> const &c = std::list <Expr> (), std::string const &l = std::string (), Param *p = NULL)
 		: type (t), value (v), oper (o), children (c), label (l), param (p) {}
 
 	valid_int compute (valid_int self) const;
@@ -82,6 +83,7 @@ struct Param
 
 	bool is_active;
 	Expr value;
+	int mask, dismask;
 
 	static void reset ();
 	static std::list <Param>::iterator find (std::string const &name);

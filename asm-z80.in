@@ -12,16 +12,6 @@ directive: if if
 directive: else else
 directive: endif endif
 
-enum: .rr
-name: bc
-value: 0x00
-name: de
-value: 0x10
-name: hl
-value: 0x20
-name: sp
-value: 0x30
-
 enum: .rr2
 name: bc
 value: 0x00
@@ -38,6 +28,35 @@ value: 0x20
 name: af
 value: 0x30
 
+enum: .rr
+name: bc
+value: 0x00
+name: de
+value: 0x10
+name: hl
+value: 0x20
+name: sp
+value: 0x30
+
+enum: .r7
+name: b
+value: 0
+name: c
+value: 1
+name: d
+value: 2
+name: e
+value: 3
+name: h
+value: 4
+name: l
+value: 5
+name: a
+value: 7
+
+num: .rst
+mask: 0x38
+
 enum: .r
 name: b
 value: 0
@@ -53,22 +72,6 @@ name: l
 value: 5
 name: ( hl )
 value: 6
-name: a
-value: 7
-
-enum: .r7
-name: b
-value: 0
-name: c
-value: 1
-name: d
-value: 2
-name: e
-value: 3
-name: h
-value: 4
-name: l
-value: 5
 name: a
 value: 7
 
@@ -96,9 +99,6 @@ value: 0x30
 name: m
 value: 0x38
 
-num: .rst
-constraint: (.rst >= 0) && (.rst <= 0x38) && ((.rst & 0x7) == 0)
-
 num: .nn
 constraint: (.nn >= -0x8000) && (.nn <= 0xffff)
 
@@ -106,13 +106,13 @@ num: .n
 constraint: (.n >= -0x80) && (.n <= 0xff)
 
 num: .addr
-constraint: (.addr >= 0) && (.addr <= 0xffff)
+mask: 0xffff
 
 num: .port
-constraint: (.port >= 0) && (.port <= 0xff)
+mask: 0xff
 
 num: .b
-constraint: (.b >= 0) && (.b <= 7)
+mask: 0x7
 
 
 # 00xxx000
@@ -151,10 +151,10 @@ target: .addr - $
 # 01xxxxxx
 
 source: ld .r , .r7
-target: 0x40 + 8 * .r + .r7
+target: 0x40 | .r << 3 | .r7
 
 source: ld .r7 , ( hl )
-target: 0x40 + 8 * .r7 + 6
+target: 0x40 | .r7 << 3 | 6
 
 source: halt
 target: 0x76
@@ -163,21 +163,21 @@ target: 0x76
 # 00xxx001
 
 source: ld .rr , .nn
-target: 1 + .rr
+target: 1 | .rr
 target: .nn & 0xff
 target: .nn >> 8
 
 source: add hl , .rr
-target: 9 + .rr
+target: 9 | .rr
 
 
 # 00xxx010
 
 source: ld ( .rr2 ) , a
-target: 2 + .rr2
+target: 2 | .rr2
 
 source: ld a , ( .rr2 )
-target: 0xa + .rr2
+target: 0xa | .rr2
 
 source: ld ( .addr ) , hl
 target: 0x22
@@ -203,27 +203,27 @@ target: .addr >> 8
 # 00xxx011
 
 source: inc .rr
-target: 3 + .rr
+target: 3 | .rr
 
 source: dec .rr
-target: 0xb + .rr
+target: 0xb | .rr
 
 
 # 00xxx100
 
 source: inc .r
-target: 4 + 8 * .r
+target: 4 | .r << 3
 
 # 00xxx101
 
 source: dec .r
-target: 5 + 8 * .r
+target: 5 | .r << 3
 
 
 # 00xxx110
 
 source: ld .r , .n
-target: 6 + 8 * .r
+target: 6 | .r << 3
 target: .n
 
 
@@ -258,31 +258,31 @@ target: 0x3f
 
 source: rlc .r
 target: 0xcb
-target: 0x00 + .r
+target: 0x00 | .r
 
 source: rrc .r
 target: 0xcb
-target: 0x08 + .r
+target: 0x08 | .r
 
 source: rl .r
 target: 0xcb
-target: 0x10 + .r
+target: 0x10 | .r
 
 source: rr .r
 target: 0xcb
-target: 0x18 + .r
+target: 0x18 | .r
 
 source: sla .r
 target: 0xcb
-target: 0x20 + .r
+target: 0x20 | .r
 
 source: sra .r
 target: 0xcb
-target: 0x28 + .r
+target: 0x28 | .r
 
 source: srl .r
 target: 0xcb
-target: 0x38 + .r
+target: 0x38 | .r
 
 
 
@@ -290,54 +290,54 @@ target: 0x38 + .r
 
 source: bit .b , .r
 target: 0xcb
-target: 0x40 + .b * 8 + .r
+target: 0x40 | .b << 3 | .r
 
 
 # ed 01xxx00x
 
 source: in .r7 , ( c )
 target: 0xed
-target: 0x40 + 8 * .r7
+target: 0x40 | .r7 << 3
 
 source: out ( c ) , .r7
 target: 0xed
-target: 0x41 + 8 * .r7
+target: 0x41 | .r7 << 3
 
 
 # ed 01xxx010
 
 source: sbc hl , .rr
 target: 0xed
-target: 0x42 + .rr
+target: 0x42 | .rr
 
 source: adc hl , .rr
 target: 0xed
-target: 0x4a + .rr
+target: 0x4a | .rr
 
 
 # ed 01xxx011
 
 source: ld ( .addr ) , .rr2
 target: 0xed
-target: 0x43 + .rr2
+target: 0x43 | .rr2
 target: .addr & 0xff
 target: .addr >> 8
 
 source: ld .rr2 , ( .addr )
 target: 0xed
-target: 0x4b + .rr2
+target: 0x4b | .rr2
 target: .addr & 0xff
 target: .addr >> 8
 
 source: ld ( .addr ) , sp
 target: 0xed
-target: 0x43 + 0x30
+target: 0x43 | 0x30
 target: .addr & 0xff
 target: .addr >> 8
 
 source: ld sp , ( .addr )
 target: 0xed
-target: 0x4b + 0x30
+target: 0x4b | 0x30
 target: .addr & 0xff
 target: .addr >> 8
 
@@ -370,11 +370,11 @@ target: 0x5e
 
 source: ld .ir , a
 target: 0xed
-target: 0x47 + .ir
+target: 0x47 | .ir
 
 source: ld a , .ir
 target: 0xed
-target: 0x57 + .ir
+target: 0x57 | .ir
 
 source: rrd
 target: 0xed
@@ -389,35 +389,35 @@ target: 0x6f
 # 10xxxxxx
 
 source: add a , .r
-target: 0x80 + .r
+target: 0x80 | .r
 
 source: adc a , .r
-target: 0x88 + .r
+target: 0x88 | .r
 
 source: sub .r
-target: 0x90 + .r
+target: 0x90 | .r
 
 source: sbc a , .r
-target: 0x98 + .r
+target: 0x98 | .r
 
 source: and .r
-target: 0xa0 + .r
+target: 0xa0 | .r
 
 source: xor .r
-target: 0xa8 + .r
+target: 0xa8 | .r
 
 source: or .r
-target: 0xb0 + .r
+target: 0xb0 | .r
 
 source: cp .r
-target: 0xb8 + .r
+target: 0xb8 | .r
 
 
 # cb 10xxxxxx
 
 source: res .b , .r
 target: 0xcb
-target: 0x80 + 8 * .b + .r
+target: 0x80 | .b << 3 | .r
 
 
 # ed 10xxxxxx
@@ -491,15 +491,15 @@ target: 0xa0
 # 11xxx000, 11xxx010, 11xxx100
 
 source: ret .cc
-target: 0xc0 + .cc
+target: 0xc0 | .cc
 
 source: jp .cc , .addr
-target: 0xc2 + .cc
+target: 0xc2 | .cc
 target: .addr & 0xff
 target: .addr >> 8
 
 source: call .cc , .addr
-target: 0xc4 + .cc
+target: 0xc4 | .cc
 target: .addr & 0xff
 target: .addr >> 8
 
@@ -507,44 +507,44 @@ target: .addr >> 8
 # 11xx0x01
 
 source: pop .rrp
-target: 0xc1 + .rrp
+target: 0xc1 | .rrp
 
 source: push .rrp
-target: 0xc5 + .rrp
+target: 0xc5 | .rrp
 
 
 # 11xxx110
 
 source: add a , .n
-target: 0x80 + 0x46
+target: 0x80 | 0x46
 target: .n
 
 source: adc a , .n
-target: 0x88 + 0x46
+target: 0x88 | 0x46
 target: .n
 
 source: sub .n
-target: 0x90 + 0x46
+target: 0x90 | 0x46
 target: .n
 
 source: sbc a , .n
-target: 0x98 + 0x46
+target: 0x98 | 0x46
 target: .n
 
 source: and .n
-target: 0xa0 + 0x46
+target: 0xa0 | 0x46
 target: .n
 
 source: xor .n
-target: 0xa8 + 0x46
+target: 0xa8 | 0x46
 target: .n
 
 source: or .n
-target: 0xb0 + 0x46
+target: 0xb0 | 0x46
 target: .n
 
 source: cp .n
-target: 0xb8 + 0x46
+target: 0xb8 | 0x46
 target: .n
 
 
@@ -602,7 +602,7 @@ target: .addr >> 8
 # 11xxx111
 
 source: rst .rst
-target: 0xc7 + .rst
+target: 0xc7 | .rst
 
 
 
@@ -610,4 +610,4 @@ target: 0xc7 + .rst
 
 source: set .b , .r
 target: 0xcb
-target: 0xc0 + 8 * .b + .r
+target: 0xc0 | .b << 3 | .r

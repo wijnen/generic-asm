@@ -14,14 +14,41 @@ Expr::valid_int Expr::compute (valid_int self) const
 	case NUM:
 		return value;
 	case OPER:
+	{
 		dbg (print ());
-		dbg (oper->code << oper->run (c).valid << ',' << oper->run (c).value);
-		return oper->run (c);
+		valid_int ret = oper->run (c);
+		dbg (oper->code << ret.valid << ',' << ret.value);
+		return ret;
+	}
 	case PARAM:
-		if (param.empty ())
+		if (children.empty ())
+		{
+			dbg ('#' << self.valid << ',' << self.value);
 			return self;
+		}
 		else
-			return param.back ().compute (self);	// Constraints don't need to be checked here; it's done in parse and print.
+		{
+			std::list <Expr>::const_iterator e = children.end ();
+			--e;
+			dbg (e->print ());
+			Expr::valid_int ret = e->compute (self);
+			if (!ret.valid)
+				return ret;
+			--e;
+			dbg (e->print ());
+			int mask = e->value.value;
+			if (ret.value & ~mask)
+				error (shevek::rostring ("value 0x%x not allowed by mask %x", ret.value, mask));
+			for (std::list <Expr>::const_iterator i = children.begin (); i != e; ++i)
+			{
+				valid_int vi = i->compute (self);
+				if (!vi.valid)
+					return Expr::valid_int ("#param#");	// Nothing wrong yet, if it remains so, the invalidity will become a problem.
+				else if (!vi.value)
+					error (shevek::rostring ("value 0x%x fails constraint %s", ret.value, i->print ()));
+			}
+			return ret;
+		}
 	case LABEL:
 		if (label == "$")
 		{
