@@ -164,9 +164,7 @@ void Block::write_binary ()
 		case Part::BYTE:
 			if (!num_false)
 			{
-				dbg ("computing");
 				Expr::valid_int vi = i->expr.compute (Expr::valid_int ("}"));
-				dbg (vi.valid << ',' << vi.value);
 				write_byte (vi, offset++);
 			}
 			break;
@@ -197,7 +195,6 @@ void Block::write_object (std::string &script, std::string &code)
 	script += '\n';
 	for (std::list <Part>::iterator i = parts.begin (); i != parts.end (); ++i)
 	{
-		dbg (i->type);
 		switch (i->type)
 		{
 		case Part::IF:

@@ -7,7 +7,6 @@ Expr::valid_int Expr::compute (valid_int self) const
 	for (std::list <Expr>::const_iterator i = children.begin (); i != children.end (); ++i)
 	{
 		c.push_back (i->compute (self));
-		dbg (i->print () << " = " << c.back ().valid << ',' << c.back ().value);
 	}
 	switch (type)
 	{
@@ -15,35 +14,30 @@ Expr::valid_int Expr::compute (valid_int self) const
 		return value;
 	case OPER:
 	{
-		dbg (print ());
 		valid_int ret = oper->run (c);
-		dbg (oper->code << ret.valid << ',' << ret.value);
 		return ret;
 	}
 	case PARAM:
 		if (children.empty ())
 		{
-			dbg ('#' << self.valid << ',' << self.value);
 			return self;
 		}
 		else
 		{
 			std::list <Expr>::const_iterator e = children.end ();
 			--e;
-			dbg (e->print ());
 			Expr::valid_int ret = e->compute (self);
 			if (!ret.valid)
 				return ret;
 			--e;
-			dbg (e->print ());
 			int mask = e->value.value;
 			if (ret.value & ~mask)
 				error (shevek::rostring ("value 0x%x not allowed by mask %x", ret.value, mask));
 			for (std::list <Expr>::const_iterator i = children.begin (); i != e; ++i)
 			{
-				valid_int vi = i->compute (self);
+				valid_int vi = i->compute (ret);
 				if (!vi.valid)
-					return Expr::valid_int ("#param#");	// Nothing wrong yet, if it remains so, the invalidity will become a problem.
+					return vi;	// Nothing wrong yet, but if it remains so, the invalidity will become a problem.
 				else if (!vi.value)
 					error (shevek::rostring ("value 0x%x fails constraint %s", ret.value, i->print ()));
 			}

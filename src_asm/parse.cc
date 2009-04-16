@@ -10,7 +10,6 @@ void parse (input_line &input)
 	shevek::ristring l (input.data);
 	if (l (" %r/[a-zA-Z_.@][a-zA-Z_.@0-9]*/:", label))
 	{
-		dbg ("found label " << label);
 		make_label = true;
 		new_label = find_label (label);
 		if (stage == 1 && new_label != labels.end ())
@@ -129,10 +128,8 @@ void parse (input_line &input)
 				{
 					if (pvi.value & ~p->second->mask)
 						error (shevek::rostring ("Value 0x%x fails mask 0x%x", pvi.value, p->second->mask));
-					dbg ("computing " << p->second->constraints.size () << " constraints");
 					for (std::list <Expr>::iterator i = p->second->constraints.begin (); i != p->second->constraints.end (); ++i)
 					{
-						dbg ("computing constraint " << i->print ());
 						Expr::valid_int vi = i->compute (pvi);
 						if (!vi.valid)
 						{
@@ -163,7 +160,6 @@ void parse (input_line &input)
 			continue;
 		if (make_label)
 		{
-			dbg ("invalid?");
 			Expr::valid_int vi = new_label->value.compute (Expr::valid_int ("?:"));
 			if (old_label.valid)
 			{

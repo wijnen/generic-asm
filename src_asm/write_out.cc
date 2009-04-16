@@ -12,7 +12,6 @@ void write_out (Source const &s)
 			error ("unable to parse write expression");
 			continue;
 		}
-		dbg ("writing target " << num << ": " << e.print ());
 		e.simplify ();
 		write_expr (e);
 	}

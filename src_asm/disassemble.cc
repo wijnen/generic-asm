@@ -36,7 +36,6 @@ static int make_mask (Expr e)
 	case Expr::ISLABEL:
 		return 1;
 	case Expr::PARAM:
-		dbg ("mask of param: " << e.param->mask);
 		return e.param->mask;
 	case Expr::OPER:
 		switch (e.oper->code)

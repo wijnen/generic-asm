@@ -142,13 +142,6 @@ void read_definitions ()
 				continue;
 			}
 			current_param->constraints.push_back (e);
-			for (std::list <Param>::iterator i = params.begin (); i != params.end (); ++i)
-			{
-				dbg ("constraints for " << i->name << ":");
-				for (std::list <Expr>::iterator j = i->constraints.begin (); j != i->constraints.end (); ++j)
-					dbg (j->print ());
-			}
-			dbg ("done");
 		}
 		else if (l ("source: %l", d))
 		{

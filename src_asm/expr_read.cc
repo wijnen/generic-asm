@@ -32,7 +32,6 @@ Expr Expr::read (std::string const &input, bool allow_params, std::string::size_
 		l (" ");
 		if (expect_number)
 		{
-			dbg (l.rest ());
 			std::string word;
 			// Is this a label existance check?
 			if (l ("?%r/[A-Za-z_.][A-Za-z_.0-9]*/", word))
@@ -155,7 +154,6 @@ Expr Expr::read (std::string const &input, bool allow_params, std::string::size_
 		}
 		else
 		{
-			dbg (l.rest ());
 			// Operator or closing parentheses.
 			unsigned i;
 			for (i = 0; i < num_elem (operators2); ++i)
