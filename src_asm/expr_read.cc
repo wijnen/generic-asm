@@ -220,7 +220,6 @@ Expr Expr::read (std::string const &input, bool allow_params, std::string::size_
 			pos = std::string::npos;
 			return Expr ();
 		}
-		dbg ("pushing pending operator " << opers.top ()->name);
 		oper_push (result, opers);
 	}
 	pos = input.size () - l.rest ().size ();
