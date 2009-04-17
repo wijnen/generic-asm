@@ -59,11 +59,19 @@ Expr Expr::read (std::string const &input, bool allow_params, std::string::size_
 				continue;
 			}
 			// Param
+			if (l ("#"))
+			{
+				result.push (Expr (PARAM, valid_int ("#")));
+				expect_number = false;
+				continue;
+			}
 			if (l ("["))
 			{
 				std::string r = l.rest ();
 				std::string::size_type p = 0;
-				std::list <Expr> lst;
+				std::list <std::string> lst;
+				int last = 0, beforelast = 0;
+				bool valid = false;
 				while (true)
 				{
 					Expr e = Expr::read (r, false, p);
@@ -72,7 +80,15 @@ Expr Expr::read (std::string const &input, bool allow_params, std::string::size_
 						pos = std::string::npos;
 						return Expr ();
 					}
-					lst.push_back (e);
+					beforelast = last;
+					if (e.type == NUM && e.value.valid)
+						last = e.value.value;
+					else
+					{
+						last = 0;
+						valid = false;
+					}
+					lst.push_back (e.print ());
 					if (r[p] != ';')
 						break;
 					++p;
@@ -84,9 +100,14 @@ Expr Expr::read (std::string const &input, bool allow_params, std::string::size_
 					pos = std::string::npos;
 					return Expr ();
 				}
-				if (lst.size () < 2)
-					error ("invalid constraint in expression");
-				result.push (Expr (PARAM, valid_int ("#"), NULL, lst));
+				if (lst.size () < 2 || beforelast == 0 || !valid)
+					error ("invalid param in expression");
+				lst.pop_back ();
+				lst.pop_back ();
+				result.push (Expr (PARAM, valid_int ("#!#")));
+				result.top ().children.push_back (Expr (NUM, valid_int (beforelast)));
+				result.top ().children.push_back (Expr (NUM, valid_int (last)));
+				result.top ().constraints = lst;
 				expect_number = false;
 				continue;
 			}
@@ -109,11 +130,11 @@ Expr Expr::read (std::string const &input, bool allow_params, std::string::size_
 						}
 						else
 						{
-							std::list <Expr> e = i->constraints;
-							e.push_back (Expr (Expr::NUM, Expr::valid_int (i->mask)));
-							e.push_back (i->value);
-							result.push (Expr (PARAM, valid_int ("##"), NULL, e));
+							result.push (Expr (PARAM, valid_int ("##")));
+							result.top ().constraints = i->constraints;
 							result.top ().param = &*i;
+							result.top ().children.push_back (i->value);
+							result.top ().children.push_back (Expr (Expr::NUM, Expr::valid_int (i->mask)));
 						}
 						expect_number = false;
 						break;

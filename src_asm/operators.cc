@@ -29,7 +29,7 @@ template <typename _T> static _T do_pop (std::stack <_T> &stack)
 		Expr::valid_int b = children.back (); \
 		Expr::valid_int r ("!" #name); \
 		r.valid = a.valid && b.valid; \
-		r.value = a.value oper b.value; \
+		r.value = (a.value oper b.value); \
 		r.invalid = a.invalid; \
 		for (std::list <std::string>::iterator i = b.invalid.begin (); i != b.invalid.end (); ++i) \
 			r.invalid.push_back (*i); \

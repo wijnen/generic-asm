@@ -48,7 +48,8 @@ struct Expr
 	enum Type { NUM, PARAM, LABEL, ISLABEL, OPER } type;
 	valid_int value;
 	Oper *oper;
-	std::list <Expr> children; // For params, the last is the value, the rest are constraints.
+	std::list <Expr> children; // For params, value; mask.
+	std::list <std::string> constraints; // params only.
 	std::string label;
 	Param *param;
 	Expr (Type t = NUM, valid_int v = valid_int ("{}"), Oper *o = NULL, std::list <Expr> const &c = std::list <Expr> (), std::string const &l = std::string (), Param *p = NULL)
@@ -79,7 +80,8 @@ struct Param
 	std::string name;
 	bool is_enum;
 	std::map <std::string, Expr::valid_int> enum_values;
-	std::list <Expr> constraints;
+	std::list <std::string> constraints;
+	std::string prefix, rprefix;
 
 	bool is_active;
 	Expr value;
@@ -207,6 +209,7 @@ std::string make_base (std::string const &file);
 int main (int argc, char **argv);
 void assemble (std::vector <std::string> &in_files);
 void disassemble (std::istream &in);
+void disasm_setup (std::istream &file);
 
 void dir_org (shevek::ristring &args, bool first, std::list <Label>::iterator current_label);
 void dir_defb (shevek::ristring &args, bool first, std::list <Label>::iterator current_label);

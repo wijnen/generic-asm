@@ -129,7 +129,10 @@ void read_definitions ()
 			std::string::size_type pos = 0;
 			Param::reset ();
 			current_param->is_active = true;
+			int oldaddr = addr;
+			addr = 0;
 			Expr e = Expr::read (l.rest (), true, pos);
+			addr = oldaddr;
 			if (pos == std::string::npos)
 			{
 				error ("invalid constraint expression: " + l.rest ());
@@ -141,7 +144,27 @@ void read_definitions ()
 				error (shevek::rostring ("junk after constraint: %s", l.rest ()));
 				continue;
 			}
-			current_param->constraints.push_back (e);
+			current_param->constraints.push_back (e.print ());
+		}
+		else if (l ("prefix: %r/[a-zA-Z_@.][a-zA-Z_@.0-9]*/", d))
+		{
+			is_source = false;
+			if (!is_num && !is_enum)
+			{
+				error ("prefix without num or enum");
+				continue;
+			}
+			current_param->prefix = d;
+		}
+		else if (l ("rprefix: %r/[a-zA-Z_@.][a-zA-Z_@.0-9]*/", d))
+		{
+			is_source = false;
+			if (!is_num && !is_enum)
+			{
+				error ("prefix without num or enum");
+				continue;
+			}
+			current_param->rprefix = d;
 		}
 		else if (l ("source: %l", d))
 		{

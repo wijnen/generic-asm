@@ -8,7 +8,7 @@ int main (int argc, char **argv)
 	std::string outfilename, listfilename;
 	usehex = true;
 	bool useobject = false;
-	bool disasm = false;
+	std::string disasm;
 	addr = 0;
 	include_path.push_back (".");
 	shevek::args::option opts[] = {
@@ -18,7 +18,7 @@ int main (int argc, char **argv)
 		shevek::args::option ('b', "binary", "binary output format", usehex, false),
 		shevek::args::option ('O', "object", "object output format", useobject, true),
 		shevek::args::option ('I', "includedir", "add directory to include path", include_path),
-		shevek::args::option ('d', "disasm", "disassemle binary input file", disasm, true),
+		shevek::args::option ('d', "disasm", "file to disassemle", true, disasm),
 		shevek::args::option ('a', "addr", "start address for disassembly", true, addr),
 	};
 	shevek::args args (argc, argv, opts, 0, -1, "Generic assembler", "2008");
@@ -48,10 +48,11 @@ int main (int argc, char **argv)
 		stage = 0;
 		read_definitions ();
 	}
+	stage = 1;
 
 	if (!errors)
 	{
-		if (!disasm)
+		if (disasm.empty ())
 		{
 			if (!listfilename.empty ())
 			{
@@ -110,15 +111,21 @@ int main (int argc, char **argv)
 		{
 			if (defs.empty ())
 				std::cerr << "Error: cannot disassemble without a definitions file\n";
-			else if (args.size () > 1)
-				std::cerr << "Error: cannot disassemble multiple files\n";
-			else if (args.size () == 0)
+			for (unsigned n = 0; n < args.size (); ++n)
+			{
+				std::ifstream f (args[n].c_str ());
+				if (!f)
+					std::cerr << "Error: cannot open input file " << args[n] << '\n';
+				else
+					disasm_setup (f);
+			}
+			if (disasm == "-")
 				disassemble (std::cin);
 			else
 			{
-				std::ifstream f (args[0].c_str ());
+				std::ifstream f (disasm.c_str ());
 				if (!f)
-					std::cerr << "Error: cannot open input file " << args[0] << '\n';
+					std::cerr << "Error: cannot open input file " << disasm << '\n';
 				else
 					disassemble (f);
 			}

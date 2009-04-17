@@ -24,30 +24,28 @@ Expr::valid_int Expr::compute (valid_int self) const
 		}
 		else
 		{
-			std::list <Expr>::const_iterator e = children.end ();
-			--e;
-			Expr::valid_int ret = e->compute (self);
-			if (!ret.valid)
-				return ret;
-			--e;
-			int mask = e->value.value;
-			if (ret.value & ~mask)
-				error (shevek::rostring ("value 0x%x not allowed by mask %x", ret.value, mask));
-			for (std::list <Expr>::const_iterator i = children.begin (); i != e; ++i)
+			if (!c.front ().valid)
+				return c.front ();
+			if (c.front ().value & ~c.back ().value)
+				error (shevek::rostring ("value 0x%x not allowed by mask %x", c.front ().value, c.back ().value));
+			for (std::list <std::string>::const_iterator i = constraints.begin (); i != constraints.end (); ++i)
 			{
-				valid_int vi = i->compute (ret);
+				std::string::size_type pos = 0;
+				valid_int vi = Expr::read (*i, true, pos).compute (c.front ());
 				if (!vi.valid)
 					return vi;	// Nothing wrong yet, but if it remains so, the invalidity will become a problem.
 				else if (!vi.value)
-					error (shevek::rostring ("value 0x%x fails constraint %s", ret.value, i->print ()));
+					error (shevek::rostring ("value 0x%x fails constraint %s", c.front ().value, *i));
 			}
-			return ret;
+			return c.front ();
 		}
 	case LABEL:
 		if (label == "$")
 		{
 			if (absolute_addr && (self.invalid.empty () || self.invalid.front () != "$?"))
+			{
 				return valid_int (addr);
+			}
 			return valid_int ("$");
 		}
 		l = find_label (label);

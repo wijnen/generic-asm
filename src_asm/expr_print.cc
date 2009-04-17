@@ -13,15 +13,13 @@ std::string Expr::print () const
 	case PARAM:
 	{
 		if (children.empty ())
-			return shevek::rostring ("#%x#", param->mask);
+			return "#";
 		std::string ret;
-		std::string sep;
-		for (std::list <Expr>::const_iterator i = children.begin (); i != children.end (); ++i)
+		for (std::list <std::string>::const_iterator i = constraints.begin (); i != constraints.end (); ++i)
 		{
-			ret += sep + i->print ();
-			sep = ";";
+			ret += *i + ';';
 		}
-		return '[' + ret + ']';
+		return '[' + ret + std::string (shevek::rostring ("%d;%d", children.back ().value.value, children.front ().value.value)) + ']';
 	}
 	case LABEL:
 		return label;

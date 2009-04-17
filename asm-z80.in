@@ -56,6 +56,13 @@ value: 7
 
 num: .rst
 mask: 0x38
+prefix: rst_
+
+num: .reladdr
+mask: 0xffff
+constraint: (.reladdr - $ - 2 >= -0x80) && (.reladdr - $ - 2 <= 0x7f)
+prefix: j_
+rprefix: loop_
 
 enum: .r
 name: b
@@ -107,6 +114,12 @@ constraint: (.n >= -0x80) && (.n <= 0xff)
 
 num: .addr
 mask: 0xffff
+prefix: j_
+rprefix: loop_
+
+num: .caddr
+mask: 0xffff
+prefix: sub_
 
 num: .port
 mask: 0xff
@@ -123,29 +136,29 @@ target: 0
 source: ex af , af'
 target: 0x8
 
-source: djnz .addr
+source: djnz .reladdr
 target: 0x10
-target: .addr - $
+target: .reladdr - $ - 2
 
-source: jr .addr
+source: jr .reladdr
 target: 0x18
-target: .addr - $
+target: .reladdr - $ - 2
 
-source: jr nz , .addr
+source: jr nz , .reladdr
 target: 0x20
-target: .addr - $
+target: .reladdr - $ - 2
 
-source: jr z , .addr
+source: jr z , .reladdr
 target: 0x28
-target: .addr - $
+target: .reladdr - $ - 2
 
-source: jr nc , .addr
+source: jr nc , .reladdr
 target: 0x30
-target: .addr - $
+target: .reladdr - $ - 2
 
-source: jr c , .addr
+source: jr c , .reladdr
 target: 0x38
-target: .addr - $
+target: .reladdr - $ - 2
 
 
 # 01xxxxxx
@@ -498,10 +511,10 @@ target: 0xc2 | .cc
 target: .addr & 0xff
 target: .addr >> 8
 
-source: call .cc , .addr
+source: call .cc , .caddr
 target: 0xc4 | .cc
-target: .addr & 0xff
-target: .addr >> 8
+target: .caddr & 0xff
+target: .caddr >> 8
 
 
 # 11xx0x01
@@ -593,10 +606,10 @@ target: 0xfb
 
 # 11xx1101
 
-source: call .addr
+source: call .caddr
 target: 0xcd
-target: .addr & 0xff
-target: .addr >> 8
+target: .caddr & 0xff
+target: .caddr >> 8
 
 
 # 11xxx111

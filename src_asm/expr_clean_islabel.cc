@@ -2,6 +2,8 @@
 
 void Expr::clean_islabel ()
 {
+	if (type == Expr::PARAM)
+		return;
 	for (std::list <Expr>::iterator i = children.begin (); i != children.end (); ++i)
 		i->clean_islabel ();
 	if (type != ISLABEL)

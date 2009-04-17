@@ -253,7 +253,9 @@ static bool fit (int ch, int mask, Expr expr, std::list <std::list <Param>::iter
 				return false;
 			}
 			if ((~expr.children.front ().value.value & ch) != 0)
+			{
 				return false;
+			}
 			return fit (ch, mask & expr.children.front ().value.value, expr.children.back (), param);
 		case '|':
 		case '^':
@@ -298,36 +300,14 @@ static bool fit (int ch, int mask, Expr expr, std::list <std::list <Param>::iter
 	return false;
 }
 
-void disassemble (std::istream &in)
+static void do_disassemble (unsigned max, bool write, std::string const &data, std::string const &defb)
 {
-	absolute_addr = true;
-	*outfile << std::hex;
-	std::string defb;
-	if (directives[0].nick.empty ())
-	{
-		std::cerr << "Warning: defb has no defined nickname; using \"defb\".\n";
-		defb = "defb";
-	}
-	else
-		defb = directives[0].nick.front ();
-	*outfile << std::hex;
-	unsigned max = 1;
-	for (std::list <Source>::iterator s = sources.begin (); s != sources.end (); ++s)
-	{
-		if (s->targets.size () > max)
-			max = s->targets.size ();
-	}
 	std::string buffer;
-	while (!buffer.empty () || in)
+	std::string::size_type datapos = 0, datasize = data.size ();
+	while (!buffer.empty () || datapos < datasize)
 	{
-		while (buffer.size () < max && in)
-		{
-			char c;
-			in >> c;
-			if (!in)
-				break;
-			buffer += c;
-		}
+		while (buffer.size () < max && datapos < datasize)
+			buffer += data[datapos++];
 		if (buffer.empty ())
 			break;
 		std::list <Source>::iterator s;
@@ -342,6 +322,7 @@ void disassemble (std::istream &in)
 				p.push_back (pi->second);
 				pi->second->is_active = true;
 				pi->second->value.value.value = 0;
+				pi->second->value.value.valid = false;
 				pi->second->dismask = 0;
 				for (std::map <std::string, Expr::valid_int>::iterator j = pi->second->enum_values.begin (); j != pi->second->enum_values.end (); ++j)
 					j->second.valid = true;
@@ -351,8 +332,10 @@ void disassemble (std::istream &in)
 			for (i = 0, t = s->targets.begin (); t != s->targets.end (); ++i, ++t)
 			{
 				std::string::size_type pos = 0;
-				if (!fit (buffer[i], ~0, Expr::read (*t, true, pos), p))
+				if (!fit (buffer[i] & 0xff, ~0, Expr::read (*t, true, pos), p))
+				{
 					break;
+				}
 			}
 			if (t != s->targets.end ())
 				continue;
@@ -364,62 +347,219 @@ void disassemble (std::istream &in)
 				(*pi)->value.value.value &= (*pi)->dismask;
 				if ((*pi)->value.value.value & ~(*pi)->mask)
 					break;
-				for (std::list <Expr>::iterator c = (*pi)->constraints.begin (); c != (*pi)->constraints.end (); ++c)
+				std::list <std::string>::iterator c;
+				for (c = (*pi)->constraints.begin (); c != (*pi)->constraints.end (); ++c)
 				{
-					Expr::valid_int vi = c->compute ((*pi)->value.value);
+					std::string::size_type pos = 0;
+					Expr ce = Expr::read (*c, true, pos);
+					Expr::valid_int vi = ce.compute ((*pi)->value.value);
 					if (!vi.valid)
-						error ("invalid constraint");
+					{
+						error ("invalid constraint: " + *c);
+						break;
+					}
 					else if (vi.value)
+					{
 						continue;
-					(*pi)->value.value.value = ((*pi)->mask & ~(*pi)->dismask) | (*pi)->value.value.value;
-					vi = c->compute ((*pi)->value.value);
+					}
+					(*pi)->value.value.value -= 0x100;
+					vi = ce.compute ((*pi)->value.value);
 					if (!vi.valid)
-						error ("invalid constraint");
+					{
+						error ("invalid constraint(1): " + *c);
+						break;
+					}
 					else if (vi.value)
+					{
 						continue;
+					}
+					(*pi)->value.value.value |= (*pi)->mask & ~(*pi)->dismask;
+					vi = ce.compute ((*pi)->value.value);
+					if (!vi.valid)
+					{
+						error ("invalid constraint(2): " + *c);
+						break;
+					}
+					else if (vi.value)
+					{
+						continue;
+					}
+					(*pi)->value.value.value &= 0xff;
+					vi = ce.compute ((*pi)->value.value);
+					if (!vi.valid)
+					{
+						error ("invalid constraint(3): " + *c);
+						break;
+					}
+					else if (vi.value)
+					{
+						continue;
+					}
+					(*pi)->value.value.value |= ~0xff;
+					vi = ce.compute ((*pi)->value.value);
+					if (!vi.valid)
+					{
+						error ("invalid constraint(4): " + *c);
+						break;
+					}
+					else if (vi.value)
+					{
+						continue;
+					}
+					dbg (shevek::rostring ("fail constraint %s for 0x%x", *c, (*pi)->value.value.value));
 					break;
 				}
+				if (c != (*pi)->constraints.end ())
+					break;
 			}
 			if (pi != p.end ())
 				continue;
-			// Check if the values that were found are indeed valid.
-			for (i = 0, t = s->targets.begin (); t != s->targets.end (); ++i, ++t)
-			{
-				std::string::size_type pos = 0;
-				Expr::valid_int vi = Expr::read (*t, true, pos).compute (Expr::valid_int ("%*"));
-				if (!vi.valid || (vi.value & 0xff) != (buffer[i] & 0xff))
-					break;
-			}
-			if (t != s->targets.end ())
-				continue;
-			*outfile << '\t';
 			for (std::list <std::pair <std::string, std::list <Param>::iterator> >::iterator pi = s->parts.begin (); pi != s->parts.end (); ++pi)
 			{
-				*outfile << pi->first;
 				if (pi->second->is_enum)
 				{
 					for (std::map <std::string, Expr::valid_int>::iterator j = pi->second->enum_values.begin (); j != pi->second->enum_values.end (); ++j)
 					{
 						if (j->second.valid)
 						{
-							*outfile << j->first;
+							pi->second->value.value = j->second;
 							break;
 						}
 					}
 				}
-				else
-					*outfile << "0x" << pi->second->value.print ();
 			}
-			*outfile << s->post << '\n';
+			// Check if the values that were found are indeed valid.
+			for (i = 0, t = s->targets.begin (); t != s->targets.end (); ++i, ++t)
+			{
+				std::string::size_type pos = 0;
+				Expr::valid_int vi = Expr::read (*t, true, pos).compute (Expr::valid_int ("%*"));
+				if (!vi.valid || (vi.value & 0xff) != (buffer[i] & 0xff))
+				{
+					break;
+				}
+			}
+			if (t != s->targets.end ())
+				continue;
+			if (write)
+			{
+				for (std::list <Label>::iterator l = labels.begin (); l != labels.end (); ++l)
+				{
+					if (l->value.value.value == (int)addr)
+						*outfile << l->name << ":\n";
+				}
+				*outfile << '\t';
+				for (std::list <std::pair <std::string, std::list <Param>::iterator> >::iterator pi = s->parts.begin (); pi != s->parts.end (); ++pi)
+				{
+					*outfile << pi->first;
+					if (pi->second->is_enum)
+					{
+						for (std::map <std::string, Expr::valid_int>::iterator j = pi->second->enum_values.begin (); j != pi->second->enum_values.end (); ++j)
+						{
+							if (j->second.valid)
+							{
+								*outfile << j->first;
+								break;
+							}
+						}
+					}
+					else
+					{
+						std::list <Label>::iterator l;
+						for (l = labels.begin (); l != labels.end (); ++l)
+						{
+							if (l->value.value.value == pi->second->value.value.value)
+								break;
+						}
+						if (l == labels.end ())
+							*outfile << "0x" << pi->second->value.value.value;
+						else
+							*outfile << l->name;
+					}
+				}
+				*outfile << s->post << '\n';
+			}
+			else
+			{
+				for (std::list <std::pair <std::string, std::list <Param>::iterator> >::iterator pi = s->parts.begin (); pi != s->parts.end (); ++pi)
+				{
+					if (pi->second->prefix.empty ())
+						continue;
+					std::string prefix;
+					if (pi->second->value.value.value <= (int)addr && !pi->second->rprefix.empty ())
+						prefix = pi->second->rprefix;
+					else
+						prefix = pi->second->prefix;
+					std::list <Label>::iterator li;
+					for (li = labels.begin (); li != labels.end (); ++li)
+					{
+						if (li->value.value.value == pi->second->value.value.value)
+							break;
+					}
+					if (li != labels.end ())
+						continue;
+					Label l;
+					l.name = shevek::rostring ("%s%x", prefix, pi->second->value.value.value);
+					l.definition = NULL;
+					l.value = pi->second->value;
+					labels.push_back (l);
+				}
+			}
 			buffer = buffer.substr (s->targets.size ());
 			addr += s->targets.size ();
 			break;
 		}
 		if (s == sources.end ())
 		{
-			*outfile << '\t' << defb << " 0x" << (buffer[0] & 0xff) << '\n';
+			if (write)
+				*outfile << '\t' << defb << " 0x" << (buffer[0] & 0xff) << '\n';
 			buffer = buffer.substr (1);
 			++addr;
 		}
+	}
+}
+
+void disassemble (std::istream &in)
+{
+	absolute_addr = true;
+	*outfile << std::hex;
+	std::string defb, org, equ;
+	if (directives[0].nick.empty ())
+	{
+		std::cerr << "Warning: org has no defined nickname; using \"org\".\n";
+		org = "org";
+	}
+	else
+		org = directives[0].nick.front ();
+	if (directives[1].nick.empty ())
+	{
+		std::cerr << "Warning: equ has no defined nickname; using \"equ\".\n";
+		equ = "equ";
+	}
+	else
+		equ = directives[1].nick.front ();
+	if (directives[2].nick.empty ())
+	{
+		std::cerr << "Warning: defb has no defined nickname; using \"defb\".\n";
+		defb = "defb";
+	}
+	else
+		defb = directives[2].nick.front ();
+	unsigned max = 1;
+	for (std::list <Source>::iterator s = sources.begin (); s != sources.end (); ++s)
+	{
+		if (s->targets.size () > max)
+			max = s->targets.size ();
+	}
+	std::ostringstream data;
+	data << in.rdbuf ();
+	int startaddr = addr;
+	do_disassemble (max, false, data.str (), defb);
+	addr = startaddr;
+	*outfile << shevek::rostring ("\t%s 0x%x\n", org, addr);
+	do_disassemble (max, true, data.str (), defb);
+	for (std::list <Label>::iterator l = labels.begin (); l != labels.end (); ++l)
+	{
+		if (l->value.value.value < startaddr || l->value.value.value >= (int)addr)
+			*outfile << std::string (shevek::rostring ("%s:\t%s 0x%x\n", l->name, equ, l->value.value.value));
 	}
 }

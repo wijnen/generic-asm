@@ -2,6 +2,8 @@
 
 static void fill_check (Expr &e, bool file)
 {
+	if (e.type == Expr::PARAM)
+		return;
 	for (std::list <Expr>::iterator i = e.children.begin (); i != e.children.end (); ++i)
 		fill_check (*i, file);
 	if (e.type == Expr::ISLABEL && (e.label[0] == '.' || (file && e.label[0] == '@')))
@@ -15,6 +17,8 @@ static void fill_check (Expr &e, bool file)
 
 static void undefined_check (Expr &e, bool file)
 {
+	if (e.type == Expr::PARAM)
+		return;
 	for (std::list <Expr>::iterator i = e.children.begin (); i != e.children.end (); ++i)
 		undefined_check (*i, file);
 	if (e.type == Expr::LABEL && (e.label[0] == '.' || (file && e.label[0] == '@')))
