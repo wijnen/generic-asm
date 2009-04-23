@@ -86,6 +86,7 @@ struct Param
 	bool is_active;
 	Expr value;
 	int mask, dismask;
+	int priority;
 
 	static void reset ();
 	static std::list <Param>::iterator find (std::string const &name);
@@ -98,6 +99,7 @@ struct Label
 	std::string name;
 	input_line *definition;
 	Expr value;
+	int priority;
 };
 
 struct Source

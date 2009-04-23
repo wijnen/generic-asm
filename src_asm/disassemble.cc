@@ -484,11 +484,19 @@ static void do_disassemble (unsigned max, bool write, std::string const &data, s
 				{
 					if (pi->second->prefix.empty ())
 						continue;
+					int priority;
 					std::string prefix;
 					if (pi->second->value.value.value <= (int)addr && !pi->second->rprefix.empty ())
+					{
 						prefix = pi->second->rprefix;
+						priority = pi->second->priority - 1;
+					}
 					else
+					{
 						prefix = pi->second->prefix;
+						priority = pi->second->priority;
+					}
+					std::string name = shevek::rostring ("%s%x", prefix, pi->second->value.value.value);
 					std::list <Label>::iterator li;
 					for (li = labels.begin (); li != labels.end (); ++li)
 					{
@@ -496,9 +504,13 @@ static void do_disassemble (unsigned max, bool write, std::string const &data, s
 							break;
 					}
 					if (li != labels.end ())
+					{
+						if (li->priority > priority)
+							li->name = name;
 						continue;
+					}
 					Label l;
-					l.name = shevek::rostring ("%s%x", prefix, pi->second->value.value.value);
+					l.name = name;
 					l.definition = NULL;
 					l.value = pi->second->value;
 					labels.push_back (l);

@@ -2,6 +2,7 @@
 
 void read_definitions ()
 {
+	int priority = 0;
 	bool is_enum = false, is_num = false, is_source = false;
 	bool recording = false;
 	std::map <std::string, Expr::valid_int>::iterator current_enum;
@@ -155,6 +156,8 @@ void read_definitions ()
 				continue;
 			}
 			current_param->prefix = d;
+			priority += 2;
+			current_param->priority = priority;
 		}
 		else if (l ("rprefix: %r/[a-zA-Z_@.][a-zA-Z_@.0-9]*/", d))
 		{
