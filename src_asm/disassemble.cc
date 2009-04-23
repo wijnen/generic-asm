@@ -445,7 +445,10 @@ static void do_disassemble (unsigned max, bool write, std::string const &data, s
 				for (std::list <Label>::iterator l = labels.begin (); l != labels.end (); ++l)
 				{
 					if (l->value.value.value == (int)addr)
+					{
 						*outfile << l->name << ":\n";
+						l->priority = -1;
+					}
 				}
 				*outfile << '\t';
 				for (std::list <std::pair <std::string, std::list <Param>::iterator> >::iterator pi = s->parts.begin (); pi != s->parts.end (); ++pi)
@@ -513,6 +516,7 @@ static void do_disassemble (unsigned max, bool write, std::string const &data, s
 					l.name = name;
 					l.definition = NULL;
 					l.value = pi->second->value;
+					l.priority = pi->second->priority;
 					labels.push_back (l);
 				}
 			}
@@ -569,9 +573,17 @@ void disassemble (std::istream &in)
 	addr = startaddr;
 	*outfile << shevek::rostring ("\t%s 0x%x\n", org, addr);
 	do_disassemble (max, true, data.str (), defb);
+	bool first = true;
 	for (std::list <Label>::iterator l = labels.begin (); l != labels.end (); ++l)
 	{
-		if (l->value.value.value < startaddr || l->value.value.value >= (int)addr)
+		if (l->priority >= 0)
+		{
+			if (first)
+			{
+				*outfile << '\n';
+				first = false;
+			}
 			*outfile << std::string (shevek::rostring ("%s:\t%s 0x%x\n", l->name, equ, l->value.value.value));
+		}
 	}
 }

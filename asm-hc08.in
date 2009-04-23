@@ -26,16 +26,18 @@ target: .word >> 8
 target: .word & 0xff
 
 num: .bit
-constraint: .bit >= 0 && .bit <= 7
-
-num: .dir
-constraint: .dir >= 0 && .dir <= 0xff
+mask: 0x7
 
 num: .dir2
-constraint: .dir2 >= 0 && .dir2 <= 0xff
+mask: 0xff
+prefix: dir_
+
+num: .dir
+mask: 0xff
+prefix: dir_
 
 num: .ext
-constraint: .ext >= 0 && .ext <= 0xffff
+mask: 0xffff
 
 num: .imm
 constraint: .imm >= -0x80 && .imm <= 0xff
@@ -44,13 +46,29 @@ num: .aimm
 constraint: .aimm >= -0x80 && .aimm <= 0x7f
 
 num: .ix1
-constraint: .ix1 >= 0 && .ix1 <= 0xff
+mask: 0xff
 
 num: .ix2
 constraint: .ix2 >= -0x8000 && .ix2 <= 0xffff	# Allow negative indices, because they wrap anyway.
 
+num: .reladdr4
+mask: 0xffff
+constraint: .reladdr - $ + 4 >= -0x80 && .reladdr - $ + 4 < 0x80
+prefix: a_
+
+num: .reladdr3
+mask: 0xffff
+constraint: .reladdr - $ + 3 >= -0x80 && .reladdr - $ + 3 < 0x80
+prefix: a_
+
+num: .reladdr
+mask: 0xffff
+constraint: .reladdr - $ + 2 >= -0x80 && .reladdr - $ + 2 < 0x80
+prefix: a_
+
 num: .addr
-constraint: .addr >= 0 && .addr <= 0xffff
+mask: 0xffff
+prefix: a_
 
 macro: .stax .cmd .base
 
@@ -136,147 +154,147 @@ target: .aimm
 .regop asl 0x8
 .regop asr 0x7
 
-source: bcc .addr
+source: bcc .reladdr
 target: 0x24
-target: .addr - ($ + 2)
+target: .reladdr - ($ + 2)
 
 source: bclr # .bit , * .dir
 target: 0x11 + 2 * .bit
 target: .dir
 
-source: bcs .addr
+source: bcs .reladdr
 target: 0x25
-target: .addr - ($ + 2)
+target: .reladdr - ($ + 2)
 
-source: beq .addr
+source: beq .reladdr
 target: 0x27
-target: .addr - ($ + 2)
+target: .reladdr - ($ + 2)
 
-source: bge .addr
+source: bge .reladdr
 target: 0x90
-target: .addr - ($ + 2)
+target: .reladdr - ($ + 2)
 
-source: bgt .addr
+source: bgt .reladdr
 target: 0x92
-target: .addr - ($ + 2)
+target: .reladdr - ($ + 2)
 
-source: bhcc .addr
+source: bhcc .reladdr
 target: 0x28
-target: .addr - ($ + 2)
+target: .reladdr - ($ + 2)
 
-source: bhcs .addr
+source: bhcs .reladdr
 target: 0x29
-target: .addr - ($ + 2)
+target: .reladdr - ($ + 2)
 
-source: bhi .addr
+source: bhi .reladdr
 target: 0x22
-target: .addr - ($ + 2)
+target: .reladdr - ($ + 2)
 
-source: bhs .addr
+source: bhs .reladdr
 target: 0x24
-target: .addr - ($ + 2)
+target: .reladdr - ($ + 2)
 
-source: bih .addr
+source: bih .reladdr
 target: 0x2f
-target: .addr - ($ + 2)
+target: .reladdr - ($ + 2)
 
-source: bil .addr
+source: bil .reladdr
 target: 0x2e
-target: .addr - ($ + 2)
+target: .reladdr - ($ + 2)
 
 .ldax bit 0x5
 
-source: ble .addr
+source: ble .reladdr
 target: 0x93
-target: .addr - ($ + 2)
+target: .reladdr - ($ + 2)
 
-source: blo .addr
+source: blo .reladdr
 target: 0x25
-target: .addr - ($ + 2)
+target: .reladdr - ($ + 2)
 
-source: bls .addr
+source: bls .reladdr
 target: 0x23
-target: .addr - ($ + 2)
+target: .reladdr - ($ + 2)
 
-source: blt .addr
+source: blt .reladdr
 target: 0x91
-target: .addr - ($ + 2)
+target: .reladdr - ($ + 2)
 
-source: bmc .addr
+source: bmc .reladdr
 target: 0x2c
-target: .addr - ($ + 2)
+target: .reladdr - ($ + 2)
 
-source: bmi .addr
+source: bmi .reladdr
 target: 0x2b
-target: .addr - ($ + 2)
+target: .reladdr - ($ + 2)
 
-source: bms .addr
+source: bms .reladdr
 target: 0x2d
-target: .addr - ($ + 2)
+target: .reladdr - ($ + 2)
 
-source: bne .addr
+source: bne .reladdr
 target: 0x26
-target: .addr - ($ + 2)
+target: .reladdr - ($ + 2)
 
-source: bpl .addr
+source: bpl .reladdr
 target: 0x2a
-target: .addr - ($ + 2)
+target: .reladdr - ($ + 2)
 
-source: bra .addr
+source: bra .reladdr
 target: 0x20
-target: .addr - ($ + 2)
+target: .reladdr - ($ + 2)
 
-source: brclr # .bit , * .dir , .addr
+source: brclr # .bit , * .dir , .reladdr3
 target: 1 + 2 * .bit
 target: .dir
-target: .addr - ($ + 3)
+target: .reladdr3 - ($ + 3)
 
-source: brn .addr
+source: brn .reladdr
 target: 0x21
-target: .addr - ($ + 2)
+target: .reladdr - ($ + 2)
 
-source: brset # .bit , * .dir , .addr
+source: brset # .bit , * .dir , .reladdr3
 target: 0 + 2 * .bit
 target: .dir
-target: .addr - ($ + 3)
+target: .reladdr3 - ($ + 3)
 
 source: bset # .bit , * .dir
 target: 0x10 + 2 * .bit
 target: .dir
 
-source: bsr .addr
+source: bsr .reladdr
 target: 0xad
-target: .addr - ($ + 2)
+target: .reladdr - ($ + 2)
 
-source: cbeq * .dir , .addr
+source: cbeq * .dir , .reladdr3
 target: 0x31
 target: .dir
-target: .addr - ($ + 3)
+target: .reladdr3 - ($ + 3)
 
-source: cbeqa # .imm , .addr
+source: cbeqa # .imm , .reladdr
 target: 0x41
 target: .imm
-target: .addr - ($ + 2)
+target: .reladdr - ($ + 2)
 
-source: cbeqx # .imm , .addr
+source: cbeqx # .imm , .reladdr
 target: 0x51
 target: .imm
-target: .addr - ($ + 2)
+target: .reladdr - ($ + 2)
 
-source: cbeq .ix1 , x + , .addr
+source: cbeq .ix1 , x + , .reladdr
 target: 0x61
 target: .ix1
-target: .addr - ($ + 2)
+target: .reladdr - ($ + 2)
 
-source: cbeq , x + , .addr
+source: cbeq , x + , .reladdr
 target: 0x71
-target: .addr - ($ + 2)
+target: .reladdr - ($ + 2)
 
-source: cbeq .ix1 , sp , .addr
+source: cbeq .ix1 , sp , .reladdr3
 target: 0x9e
 target: 0x61
 target: .ix1
-target: .addr - ($ + 3)
+target: .reladdr3 - ($ + 3)
 
 source: clc
 target: 0x98
@@ -307,33 +325,33 @@ target: .dir
 source: daa
 target: 0x72
 
-source: dbnz * .dir , .addr
+source: dbnz * .dir , .reladdr3
 target: 0x3b
 target: .dir
-target: .addr - ($ + 3)
+target: .reladdr3 - ($ + 3)
 
-source: dbnza .addr
+source: dbnza .reladdr
 target: 0x4b
-target: .addr - ($ + 2)
+target: .reladdr - ($ + 2)
 
-source: dbnzx .addr
+source: dbnzx .reladdr
 target: 0x5b
-target: .addr - ($ + 2)
+target: .reladdr - ($ + 2)
 
-source: dbnz .ix1 , x , .addr
+source: dbnz .ix1 , x , .reladdr3
 target: 0x6b
 target: .ix1
-target: .addr - ($ + 3)
+target: .reladdr3 - ($ + 3)
 
-source: dbnz , x , .addr
+source: dbnz , x , .reladdr
 target: 0x7b
-target: .addr - ($ + 2)
+target: .reladdr - ($ + 2)
 
-source: dbnz .ix1 , sp , .addr
+source: dbnz .ix1 , sp , .reladdr4
 target: 0x9e
 target: 0x6b
 target: .ix1
-target: .addr - ($ + 4)
+target: .reladdr4 - ($ + 4)
 
 .regop dec 0xa
 
