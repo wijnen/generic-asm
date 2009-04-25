@@ -99,14 +99,14 @@ void assemble (std::vector <std::string> &in_files)
 		{
 			parse (input[t]);
 		}
-		// Clean up.
-		for (std::list <Block>::iterator i = blocks.begin (); i != blocks.end (); ++i)
-			i->clean (true);
 		// Don't continue if there are errors.
 		if (errors)
 			return;
 		if (listfile)
 			*listfile << "# End of asm source file: " << in_files[f] << '\n';
+		// Clean up.
+		for (std::list <Block>::iterator i = blocks.begin (); i != blocks.end (); ++i)
+			i->clean (true);
 	}
 	// All files are done; do final cleanup.
 	for (std::list <Label>::iterator l = labels.begin (); l != labels.end (); ++l)

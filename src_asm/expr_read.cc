@@ -156,7 +156,7 @@ Expr Expr::read (std::string const &input, bool allow_params, std::string::size_
 				{
 					std::list <Expr> c;
 					c.push_back (Expr (NUM, valid_int (addr)));
-					c.push_back (Expr (LABEL, valid_int ("!$"), NULL, std::list <Expr> (), "$"));
+					c.push_back (Expr (LABEL, valid_int ("!$"), NULL, std::list <Expr> (), "$$"));
 					result.push (Expr (OPER, valid_int ("$+"), plus_oper, c));
 				}
 				expect_number = false;

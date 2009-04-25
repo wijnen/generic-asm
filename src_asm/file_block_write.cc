@@ -2,6 +2,14 @@
 
 #define error(x) do { std::cerr << "Error: " << (x) << '\n'; ++errors; } while (0)
 
+static void clean_addr (Expr &e)
+{
+	for (std::list <Expr>::iterator i = e.children.begin (); i != e.children.end (); ++i)
+		clean_addr (*i);
+	if (e.type == Expr::LABEL && e.label == "$$")
+		e.label = "$";
+}
+
 void Block::lock ()
 {
 	std::list <Space>::iterator si = spaces.begin ();
@@ -25,6 +33,7 @@ void Block::lock ()
 			switch (i->type)
 			{
 			case Part::IF:
+				clean_addr (i->expr);
 				vi = i->expr.compute (Expr::valid_int (">"));
 				if (!vi.valid)
 					error ("invalid if expression");
@@ -56,11 +65,18 @@ void Block::lock ()
 				break;
 			case Part::DEFINE:
 				if (i->have_expr)
+				{
 					i->expr.simplify (true);
+					clean_addr (i->expr);
+				}
 				if (i->label != labels.end ())
+				{
 					i->label->value.simplify (true);
+					clean_addr (i->label->value);
+				}
 				break;
 			case Part::BYTE:
+				clean_addr (i->expr);
 				if (!num_false)
 				{
 					Expr::valid_int vi = i->expr.compute (Expr::valid_int ("}{"));
@@ -198,6 +214,7 @@ void Block::write_object (std::string &script, std::string &code)
 		switch (i->type)
 		{
 		case Part::IF:
+			clean_addr (i->expr);
 			script += shevek::rostring ("?%s\n", i->expr.print ());
 			break;
 		case Part::ELSE:
@@ -208,11 +225,18 @@ void Block::write_object (std::string &script, std::string &code)
 			break;
 		case Part::DEFINE:
 			if (i->label != labels.end ())
+			{
+				clean_addr (i->label->value);
 				script += shevek::rostring ("%s=%s\n", i->name, i->label->value.print ());
+			}
 			else
+			{
+				clean_addr (i->expr);
 				script += shevek::rostring ("%s=%s\n", i->name, i->expr.print ());
+			}
 			break;
 		case Part::BYTE:
+			clean_addr (i->expr);
 			script += shevek::rostring ("+%s\n", i->expr.print ());
 			break;
 		case Part::CODE:

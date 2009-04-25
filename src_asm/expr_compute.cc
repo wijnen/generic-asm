@@ -40,9 +40,9 @@ Expr::valid_int Expr::compute (valid_int self) const
 			return c.front ();
 		}
 	case LABEL:
-		if (label == "$")
+		if (label == "$$" || label == "$")
 		{
-			if (absolute_addr && (self.invalid.empty () || self.invalid.front () != "$?"))
+			if (absolute_addr && !self.invalid.empty () && self.invalid.front () != "$?")
 			{
 				return valid_int (addr);
 			}

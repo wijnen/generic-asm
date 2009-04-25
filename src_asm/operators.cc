@@ -17,27 +17,34 @@ template <typename _T> static _T do_pop (std::stack <_T> &stack)
 		r.value = oper a.value; \
 		return r; \
 	} \
-	static std::string print_##name (std::list <Expr> const &children) \
+	static std::string print_##name (std::list <Expr> const &children, int priority) \
 	{ \
+		(void)priority; \
 		return #oper + children.front ().print (); \
 	}
 
-#define run2(name, oper) \
+#define run2(name, _oper) \
 	static Expr::valid_int run_##name (std::list <Expr::valid_int> &children) \
 	{ \
 		Expr::valid_int a = children.front (); \
 		Expr::valid_int b = children.back (); \
 		Expr::valid_int r ("!" #name); \
 		r.valid = a.valid && b.valid; \
-		r.value = (a.value oper b.value); \
+		r.value = (a.value _oper b.value); \
 		r.invalid = a.invalid; \
 		for (std::list <std::string>::iterator i = b.invalid.begin (); i != b.invalid.end (); ++i) \
 			r.invalid.push_back (*i); \
 		return r; \
 	} \
-	static std::string print_##name (std::list <Expr> const &children) \
+	static std::string print_##name (std::list <Expr> const &children, int priority) \
 	{ \
-		return '(' + children.front ().print () + #oper + children.back ().print () + ')'; \
+		std::string f = children.front ().print (); \
+		std::string b = children.back ().print (); \
+		if (children.front ().type == Expr::OPER && children.front ().oper->priority < priority) \
+			f = '(' + f + ')'; \
+		if (children.back ().type == Expr::OPER && children.back ().oper->priority <= priority) \
+			b = '(' + b + ')'; \
+		return f + #_oper + b; \
 	}
 
 run1 (not, !)
@@ -47,7 +54,6 @@ run1 (minus1, -)
 run2 (mul, *)
 run2 (div, /)
 run2 (mod, %)
-run2 (plus, +)
 run2 (minus, -)
 run2 (lshift, <<)
 run2 (rshift, >>)
@@ -75,9 +81,44 @@ static Expr::valid_int run_xor (std::list <Expr::valid_int> &children)
 	r.value = !a.value ^ !b.value;
 	return r;
 }
-static std::string print_xor (std::list <Expr> const &children)
+static std::string print_xor (std::list <Expr> const &children, int priority)
 {
-	return '(' + children.front ().print () + "^^" + children.back ().print () + ')';
+	std::string f = children.front ().print ();
+	std::string b = children.back ().print ();
+	if (children.front ().type == Expr::OPER && children.front ().oper->priority < priority)
+		f = '(' + f + ')';
+	if (children.back ().type == Expr::OPER && children.back ().oper->priority <= priority)
+		b = '(' + b + ')';
+	return f + "^^" + b;
+}
+
+static Expr::valid_int run_plus (std::list <Expr::valid_int> &children)
+{
+	Expr::valid_int a = children.front ();
+	Expr::valid_int b = children.back ();
+	Expr::valid_int r ("!+");
+	r.valid = a.valid && b.valid;
+	r.value = (a.value + b.value);
+	r.invalid = a.invalid;
+	for (std::list <std::string>::iterator i = b.invalid.begin (); i != b.invalid.end (); ++i)
+		r.invalid.push_back (*i);
+	return r;
+}
+static std::string print_plus (std::list <Expr> const &children, int priority)
+{
+	std::string f = children.front ().print ();
+	std::string b = children.back ().print ();
+	if (children.front ().type == Expr::OPER && children.front ().oper->priority < priority)
+		f = '(' + f + ')';
+	char o = '+';
+	if (children.back ().type == Expr::OPER && children.back ().oper->code == '_')
+	{
+		b = children.back ().children.back ().print ();
+		o = '-';
+	}
+	if (children.back ().type == Expr::OPER && children.back ().oper->priority <= priority)
+		b = '(' + b + ')';
+	return f + o + b;
 }
 
 static Expr::valid_int run_tri (std::list <Expr::valid_int> &children)
@@ -96,16 +137,19 @@ static Expr::valid_int run_tri (std::list <Expr::valid_int> &children)
 	r.value = a.value ? b.value : c.value;
 	return r;
 }
-static std::string print_tri (std::list <Expr> const &children)
+static std::string print_tri (std::list <Expr> const &children, int priority)
 {
-	return '(' + children.front ().print () + "?" + (++children.begin ())->print () + ":" + children.back ().print () + ')';
+	(void)priority;
+	return children.front ().print () + "?" + (++children.begin ())->print () + ":" + children.back ().print ();
 }
 
 Oper operators1[3] = {
+	Oper (1, '_', "-", 12, &run_minus1, &print_minus1),
 	Oper (1, '!', "!", 12, &run_not, &print_not),
-	Oper (1, '~', "~", 12, &run_bitnot, &print_bitnot),
-	Oper (1, '_', "-", 12, &run_minus1, &print_minus1)
+	Oper (1, '~', "~", 12, &run_bitnot, &print_bitnot)
 };
+Oper *pre_minus_oper = &operators1[0];
+
 Oper operators2[19] = {
 	Oper (2, '+', "+", 10, &run_plus, &print_plus),
 	Oper (2, '*', "*", 11, &run_mul, &print_mul),

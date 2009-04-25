@@ -9,7 +9,7 @@ std::string Expr::print () const
 			return "{invalid}";
 		return shevek::rostring ("%d", value.value);
 	case OPER:
-		return oper->print (children);
+		return oper->print (children, oper->priority);
 	case PARAM:
 	{
 		if (children.empty ())
@@ -19,7 +19,7 @@ std::string Expr::print () const
 		{
 			ret += *i + ';';
 		}
-		return '[' + ret + std::string (shevek::rostring ("%d;%d", children.back ().value.value, children.front ().value.value)) + ']';
+		return '[' + ret + std::string (shevek::rostring ("%d;%d", children.back ().value.value, children.front ().print ())) + ']';
 	}
 	case LABEL:
 		return label;

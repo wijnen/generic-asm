@@ -70,8 +70,8 @@ struct Oper
 	std::string name;
 	int priority;
 	Expr::valid_int (*run) (std::list <Expr::valid_int> &children);
-	std::string (*print) (std::list <Expr> const &children);
-	Oper (unsigned N, char c, std::string const &n, int p, Expr::valid_int (*r)(std::list <Expr::valid_int> &), std::string (*pr)(std::list <Expr> const &))
+	std::string (*print) (std::list <Expr> const &children, int priority);
+	Oper (unsigned N, char c, std::string const &n, int p, Expr::valid_int (*r)(std::list <Expr::valid_int> &), std::string (*pr)(std::list <Expr> const &, int))
 		: num (N), code (c), name (n), priority (p), run (r), print (pr) {}
 };
 
@@ -190,7 +190,7 @@ extern bool report_labels;
 extern Oper operators1[3];
 extern Oper operators2[19];
 extern Oper operators3[1];
-extern Oper *plus_oper;
+extern Oper *plus_oper, *pre_minus_oper;
 
 template <typename T, unsigned n> unsigned num_elem (T (&arr)[n]) { (void)arr; return n; }
 

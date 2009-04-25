@@ -34,7 +34,7 @@ void parse (input_line &input)
 			{
 				std::list <Expr> c;
 				c.push_back (Expr (Expr::NUM, Expr::valid_int (addr)));
-				c.push_back (Expr (Expr::LABEL, Expr::valid_int ("$!"), NULL, std::list <Expr> (), "$"));
+				c.push_back (Expr (Expr::LABEL, Expr::valid_int ("$!"), NULL, std::list <Expr> (), "$$"));
 				new_label->value = (Expr (Expr::OPER, Expr::valid_int ("+$"), plus_oper, c));
 			}
 			blocks.back ().parts.push_back (Block::Part ());
