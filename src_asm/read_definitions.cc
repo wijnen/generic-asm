@@ -145,7 +145,7 @@ void read_definitions ()
 				error (shevek::rostring ("junk after constraint: %s", l.rest ()));
 				continue;
 			}
-			current_param->constraints.push_back (e.print ());
+			current_param->constraints.push_back (e);
 		}
 		else if (l ("prefix: %r/[a-zA-Z_@.][a-zA-Z_@.0-9]*/", d))
 		{

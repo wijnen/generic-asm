@@ -347,15 +347,13 @@ static void do_disassemble (unsigned max, bool write, std::string const &data, s
 				(*pi)->value.value.value &= (*pi)->dismask;
 				if ((*pi)->value.value.value & ~(*pi)->mask)
 					break;
-				std::list <std::string>::iterator c;
+				std::list <Expr>::iterator c;
 				for (c = (*pi)->constraints.begin (); c != (*pi)->constraints.end (); ++c)
 				{
-					std::string::size_type pos = 0;
-					Expr ce = Expr::read (*c, true, pos);
-					Expr::valid_int vi = ce.compute ((*pi)->value.value);
+					Expr::valid_int vi = c->compute ((*pi)->value.value);
 					if (!vi.valid)
 					{
-						error ("invalid constraint: " + *c);
+						error ("invalid constraint: " + c->print ());
 						break;
 					}
 					else if (vi.value)
@@ -363,10 +361,10 @@ static void do_disassemble (unsigned max, bool write, std::string const &data, s
 						continue;
 					}
 					(*pi)->value.value.value -= 0x100;
-					vi = ce.compute ((*pi)->value.value);
+					vi = c->compute ((*pi)->value.value);
 					if (!vi.valid)
 					{
-						error ("invalid constraint(1): " + *c);
+						error ("invalid constraint(1): " + c->print ());
 						break;
 					}
 					else if (vi.value)
@@ -374,10 +372,10 @@ static void do_disassemble (unsigned max, bool write, std::string const &data, s
 						continue;
 					}
 					(*pi)->value.value.value |= (*pi)->mask & ~(*pi)->dismask;
-					vi = ce.compute ((*pi)->value.value);
+					vi = c->compute ((*pi)->value.value);
 					if (!vi.valid)
 					{
-						error ("invalid constraint(2): " + *c);
+						error ("invalid constraint(2): " + c->print ());
 						break;
 					}
 					else if (vi.value)
@@ -385,10 +383,10 @@ static void do_disassemble (unsigned max, bool write, std::string const &data, s
 						continue;
 					}
 					(*pi)->value.value.value &= 0xff;
-					vi = ce.compute ((*pi)->value.value);
+					vi = c->compute ((*pi)->value.value);
 					if (!vi.valid)
 					{
-						error ("invalid constraint(3): " + *c);
+						error ("invalid constraint(3): " + c->print ());
 						break;
 					}
 					else if (vi.value)
@@ -396,17 +394,17 @@ static void do_disassemble (unsigned max, bool write, std::string const &data, s
 						continue;
 					}
 					(*pi)->value.value.value |= ~0xff;
-					vi = ce.compute ((*pi)->value.value);
+					vi = c->compute ((*pi)->value.value);
 					if (!vi.valid)
 					{
-						error ("invalid constraint(4): " + *c);
+						error ("invalid constraint(4): " + c->print ());
 						break;
 					}
 					else if (vi.value)
 					{
 						continue;
 					}
-					dbg (shevek::rostring ("fail constraint %s for 0x%x", *c, (*pi)->value.value.value));
+					dbg (shevek::rostring ("fail constraint %s for 0x%x", c->print (), (*pi)->value.value.value));
 					break;
 				}
 				if (c != (*pi)->constraints.end ())

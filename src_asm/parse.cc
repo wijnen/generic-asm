@@ -128,10 +128,9 @@ void parse (input_line &input)
 				{
 					if (pvi.value & ~p->second->mask)
 						error (shevek::rostring ("Value 0x%x fails mask 0x%x", pvi.value, p->second->mask));
-					for (std::list <std::string>::iterator i = p->second->constraints.begin (); i != p->second->constraints.end (); ++i)
+					for (std::list <Expr>::iterator i = p->second->constraints.begin (); i != p->second->constraints.end (); ++i)
 					{
-						std::string::size_type pos = 0;
-						Expr::valid_int vi = Expr::read (*i, true, pos).compute (pvi);
+						Expr::valid_int vi = i->compute (pvi);
 						if (!vi.valid)
 						{
 							error ("Constraint is invalid, because of:");

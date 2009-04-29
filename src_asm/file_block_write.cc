@@ -2,12 +2,18 @@
 
 #define error(x) do { std::cerr << "Error: " << (x) << '\n'; ++errors; } while (0)
 
-static void clean_addr (Expr &e)
+static void clean_addr (Expr &e, bool constraint = false)
 {
 	for (std::list <Expr>::iterator i = e.children.begin (); i != e.children.end (); ++i)
-		clean_addr (*i);
+		clean_addr (*i, constraint);
+	for (std::list <Expr>::iterator i = e.constraints.begin (); i != e.constraints.end (); ++i)
+		clean_addr (*i, true);
 	if (e.type == Expr::LABEL && e.label == "$$")
+	{
 		e.label = "$";
+		if (constraint)
+			error ("constraint constains '$'");
+	}
 }
 
 void Block::lock ()

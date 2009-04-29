@@ -69,7 +69,7 @@ Expr Expr::read (std::string const &input, bool allow_params, std::string::size_
 			{
 				std::string r = l.rest ();
 				std::string::size_type p = 0;
-				std::list <std::string> lst;
+				std::list <Expr> lst;
 				int last = 0, beforelast = 0;
 				bool valid = false;
 				while (true)
@@ -88,7 +88,7 @@ Expr Expr::read (std::string const &input, bool allow_params, std::string::size_
 						last = 0;
 						valid = false;
 					}
-					lst.push_back (e.print ());
+					lst.push_back (e);
 					if (r[p] != ';')
 						break;
 					++p;

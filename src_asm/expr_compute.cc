@@ -28,14 +28,13 @@ Expr::valid_int Expr::compute (valid_int self) const
 				return c.front ();
 			if (c.front ().value & ~c.back ().value)
 				error (shevek::rostring ("value 0x%x not allowed by mask %x", c.front ().value, c.back ().value));
-			for (std::list <std::string>::const_iterator i = constraints.begin (); i != constraints.end (); ++i)
+			for (std::list <Expr>::const_iterator i = constraints.begin (); i != constraints.end (); ++i)
 			{
-				std::string::size_type pos = 0;
-				valid_int vi = Expr::read (*i, true, pos).compute (c.front ());
+				valid_int vi = i->compute (c.front ());
 				if (!vi.valid)
 					return vi;	// Nothing wrong yet, but if it remains so, the invalidity will become a problem.
 				else if (!vi.value)
-					error (shevek::rostring ("value 0x%x fails constraint %s", c.front ().value, *i));
+					error (shevek::rostring ("value 0x%x fails constraint %s", c.front ().value, i->print ()));
 			}
 			return c.front ();
 		}
