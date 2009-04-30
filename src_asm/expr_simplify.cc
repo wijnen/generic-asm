@@ -4,7 +4,7 @@ static void simplify_oper (Expr &self, int zero)
 {
 	Expr *f = &self.children.front ();
 	Expr *b = &self.children.back ();
-	if ((b->type == Expr::NUM && b->value.valid) || f->type == Expr::OPER)
+	if ((b->type == Expr::NUM && b->value.valid) || f->type == Expr::OPER || (f->type != Expr::NUM && b->type == Expr::PARAM))
 	{
 		Expr e = self.children.front ();
 		self.children.front () = self.children.back ();
@@ -18,9 +18,9 @@ static void simplify_oper (Expr &self, int zero)
 		self = e;
 		return;
 	}
-	if (b->type == Expr::OPER && b->oper->code == self.oper->code && b->children.front ().type == Expr::NUM && b->children.front ().value.valid)
+	if (b->type == Expr::OPER && b->oper->code == self.oper->code && ((b->children.front ().type == Expr::NUM && b->children.front ().value.valid) || b->children.front ().type == Expr::PARAM))
 	{
-		if (f->type == Expr::NUM && f->value.valid)
+		if (b->children.front ().type != Expr::PARAM && f->type == Expr::NUM && f->value.valid)
 		{
 			switch (self.oper->code)
 			{
@@ -45,13 +45,52 @@ static void simplify_oper (Expr &self, int zero)
 			Expr e = self.children.back ().children.back ();
 			self.children.back () = e;
 		}
-		else
+		else if (f->type != Expr::NUM || !f->value.valid)
 		{
 			Expr e = self.children.front ();
 			self.children.front () = self.children.back ().children.front ();
 			self.children.back ().children.front () = e;
 		}
+		for (std::list <Expr>::iterator i = self.children.begin (); i != self.children.end (); ++i)
+			i->simplify ();
 	}
+}
+
+static void dollar_fix_expr (Expr &e)
+{
+	// Add $ to self-params.
+	for (std::list <Expr>::iterator i = e.children.begin (); i != e.children.end (); ++i)
+		dollar_fix_expr (*i);
+	if (e.type != Expr::PARAM || !e.children.empty ())
+		return;
+	e = Expr (Expr::OPER, Expr::valid_int (";#;"), plus_oper);
+	e.children.push_back (Expr (Expr::PARAM, Expr::valid_int (";$#")));
+	e.children.push_back (Expr (Expr::LABEL, Expr::valid_int (";#$"), NULL, std::list <Expr> (), "$$"));
+}
+
+static bool dollar_min_dollar (Expr &f, Expr &b)
+{
+	dbg (f.print ());
+	dbg (b.print ());
+	if (f.type != Expr::LABEL)
+		return false;
+	dbg (0);
+	if (f.label != "$$")
+		return false;
+	dbg (0);
+	if (b.type != Expr::OPER)
+		return false;
+	dbg (0);
+	if (b.oper->code != '_')
+		return false;
+	dbg (0);
+	if (b.children.back ().type != Expr::LABEL)
+		return false;
+	dbg (0);
+	if (b.children.back ().label != "$$")
+		return false;
+	dbg (0);
+	return true;
 }
 
 void Expr::simplify (bool set_addr)
@@ -114,8 +153,11 @@ void Expr::simplify (bool set_addr)
 		if (oper->code == '+')
 		{
 			simplify_oper (*this, 0);
-			if (type == OPER && oper->code == '+' && children.front ().type == LABEL && children.front ().label == "$$" && children.back ().type == OPER && children.back ().oper->code == '_' && children.back ().children.back ().type == LABEL && children.back ().children.back ().label == "$$")
-				*this = Expr (NUM, valid_int (0));
+			if (type == OPER && oper->code == '+')
+			{
+				if (dollar_min_dollar (children.front (), children.back ()) || dollar_min_dollar (children.back (), children.front ()))
+					*this = Expr (NUM, valid_int (0));
+			}
 		}
 		else if (oper->code == '*')
 			simplify_oper (*this, 1);
@@ -130,14 +172,32 @@ void Expr::simplify (bool set_addr)
 	case LABEL:
 	{
 		std::list <Label>::iterator l = find_label (label);
-		if (l == labels.end ())
-			return;
-		*this = l->value;
+		if (l != labels.end ())
+			*this = l->value;
 		break;
 	}
 	case NUM:
 	case ISLABEL:
 	case PARAM:
 		break;
+	}
+	if (type == OPER && oper->code == '+' && children.front ().type == PARAM && !children.front ().children.empty () && children.back ().type == OPER && children.back ().oper->code == '_' && children.back ().children.back ().type == LABEL && children.back ().children.back ().label == "$$")
+	{
+		dbg (print ());
+		Expr e = children.front ();
+		Expr v = e.children.front ();
+		e.children.front () = Expr (OPER, valid_int (";;;"), plus_oper);
+		e.children.front ().children.push_back (v);
+		e.children.front ().children.push_back (Expr (OPER, valid_int (";;-"), pre_minus_oper));
+		e.children.front ().children.back ().children.push_back (Expr (LABEL, valid_int (";;$"), NULL, std::list <Expr> (), "$$"));
+		dbg (e.print ());
+		for (std::list <Expr>::iterator i = e.constraints.begin (); i != e.constraints.end (); ++i)
+			dollar_fix_expr (*i);
+		dbg (e.print ());
+		for (std::list <Expr>::iterator i = e.constraints.begin (); i != e.constraints.end (); ++i)
+			i->simplify ();
+		e.simplify ();
+		dbg (e.print ());
+		*this = e;
 	}
 }
