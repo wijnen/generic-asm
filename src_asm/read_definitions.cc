@@ -29,7 +29,29 @@ void read_definitions ()
 			continue;
 		}
 		std::string d, n;
-		if (l ("enum: %s %", d))
+		if (l ("memory: %s %s %", d, n))
+		{
+			Expr::valid_int st = read_expr (d, "#");
+			Expr::valid_int sz = read_expr (n, "#");
+			if (!st.valid || !sz.valid || st.value < 0 || sz.value <= 0)
+			{
+				error ("invalid memory region");
+				continue;
+			}
+			unsigned start = st.value;
+			unsigned size = sz.value;
+			if (size == 0)
+				continue;
+			for (std::list <Space>::iterator i = spaces.begin (); i != spaces.end (); ++i)
+			{
+				if ((i->start >= start && i->start < start + size) || (start >= i->start && start < i->start + i->size))
+					error ("overlapping memory regions");
+			}
+			spaces.push_back (Space ());
+			spaces.back ().start = start;
+			spaces.back ().size = size;
+		}
+		else if (l ("enum: %s %", d))
 		{
 			is_num = false;
 			is_enum = false;
@@ -277,4 +299,6 @@ void read_definitions ()
 			error (shevek::rostring ("syntax error trying to parse `%s'", line));
 		}
 	}
+	if (spaces.empty ())
+		error ("no memory region defined");
 }

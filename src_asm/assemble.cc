@@ -11,11 +11,6 @@ std::string make_base (std::string const &file)
 
 void assemble (std::vector <std::string> &in_files)
 {
-	// TODO: make this configurable.
-	spaces.push_back (Space ());
-	spaces.back ().start = 0;
-	spaces.back ().size = 0x10000;
-
 	for (unsigned f = 0; f < in_files.size (); ++f)
 	{
 		if (read_file (in_files[f]))

@@ -230,6 +230,6 @@ void dir_error (shevek::ristring &args, bool first, std::list <Label>::iterator 
 extern Oper operators1[3];
 extern Oper operators2[19];
 extern Oper operators3[1];
-extern Directive directives[13];
+extern Directive directives[12];
 
 #endif

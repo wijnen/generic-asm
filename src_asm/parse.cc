@@ -42,7 +42,7 @@ void parse (input_line &input)
 			blocks.back ().parts.back ().have_expr = false;
 			blocks.back ().parts.back ().label = new_label;
 			blocks.back ().parts.back ().name = label;
-			dbg ("Label " << label << " defined at " << addr);
+			dbg ("Label " << label << " defined at " << std::hex << addr << std::dec);
 		}
 		else
 		{

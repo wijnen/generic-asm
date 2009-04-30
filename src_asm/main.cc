@@ -10,6 +10,7 @@ int main (int argc, char **argv)
 	bool useobject = false;
 	std::string disasm;
 	addr = 0;
+	unsigned disasm_addr = ~0;
 	include_path.push_back (".");
 	shevek::args::option opts[] = {
 		shevek::args::option (0, "defs", "code definitions", false, defs),
@@ -19,7 +20,7 @@ int main (int argc, char **argv)
 		shevek::args::option ('O', "object", "object output format", useobject, true),
 		shevek::args::option ('I', "includedir", "add directory to include path", include_path),
 		shevek::args::option ('d', "disasm", "file to disassemle", true, disasm),
-		shevek::args::option ('a', "addr", "start address for disassembly", true, addr),
+		shevek::args::option ('a', "addr", "start address for disassembly", false, disasm_addr),
 	};
 	shevek::args args (argc, argv, opts, 0, -1, "Generic assembler", "2008");
 	if (!usehex && useobject)
@@ -32,6 +33,7 @@ int main (int argc, char **argv)
 		if (!*outfile)
 			shevek_error_errno ("unable to open output file");
 	}
+
 	if (!defs.empty ())
 	{
 		input_stack.push (Input ());
@@ -48,8 +50,13 @@ int main (int argc, char **argv)
 		stage = 0;
 		read_definitions ();
 	}
+	if (spaces.empty ())
+	{
+		spaces.push_back (Space ());
+		spaces.back ().start = 0;
+		spaces.back ().size = 0;
+	}
 	stage = 1;
-
 	if (!errors)
 	{
 		if (disasm.empty ())
@@ -110,7 +117,14 @@ int main (int argc, char **argv)
 		else
 		{
 			if (defs.empty ())
+			{
 				std::cerr << "Error: cannot disassemble without a definitions file\n";
+				return 1;
+			}
+			if (disasm_addr != ~(unsigned)0)
+				addr = disasm_addr;
+			else
+				addr = spaces.front ().start;
 			for (unsigned n = 0; n < args.size (); ++n)
 			{
 				std::ifstream f (args[n].c_str ());

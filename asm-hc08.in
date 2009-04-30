@@ -1,12 +1,16 @@
 #!NAME --defs
 
+# program memory
+memory: 0xdc00 0x2000
+# interrupt vectors
+memory: 0xfff0 0x10
+
 directive: org .org
 directive: defb .defb
 directive: defb .db
 directive: equ .equ
 directive: include .include
 directive: incbin .incbin
-directive: seek .seek
 directive: macro .macro
 directive: endmacro .endmacro
 directive: if .if

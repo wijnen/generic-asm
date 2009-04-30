@@ -28,7 +28,7 @@ void Block::lock ()
 			if (si == spaces.end ())
 				error ("out of memory");
 			address = si->start;
-			dbg ("trying address " << address);
+			dbg ("trying address " << std::hex << address << std::dec);
 		}
 		addr = address;
 		size = 0;
@@ -115,7 +115,7 @@ void Block::lock ()
 		break;
 	}
 	// Cut this chunk out of available chunks.
-	dbg ("placed block at " << address << "+" << size);
+	dbg ("placed block at " << std::hex << address << "+" << size << std::dec);
 	std::list <Space>::iterator next;
 	for (si = spaces.begin (), next = si; si != spaces.end (); si = next)
 	{

@@ -1,11 +1,12 @@
 #!NAME --defs
 
+memory: 0x0000 0x10000
+
 directive: org org
 directive: defb defb
 directive: equ equ
 directive: include include
 directive: incbin incbin
-directive: seek seek
 directive: macro macro
 directive: endmacro endmacro
 directive: if if

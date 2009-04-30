@@ -1,7 +1,6 @@
 Plans:
 
 - allow setting a region for placement of a block of code
-- create a disassembler from the definitions file
 - implement all directives
 
 

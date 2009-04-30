@@ -287,8 +287,7 @@ namespace
 		return ret;
 	}
 
-	void write_record_hex (std::ostream &file, int type,
-			std::string const &data = std::string (), int addr = 0)
+	void write_record_hex (std::ostream &file, int type, std::string const &data = std::string (), int addr = 0)
 	{
 		int sum = type + addr + (addr >> 8);
 		file << ':' << make_hex (data.size ()) << make_hex (addr, 2)
