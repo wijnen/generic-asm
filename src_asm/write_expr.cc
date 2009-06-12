@@ -18,6 +18,8 @@ void write_expr (Expr &e)
 			blocks.back ().parts.back ().have_expr = false;
 		}
 		blocks.back ().parts.back ().name += (char)v.value;
+		if (listfile)
+			*listfile << ' ' << std::setfill ('0') << std::setw (2) << (v.value & 0xff);
 	}
 	else
 	{
@@ -25,5 +27,7 @@ void write_expr (Expr &e)
 		blocks.back ().parts.back ().type = Block::Part::BYTE;
 		blocks.back ().parts.back ().have_expr = true;
 		blocks.back ().parts.back ().expr = e;
+		if (listfile)
+			*listfile << " xx";
 	}
 }

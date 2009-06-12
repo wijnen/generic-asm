@@ -8,6 +8,7 @@ static void clean_addr (Expr &e, bool constraint = false)
 		clean_addr (*i, constraint);
 	for (std::list <Expr>::iterator i = e.constraints.begin (); i != e.constraints.end (); ++i)
 		clean_addr (*i, true);
+	e.clean_islabel ();
 	if (e.type == Expr::LABEL && e.label == "$$")
 	{
 		e.label = "$";

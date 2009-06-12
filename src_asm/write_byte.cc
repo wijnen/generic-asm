@@ -4,6 +4,7 @@
 void write_byte (Expr::valid_int byte, int addr_offset)
 {
 	startfunc;
+	dbg (shevek::ostring ("Writing byte 0x%02x at 0x%04x+0x%x", byte.value & 0xff, addr, addr_offset));
 	if (!byte.valid)
 	{
 		for (std::list <std::string>::iterator i = byte.invalid.begin (); i != byte.invalid.end (); ++i)
@@ -21,6 +22,4 @@ void write_byte (Expr::valid_int byte, int addr_offset)
 		hexfile.set (addr + addr_offset, byte.value);
 	else
 		*outfile << (char)byte.value;
-	if (listfile)
-		*listfile << ' ' << std::setfill ('0') << std::setw (2) << (byte.value & 0xff);
 }

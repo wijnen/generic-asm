@@ -57,12 +57,12 @@ constraint: .ix2 >= -0x8000 && .ix2 <= 0xffff	# Allow negative indices, because 
 
 num: .reladdr4
 mask: 0xffff
-constraint: .reladdr - $ + 4 >= -0x80 && .reladdr - $ + 4 < 0x80
+constraint: .reladdr4 - $ + 4 >= -0x80 && .reladdr4 - $ + 4 < 0x80
 prefix: a_
 
 num: .reladdr3
 mask: 0xffff
-constraint: .reladdr - $ + 3 >= -0x80 && .reladdr - $ + 3 < 0x80
+constraint: .reladdr3 - $ + 3 >= -0x80 && .reladdr3 - $ + 3 < 0x80
 prefix: a_
 
 num: .reladdr
