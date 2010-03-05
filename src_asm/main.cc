@@ -7,24 +7,29 @@ int main (int argc, char **argv)
 	std::string defs;
 	std::string outfilename, listfilename;
 	usehex = true;
+	use_bytes = true;
+	bool intel = false;
 	bool useobject = false;
 	std::string disasm;
 	addr = 0;
 	unsigned disasm_addr = ~0;
 	include_path.push_back (".");
 	shevek::args::option opts[] = {
-		shevek::args::option (0, "defs", "code definitions", false, defs),
+		shevek::args::option ('D', "defs", "code definitions", false, defs),
 		shevek::args::option ('o', "output", "output file", false, outfilename),
 		shevek::args::option ('L', "list", "list file", false, listfilename),
 		shevek::args::option ('b', "binary", "binary output format", usehex, false),
 		shevek::args::option ('O', "object", "object output format", useobject, true),
+		shevek::args::option ('i', "intel", "intel hex instead of s19", intel, true),
 		shevek::args::option ('I', "includedir", "add directory to include path", include_path),
 		shevek::args::option ('d', "disasm", "file to disassemle", true, disasm),
 		shevek::args::option ('a', "addr", "start address for disassembly", false, disasm_addr),
+		shevek::args::option ('w', "words", "use 16-bit words as output", use_bytes, false),
 	};
 	shevek::args args (argc, argv, opts, 0, -1, "Generic assembler", "2008");
 	if (!usehex && useobject)
 		shevek_error ("specify only one type of output file");
+	hexfile.words (!use_bytes);
 	if (outfilename.empty ())
 		outfile = &std::cout;
 	else
@@ -89,6 +94,8 @@ int main (int argc, char **argv)
 				if (useobject)
 				{
 					std::string script ("#\xfeof\0\0\0\0", 8), code;
+					if (!use_bytes)
+						script += "2\n";
 					for (std::list <Block>::iterator i = blocks.begin (); i != blocks.end (); ++i)
 						i->write_object (script, code);
 					*outfile << script << '\0' << code << std::flush;
@@ -111,7 +118,12 @@ int main (int argc, char **argv)
 					}
 				}
 				if (!errors && !useobject && usehex)
-					hexfile.write_s19 (*outfile);
+				{
+					if (intel)
+						hexfile.write_hex (*outfile);
+					else
+						hexfile.write_s19 (*outfile);
+				}
 			}
 		}
 		else

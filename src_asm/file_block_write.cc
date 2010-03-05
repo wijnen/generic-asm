@@ -97,7 +97,7 @@ void Block::lock ()
 				break;
 			case Part::CODE:
 				if (!num_false)
-					size += i->name.size ();
+					size += i->code.size ();
 				break;
 			case Part::COMMENT:
 				break;
@@ -194,10 +194,10 @@ void Block::write_binary ()
 		case Part::CODE:
 			if (!num_false)
 			{
-				for (unsigned t = 0; t < i->name.size (); ++t)
+				for (unsigned t = 0; t < i->code.size (); ++t)
 				{
 					vi.valid = true;
-					vi.value = i->name[t];
+					vi.value = i->code[t];
 					write_byte (vi, offset++);
 				}
 			}
@@ -247,8 +247,13 @@ void Block::write_object (std::string &script, std::string &code)
 			script += shevek::rostring ("+%s\n", i->expr.print ());
 			break;
 		case Part::CODE:
-			script += shevek::rostring (">%d\n", i->name.size ());
-			code += i->name;
+			script += shevek::rostring (">%d\n", i->code.size ());
+			for (unsigned k = 0; k < i->code.size (); ++k)
+			{
+				code += i->code[k] & 0xff;
+				if (!use_bytes)
+					code += i->code[k] >> 8;
+			}
 			break;
 		case Part::COMMENT:
 			script += shevek::rostring ("#%s\n", i->name);

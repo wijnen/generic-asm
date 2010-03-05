@@ -1,7 +1,7 @@
 AUTOMAKE_OPTIONS = foreign subdir-objects
 
 bin_PROGRAMS = genasm
-dist_bin_SCRIPTS = asm-z80 asm-hc08
+dist_bin_SCRIPTS = asm-z80 asm-hc08 asm-avr
 
 genasm_SOURCES = \
 	src_asm/assemble.cc \

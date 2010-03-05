@@ -1,0 +1,412 @@
+#!NAME -wD
+
+# values in this file are for the attiny45.
+
+# flash memory: 2 bytes per address
+memory: 0x0000 0x800
+# eeprom: 1 byte per address
+memory: 0x4000 0x100
+# lock and fuse bits: 1 byte per address
+memory: 0x7000 0x4
+# The order is the same as for reading them from firmware:
+# 7000: fuse low byte
+# 7001: lock byte
+# 7002: fuse extended byte
+# 7003: fuse high byte
+
+directive: org .org
+directive: defb .defw
+directive: defb .dw
+directive: equ .equ
+directive: include .include
+directive: incbin .incbin
+directive: macro .macro
+directive: endmacro .endmacro
+directive: if .if
+directive: else .else
+directive: endif .endif
+directive: ; ;
+
+num: .r
+mask: 0x1f
+
+num: .d
+mask: 0x1f
+
+num: .ur
+mask: 0x1f
+constraint: .ur >= 0x10
+
+num: .ud
+mask: 0x1f
+constraint: .ud >= 0x10
+
+num: .x
+mask: 0x1e
+constraint: .x >= 0x18
+
+num: .md
+mask: 0x1f
+constraint: .md >= 16 && .md <= 23
+
+num: .md2
+mask: 0x1f
+constraint: .md2 >= 16 && .md2 <= 23
+
+num: .rw
+mask: 0x1e
+
+num: .dw
+mask: 0x1e
+
+num: .addr
+mask: 0x3fffff
+prefix: a_
+
+num: .reladdr
+constraint: .reladdr - ($ + 1) >= -0x40 &&  .reladdr - ($ + 1) < 0x40
+prefix: a_
+
+num: .reladdr2k
+constraint: .reladdr2k - ($ + 1) >= -0x800 &&  .reladdr2k - ($ + 1) < 0x800
+prefix: a_
+
+num: .k10
+mask: 0xf
+prefix: k_
+
+num: .k100
+mask: 0xff
+prefix: k_
+
+num: .k10000
+mask: 0xffff
+prefix: k_
+
+num: .k40
+mask: 0x3f
+prefix: k_
+
+num: .k80
+mask: 0x7f
+prefix: k_
+
+num: .km40
+constraint: (.km40 >= -0x40 && .km40 < 0x40)
+prefix: k_
+
+num: .bit
+mask: 0x7
+prefix: b_
+
+macro: .dr .cmd .base
+source: .cmd .d , .r
+target: .base | ((.r & 0x10) << 5) | ((.d & 0x1f) << 4) | (.r & 0xf)
+endmacro:
+
+macro: .id .cmd .base
+source: .cmd .ud , .k100
+target: .base | ((.k100 & 0xf0) << 4) | ((.ud & 0xf) << 4) | (.k100 & 0xf)
+endmacro:
+
+.dr adc 0x1c00
+.dr add 0x0c00
+
+macro: .iw .cmd .base
+source: .cmd .x , .k40
+target: .base | ((.k40 & 0x30) << 2) | (.k40 & 0xf) | ((.x & 0x6) << 3)
+endmacro:
+
+.iw adiw 0x9600
+
+.dr and 0x2000
+
+.id andi 0x7000
+
+source: asr .d
+target: 0x9405 | (.d << 4)
+
+source: bclr .bit
+target: 0x9488 | (.bit << 4)
+
+source: bld .d , .bit
+target: 0xf800 | (.d << 4) | .bit
+
+macro: .brb .cmd .base
+source: .cmd .bit , .reladdr
+target: .base | (((.reladdr - $ - 1) & 0x7f) << 3) | .bit
+endmacro:
+
+macro: .br .cmdn .cmdy .base
+source: .cmdn .reladdr
+target: .base | 0x0400 | (((.reladdr - $ - 1) & 0x7f) << 3)
+source: .cmdy .reladdr
+target: .base | (((.reladdr - $ - 1) & 0x7f) << 3)
+endmacro:
+
+.brb brbc 0xf400
+.brb brbs 0xf000
+.br brcc brcs 0xf000
+
+source: break
+target: 0x9598
+
+.br brne breq 0xf001
+.br brge brlt 0xf004
+.br brhc brhs 0xf005
+.br brid brie 0xf007
+.br brsh brlo 0xf000
+.br brpl brmi 0xf002
+.br brtc brts 0xf006
+.br brvc brvs 0xf003
+
+source: bset .bit
+target: 0x9408 | (.bit << 4)
+
+source: bst .d , .bit
+target: 0xfa00 | (.d << 4) | .bit
+
+source: call .addr
+target: 0x940e | ((.addr >> 13) & 0x01f0) | ((.addr >> 16) & 0x0001)
+target: addr & 0xffff
+
+macro: .io .cmd .base
+source: .cmd .d , .bit
+target: .base | (.d << 3) | .bit
+endmacro:
+
+.io cbi 0x9800
+
+source: cbr .ud , .k100
+target: 0x7000 | ((~.k100 & 0xf0) << 4) | ((.ud & 0xf) << 4) | (~.k100 & 0xf)
+
+macro: .cs .clear .set .base
+source: .clear
+target: .base | 0x9488
+source: .set
+target: .base | 0x9408
+endmacro:
+
+.cs clc sec 0x0000
+.cs clh seh 0x0050
+.cs cli sei 0x0070
+.cs cln sen 0x0020
+
+source: clr .d
+target: 0x2400 | (.d & 0x10) << 5) | ((.d & 0x1f) << 4) | (.d & 0xf)
+
+.cs cls ses 0x0040
+.cs clt set 0x0060
+.cs clv sev 0x0030
+.cs clz sez 0x0010
+
+source: com .d
+target: 0x9400 | (.d << 4)
+
+.dr cp 0x1400
+.dr cpc 0x0400
+
+.id cpi 0x3000
+
+.dr cpse 0x1000
+
+source: dec .d
+target: 0x940a | (.d << 4)
+
+source: des .k10
+target: 0x940b | (.k10 << 4)
+
+source: eicall
+target: 0x9519
+
+source: eijmp
+target: 0x9419
+
+source: elpm .d , z+
+target: 0x9007 | (.d << 4)
+
+source: elpm .d , z
+target: 0x9006 | (.d << 4)
+
+source: elpm
+target: 0x95d8
+
+.dr eor 0x2400
+
+source: fmul .md , .md2
+target: 0x0308 | ((.md & 0x7) << 4) | (.md2 & 0x7)
+
+source: fmuls .md , .md2
+target: 0x0380 | ((.md & 0x7) << 4) | (.md2 & 0x7)
+
+source: fmulsu .md , .md2
+target: 0x0388 | ((.md & 0x7) << 4) | (.md2 & 0x7)
+
+source: icall
+target: 0x9509
+
+source: ijmp
+target: 0x9409
+
+source: in .d , .k40
+target: 0xb000 | ((.k40 & 0x30) << 5) | (.d << 4) | (.k40 & 0xf)
+
+source: inc .d
+target: 0x9403 | (.d << 4)
+
+source: jmp .addr
+target: 0x940c | ((.addr >> 13) & 0x01f0) | ((.addr >> 16) & 0x0001)
+target: .addr & 0xffff
+
+macro: .stld .short .long .mask
+source: .short .d , x
+target: 0x900c | .mask | (.d << 4)
+source: .short .d , x+
+target: 0x900d | .mask | (.d << 4)
+source: .short .d , -x
+target: 0x900e | .mask | (.d << 4)
+
+source: .short .d , y
+target: 0x8008 | .mask | (.d << 4)
+source: .short .d , y+
+target: 0x9009 | .mask | (.d << 4)
+source: .short .d , -y
+target: 0x900a | .mask | (.d << 4)
+source: .long .d , y + .k40
+target: 0x8008 | .mask | (.d << 4) | ((.k40 & 0x20) << 8) | ((.k40 & 0x18) << 7) | (.k40 & 0x7)
+
+source: .short .d , z
+target: 0x8000 | .mask | (.d << 4)
+source: .short .d , z+
+target: 0x9001 | .mask | (.d << 4)
+source: .short .d , -z
+target: 0x9002 | .mask | (.d << 4)
+source: .long .d , z + .k40
+target: 0x8000 | .mask | (.d << 4) | ((.k40 & 0x20) << 8) | ((.k40 & 0x18) << 7) | (.k40 & 0x7)
+endmacro:
+
+.stld ld ldd 0x0000
+
+.id ldi 0xe000
+
+source: lds .d , .lds
+target: 0xa000 | (.d << 4) | ((.lds & 0x30) << 5) | (.lds & 0xf) | ((.lds & 0x40) << 2)
+
+source: lds .d , .k10000
+target: 0x9000 | (.d << 4)
+target: .k10000
+
+source: lpm
+target: 0x95c8
+
+source: lpm .d , z
+target: 0x9004 | (.d << 4)
+
+source: lpm .d , z+
+target: 0x9005 | (.d << 4)
+
+source: lsl .d
+target: 0x0c00 | (.d & 0x10) << 5) | ((.d & 0x1f) << 4) | (.d & 0xf)
+
+source: lsr .d
+target: 0x9406 | (.d << 4)
+
+.dr mov 0x2c00
+
+source: movw .dw , .rw
+target: 0x0100 | (.dw << 3) | (.rw >> 1)
+
+.dr mul 0x9c00
+
+source: muls .ud , .ur
+target: 0x0200 | ((.ud & 0xf) << 4) | (.ur & 0xf)
+
+source: mulsu .md , .md2
+target: 0x0300 | ((.md & 0x7) << 4) | (.md2 & 0x7)
+
+source: neg .d
+target: 0x9401 | (.d << 4)
+
+source: nop
+target: 0x0000
+
+.dr or 0x2800
+
+.id ori 0x6000
+
+source: out .d , .k40
+target: 0xb800 | ((.k40 & 0x30) << 5) | (.d << 4) | (.k40 & 0xf)
+
+source: pop .d
+target: 0x900f | (.d << 4)
+
+source: push .d
+target: 0x920f | (.d << 4)
+
+source: rcall .reladdr2k
+target: 0xd000 | ((.reladdr2k - $ - 1) & 0xfff)
+
+source: ret
+target: 0x9508
+
+source: reti
+target: 0x9518
+
+source: rjmp .reladdr2k
+target: 0xc000 | ((.reladdr2k - $ - 1) & 0xfff)
+
+source: rol .d
+target: 0x1c00 | (.d & 0x10) << 5) | ((.d & 0x1f) << 4) | (.d & 0xf)
+
+source: ror .d
+target: 0x9407 | (.d << 4)
+
+.dr sbc 0x0800
+
+.id sbci 0x4000
+
+.io sbi 0x9a00
+.io sbic 0x9900
+.io sbis 0x9b00
+
+.iw sbiw 0x9700
+.id sbr 0x6000
+
+source: sbrc .r , .bit
+target: 0xfc00 | (.r << 4) | .bit
+
+source: sbrs .r , .bit
+target: 0xfe00 | (.r << 4) | .bit
+
+source: ser .ud
+target: 0xef0f | ((.ud & 0xf) << 4)
+
+source: sleep
+target: 0x9588
+
+source: spm z+
+target: 0x95f8
+
+source: spm
+target: 0x95e8
+
+.stld st std 0x0200
+
+source: sts .ud , .k80
+target: 0xa800 | ((.ud & 0xf) << 4) | ((.k80 & 0x70) << 4) | (.k80 & 0xf)
+
+source: sts .d , .k10000
+target: 0x9200 | (.d << 4)
+target: .k10000
+
+.dr sub 0x1800
+.id subi 0x5000
+
+source: swap .d
+target: 0x9402 | (.d << 4)
+
+source: tst .d
+target: 0x2000 | (.d & 0x10) << 5) | ((.d & 0x1f) << 4) | (.d & 0xf)
+
+source: wdr
+target: 0x95a8

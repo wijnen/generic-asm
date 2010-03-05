@@ -4,7 +4,7 @@
 void write_byte (Expr::valid_int byte, int addr_offset)
 {
 	startfunc;
-	dbg (shevek::ostring ("Writing byte 0x%02x at 0x%04x+0x%x", byte.value & 0xff, addr, addr_offset));
+	dbg (shevek::ostring ("Writing byte 0x%02x at 0x%04x+0x%x", byte.value, addr, addr_offset));
 	if (!byte.valid)
 	{
 		for (std::list <std::string>::iterator i = byte.invalid.begin (); i != byte.invalid.end (); ++i)
@@ -12,14 +12,30 @@ void write_byte (Expr::valid_int byte, int addr_offset)
 		++errors;
 		return;
 	}
-	if ((byte.value < -0x80) || (byte.value >= 0x100))
+	if (use_bytes)
 	{
-		std::cerr << shevek::rostring ("byte %x out of range", byte.value);
-		++errors;
-		return;
+		if ((byte.value < -0x80) || (byte.value >= 0x100))
+		{
+			std::cerr << shevek::rostring ("byte %02x out of range", byte.value);
+			++errors;
+			return;
+		}
+		if (usehex)
+			hexfile.set (addr + addr_offset, byte.value);
+		else
+			*outfile << (char)byte.value;
 	}
-	if (usehex)
-		hexfile.set (addr + addr_offset, byte.value);
 	else
-		*outfile << (char)byte.value;
+	{
+		if ((byte.value < -0x8000) || (byte.value >= 0x10000))
+		{
+			std::cerr << shevek::rostring ("word %04x out of range", byte.value);
+			++errors;
+			return;
+		}
+		if (usehex)
+			hexfile.set (addr + addr_offset, byte.value);
+		else
+			*outfile << ((char)(byte.value >> 8)) << (char)byte.value;
+	}
 }

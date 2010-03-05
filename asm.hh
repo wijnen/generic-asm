@@ -128,6 +128,8 @@ struct Directive
 class Hex
 {
 public:
+	Hex () : use_words (false) {}
+	void words (bool w = true) { use_words = w; }
 	void open (std::istream &file);
 	void write_hex (std::ostream &file);
 	void write_s19 (std::ostream &file);
@@ -136,6 +138,7 @@ public:
 	unsigned size () const { return data.size (); }
 private:
 	std::vector <int> data;
+	bool use_words;
 };
 
 struct Block
@@ -148,7 +151,8 @@ struct Block
 		std::list <Label>::iterator label;
 		Expr::valid_int value;
 		Expr expr;
-		std::string name;	// or code.
+		std::string name;
+		std::vector <int> code;
 		Part () : value ("&") {}
 	};
 	bool absolute;
@@ -175,7 +179,7 @@ extern std::list <Block> blocks;
 extern std::list <Space> spaces;
 
 extern std::ostream *outfile, *listfile;
-extern bool usehex;
+extern bool usehex, use_bytes;
 extern Hex hexfile;
 extern unsigned addr;
 extern bool absolute_addr;

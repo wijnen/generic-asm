@@ -24,10 +24,21 @@ bool read_file (std::string const &filename)
 	std::string code = str.substr (pos + 1);
 	unsigned num_if = 0;
 	unsigned current = 0;
+	bool bytes (true);
 	blocks.push_back (Block ());
 	while (!script.rest ().empty ())
 	{
 		std::string name, expr;
+		if (script ("1\n"))
+		{
+			bytes = true;
+			continue;
+		}
+		if (script ("2\n"))
+		{
+			bytes = false;
+			continue;
+		}
 		if (script ("?%r/[^\n]*/\n", expr))
 		{
 			std::string::size_type p = 0;
@@ -141,8 +152,14 @@ bool read_file (std::string const &filename)
 			blocks.back ().parts.push_back (Block::Part ());
 			blocks.back ().parts.back ().type = Block::Part::CODE;
 			blocks.back ().parts.back ().have_expr = false;
-			blocks.back ().parts.back ().name = code.substr (current, i.value);
-			current += i.value;
+			for (int k = 0; k < i.value; ++k)
+			{
+				if (bytes)
+					blocks.back ().parts.back ().code.push_back (code[current + k]);
+				else
+					blocks.back ().parts.back ().code.push_back (code[current + 2 * k] | (code[current + 2 * k + 1] << 8));
+			}
+			current += (bytes ? 1 : 2) * i.value;
 			if (listfile)
 				*listfile << "using 0x" << i.value << " bytes of code\n";
 			continue;

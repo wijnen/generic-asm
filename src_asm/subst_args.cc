@@ -9,8 +9,7 @@ std::string subst_args (std::string const &orig,
 	{
 		while (true)
 		{
-			std::string::size_type
-				p = orig.find (args[i].first, pos);
+			std::string::size_type p = orig.find (args[i].first, pos);
 			if (p == std::string::npos)
 				break;
 			ret += orig.substr (pos, p - pos);

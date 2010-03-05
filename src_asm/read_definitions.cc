@@ -193,6 +193,7 @@ void read_definitions ()
 		}
 		else if (l ("source: %l", d))
 		{
+			dbg ("starting source " << d);
 			is_num = false;
 			is_enum = false;
 			is_source = true;
@@ -206,6 +207,10 @@ void read_definitions ()
 				for (std::list <Param>::iterator i = params.begin (); i != params.end (); ++i)
 				{
 					std::string::size_type p = d.find (i->name, pos);
+					if (p != 0 && p != d.size () && Glib::Ascii::isalnum (d[p - 1]) && Glib::Ascii::isalnum (d[p]))
+						continue;
+					if (p + i->name.size () != d.size () && Glib::Ascii::isalnum (d[p + i->name.size () - 1]) && Glib::Ascii::isalnum (d[p + i->name.size ()]))
+						continue;
 					if (p < first)
 					{
 						first = p;
@@ -214,9 +219,7 @@ void read_definitions ()
 				}
 				if (first >= d.size ())
 					break;
-				sources.back ().parts.push_back
-					(std::make_pair (d.substr
-						 (pos, first - pos), firstp));
+				sources.back ().parts.push_back (std::make_pair (d.substr (pos, first - pos), firstp));
 				pos = first + firstp->name.size ();
 			}
 			sources.back ().post = d.substr (pos);
@@ -231,6 +234,7 @@ void read_definitions ()
 				continue;
 			}
 			sources.back ().targets.push_back (d);
+			dbg ("added target " << d << " to " << (sources.back ().parts.empty () ? sources.back ().post : sources.back ().parts.front ().first));
 		}
 		else if (l ("macro: %s", d))
 		{
@@ -275,9 +279,7 @@ void read_definitions ()
 						if (!l (" %s",
 							i->args[k].second))
 						{
-							error ("not enough "
-								"macro "
-								"arguments");
+							error ("not enough macro arguments");
 							break;
 						}
 					}

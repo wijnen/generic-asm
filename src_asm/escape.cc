@@ -2,7 +2,7 @@
 
 std::string escape (std::string const &in)
 {
-	std::string out;
+	std::string out ("%:");
 	for (unsigned i = 0; i < in.size (); ++i)
 	{
 		if (in[i] == '%')
@@ -10,5 +10,5 @@ std::string escape (std::string const &in)
 		else
 			out += in[i];
 	}
-	return out;
+	return out + "%:";
 }

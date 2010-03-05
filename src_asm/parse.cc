@@ -101,6 +101,7 @@ void parse (input_line &input)
 			p->second->is_active = true;
 			if (!l (escape (p->first)))
 				break;
+			dbg ("found " << p->first);
 			if (p->second->is_enum)
 			{
 				std::map <std::string, Expr::valid_int>::iterator v;
@@ -112,7 +113,11 @@ void parse (input_line &input)
 					break;
 				}
 				if (v == p->second->enum_values.end ())
+				{
+					dbg ("skipping enum, because no value was found");
 					break;
+				}
+				dbg ("found enum " << v->first);
 			}
 			else
 			{
@@ -140,6 +145,7 @@ void parse (input_line &input)
 						if (!vi.value)
 							error (shevek::rostring ("Given value %d fails constraint", pvi.value));
 					}
+					dbg ("found valid number " << pvi.value);
 				}
 				else
 				{
@@ -152,12 +158,26 @@ void parse (input_line &input)
 								error ("use of undefined local label: " + *iv);
 						}
 					}
+					dbg ("found invalid number");
 				}
 				l.skip (pos);
 			}
 		}
-		if (p != s->parts.end () || !l (escape (s->post)) || (!l (" %") && !l (" ;")))
+		if (p != s->parts.end ())
+		{
+			dbg ("not all parts are used");
 			continue;
+		}
+		if (!l (escape (s->post)))
+		{
+			dbg ("not matching " << s->post);
+			continue;
+		}
+		if (!l (" %") && !l (" ;"))
+		{
+			dbg ("not entire line used");
+			continue;
+		}
 		if (make_label)
 		{
 			Expr::valid_int vi = new_label->value.compute (Expr::valid_int ("?:"));

@@ -287,22 +287,46 @@ namespace
 		return ret;
 	}
 
-	void write_record_hex (std::ostream &file, int type, std::string const &data = std::string (), int addr = 0)
+	void write_record_hex (std::ostream &file, int type, std::vector <int> const &data, int addr, bool use_words)
 	{
-		int sum = type + addr + (addr >> 8);
-		file << ':' << make_hex (data.size ()) << make_hex (addr, 2)
-			<< make_hex (type);
-		for (int i = 0; i < (int)data.size (); ++i)
+		std::vector <int> rdata;
+		if (use_words)
 		{
-			sum += data[i];
-			file << make_hex (data[i]);
+			addr *= 2;
+			rdata.resize (data.size () * 2);
+			for (unsigned i = 0; i < data.size (); ++i)
+			{
+				rdata[i * 2] = data[i] & 0xff;
+				rdata[i * 2 + 1] = data[i] >> 8;
+			}
+		}
+		else
+			rdata = data;
+		int sum = type + addr + (addr >> 8);
+		file << ':' << make_hex (rdata.size ()) << make_hex (addr, 2) << make_hex (type);
+		for (int i = 0; i < (int)rdata.size (); ++i)
+		{
+			sum += rdata[i];
+			file << make_hex (rdata[i]);
 		}
 		file << make_hex (-sum) << '\n';
 	}
 
-	void write_record_s19 (std::ostream &file, std::string const &data,
-			int addr)
+	void write_record_s19 (std::ostream &file, std::vector <int> const &data, int addr, bool use_words)
 	{
+		std::vector <int> rdata;
+		if (use_words)
+		{
+			addr *= 2;
+			rdata.resize (data.size () * 2);
+			for (unsigned i = 0; i < data.size (); ++i)
+			{
+				rdata[i * 2] = data[i] & 0xff;
+				rdata[i * 2 + 1] = data[i] >> 8;
+			}
+		}
+		else
+			rdata = data;
 		std::string a;
 		file << 'S';
 		unsigned checksum;
@@ -313,23 +337,21 @@ namespace
 		}
 		else if (addr < 1 << 24)
 		{
-			a = make_hex (addr >> 16) + make_hex (addr >> 8)
-				+ make_hex (addr);
+			a = make_hex (addr >> 16) + make_hex (addr >> 8) + make_hex (addr);
 			file << '2';
 		}
 		else
 		{
-			a = make_hex (addr >> 24) + make_hex (addr >> 16)
-				+ make_hex (addr >> 8) + make_hex (addr);
+			a = make_hex (addr >> 24) + make_hex (addr >> 16) + make_hex (addr >> 8) + make_hex (addr);
 			file << '3';
 		}
 		checksum = (addr >> 24) + (addr >> 16) + (addr >> 8) + addr;
-		checksum += a.size () / 2 + data.size () + 1;
-		file << make_hex (a.size () / 2 + data.size () + 1) << a;
-		for (unsigned i = 0; i < data.size (); ++i)
+		checksum += a.size () / 2 + rdata.size () + 1;
+		file << make_hex (a.size () / 2 + rdata.size () + 1) << a;
+		for (unsigned i = 0; i < rdata.size (); ++i)
 		{
-			file << make_hex (data[i]);
-			checksum += data[i];
+			file << make_hex (rdata[i]);
+			checksum += rdata[i];
 		}
 		file << make_hex (~checksum) << '\n';
 	}
@@ -349,12 +371,29 @@ void Hex::open (std::istream &file)
 				data.begin () + lines.front ().addr);
 		lines.pop_front ();
 	}
+	if (use_words)
+	{
+		std::vector <int> old = data;
+		data.resize (old.size () / 2);
+		for (unsigned i = 0; i < data.size (); ++i)
+		{
+			if (old[i * 2] == -1 || old[i * 2 + 1] == -1)
+			{
+				if (old[i * 2] != -1 || old[i * 2 + 1] != -1)
+					shevek_error ("half a word is uninitialized");
+				data[i] = -1;
+				continue;
+
+			}
+			data[i] = old[i * 2] | (old[i * 2 + 1] << 8);
+		}
+	}
 }
 
 void Hex::write_hex (std::ostream &file)
 {
 	int high = 0;
-	std::string tosend;
+	std::vector <int> tosend;
 	unsigned base_addr = 0;
 	for (int a = 0; a < (int)data.size (); ++a)
 	{
@@ -362,7 +401,7 @@ void Hex::write_hex (std::ostream &file)
 		{
 			if (!tosend.empty ())
 			{
-				write_record_hex (file, 0, tosend, base_addr);
+				write_record_hex (file, 0, tosend, base_addr, use_words);
 				tosend.clear ();
 			}
 			continue;
@@ -371,33 +410,33 @@ void Hex::write_hex (std::ostream &file)
 		{
 			if (!tosend.empty ())
 			{
-				write_record_hex (file, 0, tosend, base_addr);
+				write_record_hex (file, 0, tosend, base_addr, use_words);
 				tosend.clear ();
 			}
 			high = a >> 16;
-			std::string str;
+			std::vector <int> str;
 			str.resize (2);
 			str[0] = high & 0xff;
 			str[1] = (high >> 8) & 0xff;
-			write_record_hex (file, 2, str);
+			write_record_hex (file, 2, str, 0, use_words);
 		}
 		if (tosend.empty ())
 			base_addr = a;
-		tosend += data[a];
-		if (tosend.size () == 0x20)
+		tosend.push_back (data[a]);
+		if (tosend.size () == (use_words ? 0x10 : 0x20))
 		{
-			write_record_hex (file, 0, tosend, base_addr);
+			write_record_hex (file, 0, tosend, base_addr, use_words);
 			tosend.clear ();
 		}
 	}
 	if (!tosend.empty ())
-		write_record_hex (file, 0, tosend, base_addr);
-	write_record_hex (file, 1);
+		write_record_hex (file, 0, tosend, base_addr, use_words);
+	write_record_hex (file, 1, std::vector <int> (), 0, use_words);
 }
 
 void Hex::write_s19 (std::ostream &file)
 {
-	std::string tosend;
+	std::vector <int> tosend;
 	unsigned base_addr = 0;
 	for (unsigned a = 0; a < data.size (); ++a)
 	{
@@ -405,22 +444,22 @@ void Hex::write_s19 (std::ostream &file)
 		{
 			if (!tosend.empty ())
 			{
-				write_record_s19 (file, tosend, base_addr);
+				write_record_s19 (file, tosend, base_addr, use_words);
 				tosend.clear ();
 			}
 			continue;
 		}
 		if (tosend.empty ())
 			base_addr = a;
-		tosend += data[a];
-		if (tosend.size () == 0x20)
+		tosend.push_back (data[a]);
+		if (tosend.size () == (use_words ? 0x10 : 0x20))
 		{
-			write_record_s19 (file, tosend, base_addr);
+			write_record_s19 (file, tosend, base_addr, use_words);
 			tosend.clear ();
 		}
 	}
 	if (!tosend.empty ())
-		write_record_s19 (file, tosend, base_addr);
+		write_record_s19 (file, tosend, base_addr, use_words);
 	file << "S9030000FC\n";
 }
 

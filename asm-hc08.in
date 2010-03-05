@@ -21,14 +21,6 @@ directive: ; ;
 num: .word
 constraint: .word >= -0x8000 && .word <= 0xffff
 
-source: .defw .word
-target: .word >> 8
-target: .word & 0xff
-
-source: .dw .word
-target: .word >> 8
-target: .word & 0xff
-
 num: .bit
 mask: 0x7
 
@@ -275,30 +267,30 @@ target: 0x31
 target: .dir
 target: .reladdr3 - ($ + 3)
 
-source: cbeqa # .imm , .reladdr
+source: cbeqa # .imm , .reladdr3
 target: 0x41
 target: .imm
-target: .reladdr - ($ + 2)
+target: .reladdr3 - ($ + 3)
 
-source: cbeqx # .imm , .reladdr
+source: cbeqx # .imm , .reladdr3
 target: 0x51
 target: .imm
-target: .reladdr - ($ + 2)
+target: .reladdr3 - ($ + 3)
 
-source: cbeq .ix1 , x + , .reladdr
+source: cbeq .ix1 , x + , .reladdr3
 target: 0x61
 target: .ix1
-target: .reladdr - ($ + 2)
+target: .reladdr3 - ($ + 3)
 
 source: cbeq , x + , .reladdr
 target: 0x71
 target: .reladdr - ($ + 2)
 
-source: cbeq .ix1 , sp , .reladdr3
+source: cbeq .ix1 , sp , .reladdr4
 target: 0x9e
 target: 0x61
 target: .ix1
-target: .reladdr3 - ($ + 3)
+target: .reladdr4 - ($ + 4)
 
 source: clc
 target: 0x98
@@ -507,3 +499,11 @@ target: 0x8f
 
 source: stop
 target: 0x8e
+
+source: .defw .word
+target: .word >> 8
+target: .word & 0xff
+
+source: .dw .word
+target: .word >> 8
+target: .word & 0xff
