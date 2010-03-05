@@ -334,7 +334,7 @@ target: 0x0000
 
 .id ori 0x6000
 
-source: out .d , .k40
+source: out .k40 , .d
 target: 0xb800 | ((.k40 & 0x30) << 5) | (.d << 4) | (.k40 & 0xf)
 
 source: pop .d
