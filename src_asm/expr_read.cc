@@ -62,6 +62,8 @@ Expr Expr::read (std::string const &input, bool allow_params, std::string::size_
 			if (l ("{"))
 			{
 				dbg ("bit construct");
+				// Protect the list from operators before it.
+				opers.push (&open);
 				std::list <Expr> list;
 				bool need_comma = false;
 				if (l (" }"))
@@ -86,7 +88,11 @@ Expr Expr::read (std::string const &input, bool allow_params, std::string::size_
 						dbg (n << ',' << p);
 					}
 					if (!l ("}"))
+					{
 						error ("bit-constructor isn't closed");
+						pos = std::string::npos;
+						return Expr ();
+					}
 					result.push (Expr (Expr::NUM, 1));
 					handle_oper (result, opers, lshift_oper);
 					result.push (list.front ());
@@ -99,6 +105,15 @@ Expr Expr::read (std::string const &input, bool allow_params, std::string::size_
 						result.push (*i);
 					}
 				}
+				handle_oper (result, opers, &close);
+				opers.pop ();
+				if (opers.empty () || opers.top () != &open)
+				{
+					error ("bit construction ends before closing brace");
+					pos = std::string::npos;
+					return Expr ();
+				}
+				opers.pop ();
 				expect_number = false;
 				dbg ("done");
 				continue;
