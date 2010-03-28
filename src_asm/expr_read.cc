@@ -64,29 +64,29 @@ Expr Expr::read (std::string const &input, bool allow_params, std::string::size_
 				dbg ("bit construct");
 				std::list <Expr> list;
 				bool need_comma = false;
-				while (true)
-				{
-					dbg (l.rest ());
-					if (need_comma)
-					{
-						if (!l (" , "))
-							break;
-					}
-					need_comma = true;
-					std::string::size_type p = input.size () - l.rest ().size ();
-					std::string::size_type n = p;
-					list.push_back (Expr::read (input, allow_params, n));
-					l.skip (n - p);
-					dbg (n << ',' << p);
-				}
-				if (!l ("}"))
-					error ("bit-constructor isn't closed");
-				if (list.empty ())
+				if (l (" }"))
 				{
 					result.push (Expr (Expr::NUM, 0));
 				}
 				else
 				{
+					while (true)
+					{
+						dbg (l.rest ());
+						if (need_comma)
+						{
+							if (!l (" , "))
+								break;
+						}
+						need_comma = true;
+						std::string::size_type p = input.size () - l.rest ().size ();
+						std::string::size_type n = p;
+						list.push_back (Expr::read (input, allow_params, n));
+						l.skip (n - p);
+						dbg (n << ',' << p);
+					}
+					if (!l ("}"))
+						error ("bit-constructor isn't closed");
 					result.push (Expr (Expr::NUM, 1));
 					handle_oper (result, opers, lshift_oper);
 					result.push (list.front ());
