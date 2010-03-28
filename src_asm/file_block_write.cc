@@ -4,6 +4,7 @@
 
 static void clean_addr (Expr &e, bool constraint = false)
 {
+	dbg ("cleaning " << e.print ());
 	for (std::list <Expr>::iterator i = e.children.begin (); i != e.children.end (); ++i)
 		clean_addr (*i, constraint);
 	for (std::list <Expr>::iterator i = e.constraints.begin (); i != e.constraints.end (); ++i)
@@ -12,8 +13,8 @@ static void clean_addr (Expr &e, bool constraint = false)
 	if (e.type == Expr::LABEL && e.label == "$$")
 	{
 		e.label = "$";
-		if (constraint)
-			error ("constraint constains '$'");
+		//if (constraint)
+		//	error ("constraint contains '$'");
 	}
 }
 
