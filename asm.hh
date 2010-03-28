@@ -194,7 +194,7 @@ extern bool report_labels;
 extern Oper operators1[3];
 extern Oper operators2[19];
 extern Oper operators3[1];
-extern Oper *plus_oper, *pre_minus_oper;
+extern Oper *plus_oper, *pre_minus_oper, *lshift_oper, *or_oper;
 
 template <typename T, unsigned n> unsigned num_elem (T (&arr)[n]) { (void)arr; return n; }
 

@@ -152,11 +152,12 @@ Oper *pre_minus_oper = &operators1[0];
 
 Oper operators2[19] = {
 	Oper (2, '+', "+", 10, &run_plus, &print_plus),
+	Oper (2, '{', "<<", 9, &run_lshift, &print_lshift),
+	Oper (2, '|', "|", 5, &run_bitor, &print_bitor),
 	Oper (2, '*', "*", 11, &run_mul, &print_mul),
 	Oper (2, '/', "/", 11, &run_div, &print_div),
 	Oper (2, '%', "%", 11, &run_mod, &print_mod),
 	Oper (2, '-', "-", 10, &run_minus, &print_minus),
-	Oper (2, '{', "<<", 9, &run_lshift, &print_lshift),
 	Oper (2, '}', ">>", 9, &run_rshift, &print_rshift),
 	Oper (2, '[', "<=", 8, &run_lte, &print_lte),
 	Oper (2, ']', ">=", 8, &run_gte, &print_gte),
@@ -168,10 +169,11 @@ Oper operators2[19] = {
 	Oper (2, '6', "^^", 2, &run_xor, &print_xor),
 	Oper (2, '\\', "||", 1, &run_or, &print_or),
 	Oper (2, '&', "&", 6, &run_bitand, &print_bitand),
-	Oper (2, '|', "|", 5, &run_bitor, &print_bitor),
 	Oper (2, '^', "^", 4, &run_bitxor, &print_bitxor)
 };
 Oper *plus_oper = &operators2[0];
+Oper *lshift_oper = &operators2[1];
+Oper *or_oper = &operators2[2];
 
 Oper operators3[1] = {
 	Oper (3, ':', ":", 0, &run_tri, &print_tri)
