@@ -411,10 +411,10 @@ target: 0x9202 | (.d << 4)
 source: std z + .k40 , $ .d
 target: 0x8200 | (.d << 4) | ((.k40 & 0x20) << 8) | ((.k40 & 0x18) << 7) | (.k40 & 0x7)
 
-source: sts $ .ud , * .k80
+source: sts * .k80 , $ .ud
 target: 0xa800 | ((.ud & 0xf) << 4) | ((.k80 & 0x70) << 4) | (.k80 & 0xf)
 
-source: sts $ .d , .k10000
+source: sts .k10000 , $ .d
 target: 0x9200 | (.d << 4)
 target: .k10000
 
