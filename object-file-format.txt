@@ -1,0 +1,20 @@
+Object file format:
+4 bytes: signature '#', '\xfe', 'o', 'f'
+4 bytes: format version.  Must be '\0\0\0\0'.
+n bytes: script.  Cannot contain '\0'.
+1 byte: separator: '\0'
+m bytes: object data.
+
+code starts out as byte data.  Script commands are executed in turn.  Options are:
+
+'1\n': set format to byte data
+'2\n': set format to word data
+'?' + expression + '\n': if statement
+':\n': else statement
+';\n': endif statement
+label + '=' + expression + '\n': label definition
+'+' + expression + '\n': add literal data to output
+"<\n": start relative org block
+'<' + expression + '\n': start absolute org block
+'>' + const_expression + '\n': add code from object data to output
+'#' + text + '\n': comment

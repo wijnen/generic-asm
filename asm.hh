@@ -130,9 +130,9 @@ class Hex
 public:
 	Hex () : use_words (false) {}
 	void words (bool w = true) { use_words = w; }
-	void open (std::istream &file);
-	void write_hex (std::ostream &file);
-	void write_s19 (std::ostream &file);
+	void open (std::istream &file, bool use_words);
+	void write_hex (std::ostream &file, bool use_words);
+	void write_s19 (std::ostream &file, bool use_words);
 	int get (unsigned address) const;
 	void set (unsigned address, int value);
 	unsigned size () const { return data.size (); }
@@ -179,7 +179,7 @@ extern std::list <Block> blocks;
 extern std::list <Space> spaces;
 
 extern std::ostream *outfile, *listfile;
-extern bool usehex, use_bytes;
+extern bool usehex, use_words;
 extern Hex hexfile;
 extern unsigned addr;
 extern bool absolute_addr;

@@ -4,6 +4,10 @@ static void simplify_oper (Expr &self, int zero)
 {
 	Expr *f = &self.children.front ();
 	Expr *b = &self.children.back ();
+	if (self.oper->code == ':')
+	{
+		dbg (f->print ());
+	}
 	if ((b->type == Expr::NUM && b->value.valid) || f->type == Expr::OPER || (f->type != Expr::NUM && b->type == Expr::PARAM))
 	{
 		Expr e = self.children.front ();

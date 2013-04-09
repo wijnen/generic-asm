@@ -302,7 +302,7 @@ namespace
 		}
 		else
 			rdata = data;
-		int sum = type + addr + (addr >> 8);
+		int sum = rdata.size () + addr + (addr >> 8) + type;
 		file << ':' << make_hex (rdata.size ()) << make_hex (addr, 2) << make_hex (type);
 		for (int i = 0; i < (int)rdata.size (); ++i)
 		{
@@ -357,7 +357,7 @@ namespace
 	}
 }
 
-void Hex::open (std::istream &file)
+void Hex::open (std::istream &file, bool use_words)
 {
 	std::list <line_t> lines = read_lines (file);
 	while (!lines.empty ())
@@ -390,7 +390,7 @@ void Hex::open (std::istream &file)
 	}
 }
 
-void Hex::write_hex (std::ostream &file)
+void Hex::write_hex (std::ostream &file, bool use_words)
 {
 	int high = 0;
 	std::vector <int> tosend;
@@ -406,19 +406,19 @@ void Hex::write_hex (std::ostream &file)
 			}
 			continue;
 		}
-		if (a >= (high + 1) << 16)
+		if (a >= (high + 1) << (use_words ? 15 : 16))
 		{
 			if (!tosend.empty ())
 			{
 				write_record_hex (file, 0, tosend, base_addr, use_words);
 				tosend.clear ();
 			}
-			high = a >> 16;
+			high = a >> (use_words ? 15 : 16);
 			std::vector <int> str;
 			str.resize (2);
-			str[0] = high & 0xff;
-			str[1] = (high >> 8) & 0xff;
-			write_record_hex (file, 2, str, 0, use_words);
+			str[0] = (high >> 8) & 0xff;
+			str[1] = high & 0xff;
+			write_record_hex (file, 4, str, 0, false);
 		}
 		if (tosend.empty ())
 			base_addr = a;
@@ -434,7 +434,7 @@ void Hex::write_hex (std::ostream &file)
 	write_record_hex (file, 1, std::vector <int> (), 0, use_words);
 }
 
-void Hex::write_s19 (std::ostream &file)
+void Hex::write_s19 (std::ostream &file, bool use_words)
 {
 	std::vector <int> tosend;
 	unsigned base_addr = 0;

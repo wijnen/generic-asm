@@ -2,6 +2,8 @@ AUTOMAKE_OPTIONS = foreign subdir-objects
 
 bin_PROGRAMS = genasm
 dist_bin_SCRIPTS = asm-z80 asm-hc08 asm-avr
+incdir = $(pkgdatadir)/include
+inc_DATA = include/atmega8.h include/attiny45.h include/attiny2313.h include/attiny828.h
 
 genasm_SOURCES = \
 	src_asm/assemble.cc \
@@ -49,7 +51,7 @@ genasm_SOURCES = \
 	src_asm/write_expr.cc \
 	src_asm/write_out.cc \
 	asm.hh
-genasm_CPPFLAGS = $(SHEVEK_CFLAGS) -I. -Wall -Werror -Wextra -Wmissing-declarations -Wredundant-decls -O -Wunused
+genasm_CPPFLAGS = -DCOPYRIGHT_YEARS=\"2008-2012\" -DDEFAULT_INCLUDE_PATH=\"$(incdir)\" $(SHEVEK_CFLAGS) -I. -Wall -Werror -Wextra -Wmissing-declarations -Wredundant-decls -O -Wunused
 genasm_LDADD = $(SHEVEK_LIBS)
 
 asm-%: asm-%.in Makefile

@@ -2,7 +2,7 @@
 
 std::ostream *outfile, *listfile;
 bool usehex;
-bool use_bytes;
+bool use_words;
 Hex hexfile;
 unsigned addr;
 bool absolute_addr;

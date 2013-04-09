@@ -1,18 +1,30 @@
 #!NAME -wD
 
-# values in this file are for the attiny45.
-
-# flash memory: 2 bytes per address
-memory: 0x0000 0x800
-# eeprom: 1 byte per address
-memory: 0x4000 0x100
+# values for the attiny45.
+# flash memory: 2 bytes per address, 0x0000+0x800
+# eeprom: 1 byte per address, 0x4000+0x100
 # lock and fuse bits: 1 byte per address
-memory: 0x7000 0x4
 # The order is the same as for reading them from firmware:
 # 7000: fuse low byte
 # 7001: lock byte
 # 7002: fuse extended byte
 # 7003: fuse high byte
+#memory: 0x0000 0x800
+#memory: 0x4000 0x100
+#memory: 0x7000 0x4
+
+# values for the atmega8.
+# flash memory: 2 bytes per address
+# eeprom: 1 byte per address
+# lock and fuse bits: 1 byte per address
+# The order is the same as for reading them from firmware:
+# 7000: fuse low byte
+# 7001: lock byte
+# 7003: fuse high byte
+memory: 0x0000 0x1000
+memory: 0x4000 0x200
+memory: 0x7000 0x2
+memory: 0x7003 0x1
 
 directive: org .org
 directive: defb .defw
@@ -60,7 +72,7 @@ num: .dw
 mask: 0x1e
 
 num: .addr
-mask: 0x3fffff
+mask: 0xffffff
 prefix: a_
 
 num: .reladdr
@@ -168,7 +180,7 @@ target: 0xfa00 | (.d << 4) | .bit
 
 source: call .addr
 target: 0x940e | ((.addr >> 13) & 0x01f0) | ((.addr >> 16) & 0x0001)
-target: addr & 0xffff
+target: .addr & 0xffff
 
 macro: .io .cmd .base
 source: .cmd @ .d , % .bit

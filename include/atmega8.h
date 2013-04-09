@@ -1,0 +1,388 @@
+; atmega8 register and bit definitions
+TWBR:	.equ 0x00
+TWSR:	.equ 0x01
+	TWPS0:	.equ 0
+	TWPS1:	.equ 1
+	TWS3:	.equ 3
+	TWS4:	.equ 4
+	TWS5:	.equ 5
+	TWS6:	.equ 6
+	TWS7:	.equ 7
+TWAR:	.equ 0x02
+	TWGCE:	.equ 0
+	TWA0:	.equ 1
+	TWA1:	.equ 2
+	TWA2:	.equ 3
+	TWA3:	.equ 4
+	TWA4:	.equ 5
+	TWA5:	.equ 6
+	TWA6:	.equ 7
+TWDR:	.equ 0x03
+ADCL:	.equ 0x04
+ADCH:	.equ 0x05
+ADCSRA:	.equ 0x06
+	ADPS0:	.equ 0
+	ADPS1:	.equ 1
+	ADPS2:	.equ 2
+	ADIE:	.equ 3
+	ADIF:	.equ 4
+	ADFR:	.equ 5
+	ADSC:	.equ 6
+	ADEN:	.equ 7
+ADMUX:	.equ 0x07
+	MUX0:	.equ 0
+	MUX1:	.equ 1
+	MUX2:	.equ 2
+	MUX3:	.equ 3
+	ADLAR:	.equ 5
+	REFS0:	.equ 6
+	REFS1:	.equ 7
+ACSR:	.equ 0x08
+	ACIS0:	.equ 0
+	ACIS1:	.equ 1
+	ACIE:	.equ 3
+	ACI:	.equ 4
+	ACO:	.equ 5
+	ACBG:	.equ 6
+	ACD:	.equ 7
+UBRRL:	.equ 0x09
+UCSRB:	.equ 0x0a
+	TXB8:	.equ 0
+	RXB8:	.equ 1
+	UCSZ2:	.equ 2
+	TXEN:	.equ 3
+	RXEN:	.equ 4
+	UDRIE:	.equ 5
+	TXCIE:	.equ 6
+	RXCIE:	.equ 7
+UCSRA:	.equ 0x0b
+	MPCM:	.equ 0
+	U2X:	.equ 1
+	PE:	.equ 2
+	DOR:	.equ 3
+	FE:	.equ 4
+	UDRE:	.equ 5
+	TXC:	.equ 6
+	RXC:	.equ 7
+; These are three names for the same register.
+UDR:	.equ 0x0c
+RXB:	.equ 0x0c
+TXB:	.equ 0x0c
+SPCR:	.equ 0x0d
+	SPR0:	.equ 0
+	SPR1:	.equ 1
+	CPHA:	.equ 2
+	CPOL:	.equ 3
+	MSTR:	.equ 4
+	DORD:	.equ 5
+	SPE:	.equ 6
+	SPIE:	.equ 7
+SPSR:	.equ 0x0e
+	SPI2X:	.equ 0
+	WCOL:	.equ 6
+	SPIF:	.equ 7
+SPDR:	.equ 0x0f
+PIND:	.equ 0x10
+	PIND0:	.equ 0
+	PIND1:	.equ 1
+	PIND2:	.equ 2
+	PIND3:	.equ 3
+	PIND4:	.equ 4
+	PIND5:	.equ 5
+	PIND6:	.equ 6
+	PIND7:	.equ 7
+DDRD:	.equ 0x11
+	DDRD0:	.equ 0
+	DDRD1:	.equ 1
+	DDRD2:	.equ 2
+	DDRD3:	.equ 3
+	DDRD4:	.equ 4
+	DDRD5:	.equ 5
+	DDRD6:	.equ 6
+	DDRD7:	.equ 7
+PORTD:	.equ 0x12
+	PORTD0:	.equ 0
+	PORTD1:	.equ 1
+	PORTD2:	.equ 2
+	PORTD3:	.equ 3
+	PORTD4:	.equ 4
+	PORTD5:	.equ 5
+	PORTD6:	.equ 6
+	PORTD7:	.equ 7
+PINC:	.equ 0x13
+	PINC0:	.equ 0
+	PINC1:	.equ 1
+	PINC2:	.equ 2
+	PINC3:	.equ 3
+	PINC4:	.equ 4
+	PINC5:	.equ 5
+	PINC6:	.equ 6
+	PINC7:	.equ 7
+DDRC:	.equ 0x14
+	DDRC0:	.equ 0
+	DDRC1:	.equ 1
+	DDRC2:	.equ 2
+	DDRC3:	.equ 3
+	DDRC4:	.equ 4
+	DDRC5:	.equ 5
+	DDRC6:	.equ 6
+	DDRC7:	.equ 7
+PORTC:	.equ 0x15
+	PORTC0:	.equ 0
+	PORTC1:	.equ 1
+	PORTC2:	.equ 2
+	PORTC3:	.equ 3
+	PORTC4:	.equ 4
+	PORTC5:	.equ 5
+	PORTC6:	.equ 6
+	PORTC7:	.equ 7
+PINB:	.equ 0x16
+	PINB0:	.equ 0
+	PINB1:	.equ 1
+	PINB2:	.equ 2
+	PINB3:	.equ 3
+	PINB4:	.equ 4
+	PINB5:	.equ 5
+	PINB6:	.equ 6
+	PINB7:	.equ 7
+DDRB:	.equ 0x17
+	DDRB0:	.equ 0
+	DDRB1:	.equ 1
+	DDRB2:	.equ 2
+	DDRB3:	.equ 3
+	DDRB4:	.equ 4
+	DDRB5:	.equ 5
+	DDRB6:	.equ 6
+	DDRB7:	.equ 7
+PORTB:	.equ 0x18
+	PORTB0:	.equ 0
+	PORTB1:	.equ 1
+	PORTB2:	.equ 2
+	PORTB3:	.equ 3
+	PORTB4:	.equ 4
+	PORTB5:	.equ 5
+	PORTB6:	.equ 6
+	PORTB7:	.equ 7
+EECR:	.equ 0x1c
+	EERE:	.equ 0
+	EEWE:	.equ 1
+	EEMWE:	.equ 2
+	EERIE:	.equ 3
+EEDR:	.equ 0x1d
+EEARL:	.equ 0x1e
+	EEAR0:	.equ 0
+	EEAR1:	.equ 1
+	EEAR2:	.equ 2
+	EEAR3:	.equ 3
+	EEAR4:	.equ 4
+	EEAR5:	.equ 5
+	EEAR6:	.equ 6
+	EEAR7:	.equ 7
+EEARH:	.equ 0x1f
+	EEAR8:	.equ 0
+; These two have the same address.
+UBRRH:	.equ 0x20
+UCSRC:	.equ 0x20
+	UCPOL:	.equ 0
+	UCSZ0:	.equ 1
+	UCSZ1:	.equ 2
+	USBS:	.equ 3
+	UPM0:	.equ 4
+	UPM1:	.equ 5
+	UMSEL:	.equ 6
+	URSEL:	.equ 7
+WDTCR:	.equ 0x21
+	WDP0:	.equ 0
+	WDP1:	.equ 1
+	WDP2:	.equ 2
+	WDE:	.equ 3
+	WDCE:	.equ 4
+ASSR:	.equ 0x22
+	TCR2UB:	.equ 0
+	OCR2UB:	.equ 1
+	TCN2UB:	.equ 2
+	AS2:	.equ 3
+OCR2:	.equ 0x23
+TCNT2:	.equ 0x24
+TCCR2:	.equ 0x25
+	CS20:	.equ 0
+	CS21:	.equ 1
+	CS22:	.equ 2
+	WGM21:	.equ 3
+	COM20:	.equ 4
+	COM21:	.equ 5
+	WGM20:	.equ 6
+	FOC2:	.equ 7
+ICR1L:	.equ 0x26
+ICR1H:	.equ 0x27
+OCR1BL:	.equ 0x28
+OCR1BH:	.equ 0x29
+OCR1AL:	.equ 0x2a
+OCR1AH:	.equ 0x2b
+TCNT1L:	.equ 0x2c
+TCNT1H:	.equ 0x2d
+TCCR1B:	.equ 0x2e
+	CS10:	.equ 0
+	CS11:	.equ 1
+	CS12:	.equ 2
+	WGM12:	.equ 3
+	WGM13:	.equ 4
+	ICES1:	.equ 6
+	ICNC1:	.equ 7
+TCCR1A:	.equ 0x2f
+	WGM10:	.equ 0
+	WGM11:	.equ 1
+	FOC1B:	.equ 2
+	FOC1A:	.equ 3
+	COM1B0:	.equ 4
+	COM1B1:	.equ 5
+	COM1A0:	.equ 6
+	COM1A1:	.equ 7
+SFIOR:	.equ 0x30
+	PSR10:	.equ 0
+	PSR2:	.equ 1
+	PUD:	.equ 2
+	ACME:	.equ 3
+OSCCAL:	.equ 0x31
+TCNT0:	.equ 0x32
+TCCR0:	.equ 0x33
+	CS00:	.equ 0
+	CS01:	.equ 1
+	CS02:	.equ 2
+MCUCSR:	.equ 0x34
+	PORF:	.equ 0
+	EXTRF:	.equ 1
+	BORF:	.equ 2
+	WDRF:	.equ 3
+MCUCR:	.equ 0x35
+	ISC00:	.equ 0
+	ISC01:	.equ 1
+	ISC10:	.equ 2
+	ISC11:	.equ 3
+	SM0:	.equ 4
+	SM1:	.equ 5
+	SM2:	.equ 6
+	SE:	.equ 7
+TWCR:	.equ 0x36
+	TWIE:	.equ 0
+	TWEN:	.equ 2
+	TWWC:	.equ 3
+	TWSTO:	.equ 4
+	TWSTA:	.equ 5
+	TWEA:	.equ 6
+	TWINT:	.equ 7
+SPMCR:	.equ 0x37
+	SPMEN:	.equ 0
+	PGERS:	.equ 1
+	PGWRT:	.equ 2
+	BLBSET:	.equ 3
+	RWWSRE:	.equ 4
+	RWWSB:	.equ 6
+	SPMIE:	.equ 7
+TIFR:	.equ 0x38
+	TOV0:	.equ 0
+	TOV1:	.equ 2
+	OCF1B:	.equ 3
+	OCF1A:	.equ 4
+	ICF1:	.equ 5
+	TOV2:	.equ 6
+	OCF2:	.equ 7
+TIMSK:	.equ 0x39
+	TOIE0:	.equ 0
+	TOIE1:	.equ 2
+	OCIE1B:	.equ 3
+	OCIE1A:	.equ 4
+	TICIE1:	.equ 5
+	TOIE2:	.equ 6
+	OCIE2:	.equ 7
+GIFR:	.equ 0x3a
+	INTF0:	.equ 6
+	INTF1:	.equ 7
+GICR:	.equ 0x3b
+	IVCE:	.equ 0
+	IVSEL:	.equ 1
+	INT0:	.equ 6
+	INT1:	.equ 7
+SPL:	.equ 0x3d
+	SP0:	.equ 0
+	SP1:	.equ 1
+	SP2:	.equ 2
+	SP3:	.equ 3
+	SP4:	.equ 4
+	SP5:	.equ 5
+	SP6:	.equ 6
+	SP7:	.equ 7
+SPH:	.equ 0x3e
+	SP8:	.equ 0
+	SP9:	.equ 1
+	SP10:	.equ 2
+SREG:	.equ 0x3f
+	C:	.equ 0
+	Z:	.equ 1
+	N:	.equ 2
+	V:	.equ 3
+	S:	.equ 4
+	H:	.equ 5
+	T:	.equ 6
+	I:	.equ 7
+
+; lock and fuse byte locations
+FLB:	.equ 0x7000
+	CKSEL0:		.equ 0
+	CKSEL1:		.equ 1
+	CKSEL2:		.equ 2
+	CKSEL3:		.equ 3
+	SUT0:		.equ 4
+	SUT1:		.equ 5
+	BODEN:		.equ 6
+	BODLEVEL:	.equ 7
+LOCKBITS:	.equ 0x7001
+	LB1:		.equ 0
+	LB2:		.equ 1
+	BLB01:		.equ 2
+	BLB02:		.equ 3
+	BLB11:		.equ 4
+	BLB12:		.equ 5
+FHB:	.equ 0x7003
+	BOOTRST:	.equ 0
+	BOOTSZ0:	.equ 1
+	BOOTSZ1:	.equ 2
+	EESAVE:		.equ 3
+	CKOPT:		.equ 4
+	SPIEN:		.equ 5
+	WDTON:		.equ 6
+	RSTDISBL:	.equ 7
+
+EEPROM:	.equ 0x4000
+
+; 0x20 registers; 0x40 i/o registers; 0x400 sram bytes.
+RAMEND:	.equ 0x45f
+
+	.org 0
+	rjmp INT_RESET
+	rjmp ?INT_INT0 ? INT_INT0 : HANG
+	rjmp ?INT_INT1 ? INT_INT1 : HANG
+	rjmp ?INT_TIMER2_COMP ? INT_TIMER2_COMP : HANG
+	rjmp ?INT_TIMER2_OVF ? INT_TIMER2_OVF : HANG
+	rjmp ?INT_TIMER1_CAPT ? INT_TIMER1_CAPT : HANG
+	rjmp ?INT_TIMER1_COMP_A ? INT_TIMER1_COMP_A : HANG
+	rjmp ?INT_TIMER1_COMP_B ? INT_TIMER1_COMP_B : HANG
+	rjmp ?INT_TIMER1_OVF ? INT_TIMER1_OVF : HANG
+	rjmp ?INT_TIMER0_OVF ? INT_TIMER0_OVF : HANG
+	rjmp ?INT_SPI_STC ? INT_SPI_STC : HANG
+	rjmp ?INT_USART_RXC ? INT_USART_RXC : HANG
+	rjmp ?INT_USART_UDRE ? INT_USART_UDRE : HANG
+	rjmp ?INT_USART_TXC ? INT_USART_TXC : HANG
+	rjmp ?INT_ADC ? INT_ADC : HANG
+	rjmp ?INT_EE_RDY ? INT_EE_RDY : HANG
+	rjmp ?INT_ANA_COMP ? INT_ANA_COMP : HANG
+	rjmp ?INT_TWI ? INT_TWI : HANG
+	rjmp ?INT_SPM_RDY ? INT_SPM_RDY : HANG
+
+HANG:
+	cli
+	ldi $16, #'!'
+.HANG:
+	sbic @UCSRA, %UDRE
+	out @TXB, $16
+	rjmp .HANG

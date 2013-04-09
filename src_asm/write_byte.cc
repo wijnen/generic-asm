@@ -12,7 +12,7 @@ void write_byte (Expr::valid_int byte, int addr_offset)
 		++errors;
 		return;
 	}
-	if (use_bytes)
+	if (!use_words)
 	{
 		if ((byte.value < -0x80) || (byte.value >= 0x100))
 		{

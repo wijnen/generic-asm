@@ -13,6 +13,7 @@ void assemble (std::vector <std::string> &in_files)
 {
 	for (unsigned f = 0; f < in_files.size (); ++f)
 	{
+		// Try to read file as object file.  If it works, continue.
 		if (read_file (in_files[f]))
 			continue;
 		if (errors)

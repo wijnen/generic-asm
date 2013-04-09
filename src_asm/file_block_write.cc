@@ -146,9 +146,9 @@ void Block::write_binary ()
 	absolute_addr = true;	// This is true, because the blocks have been placed.
 	addr = address;
 	unsigned offset = 0;
+	unsigned num_true = 0, num_false = 0;
 	for (std::list <Part>::iterator i = parts.begin (); i != parts.end (); ++i)
 	{
-		unsigned num_true = 0, num_false = 0;
 		Expr::valid_int vi ("!!");
 		switch (i->type)
 		{
@@ -165,12 +165,12 @@ void Block::write_binary ()
 			switch (num_false)
 			{
 			case 0:
-				++num_true;
-				--num_false;
-				break;
-			case 1:
 				--num_true;
 				++num_false;
+				break;
+			case 1:
+				++num_true;
+				--num_false;
 				break;
 			default:
 				break;
@@ -209,6 +209,8 @@ void Block::write_binary ()
 			error ("invalid case reached");
 		}
 	}
+	if (num_true != 0 || num_false != 0)
+		error ("incomplete if statement");
 }
 
 void Block::write_object (std::string &script, std::string &code)
@@ -252,7 +254,7 @@ void Block::write_object (std::string &script, std::string &code)
 			for (unsigned k = 0; k < i->code.size (); ++k)
 			{
 				code += i->code[k] & 0xff;
-				if (!use_bytes)
+				if (use_words)
 					code += i->code[k] >> 8;
 			}
 			break;

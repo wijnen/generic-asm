@@ -1,15 +1,17 @@
 #include "asm.hh"
 #include <shevek/args.hh>
 #include <fstream>
+#include <unistd.h>
 
 int main (int argc, char **argv)
 {
 	std::string defs;
 	std::string outfilename, listfilename;
 	usehex = true;
-	use_bytes = true;
+	use_words = false;
 	bool intel = false;
 	bool useobject = false;
+	bool definc = true;
 	std::string disasm;
 	addr = 0;
 	unsigned disasm_addr = ~0;
@@ -22,14 +24,17 @@ int main (int argc, char **argv)
 		shevek::args::option ('O', "object", "object output format", useobject, true),
 		shevek::args::option ('i', "intel", "intel hex instead of s19", intel, true),
 		shevek::args::option ('I', "includedir", "add directory to include path", include_path),
+		shevek::args::option (0, "nodefaultincludes", "don't add default include directory to include path", definc, false),
 		shevek::args::option ('d', "disasm", "file to disassemle", true, disasm),
 		shevek::args::option ('a', "addr", "start address for disassembly", false, disasm_addr),
-		shevek::args::option ('w', "words", "use 16-bit words as output", use_bytes, false),
+		shevek::args::option ('w', "words", "use 16-bit words as output", use_words, true),
 	};
-	shevek::args args (argc, argv, opts, 0, -1, "Generic assembler", "2008");
+	shevek::args args (argc, argv, opts, 0, -1, "Generic assembler");
+	if (definc)
+		include_path.push_back (DEFAULT_INCLUDE_PATH);
 	if (!usehex && useobject)
 		shevek_error ("specify only one type of output file");
-	hexfile.words (!use_bytes);
+	hexfile.words (use_words);
 	if (outfilename.empty ())
 		outfile = &std::cout;
 	else
@@ -94,7 +99,7 @@ int main (int argc, char **argv)
 				if (useobject)
 				{
 					std::string script ("#\xfeof\0\0\0\0", 8), code;
-					if (!use_bytes)
+					if (use_words)
 						script += "2\n";
 					for (std::list <Block>::iterator i = blocks.begin (); i != blocks.end (); ++i)
 						i->write_object (script, code);
@@ -120,9 +125,9 @@ int main (int argc, char **argv)
 				if (!errors && !useobject && usehex)
 				{
 					if (intel)
-						hexfile.write_hex (*outfile);
+						hexfile.write_hex (*outfile, use_words);
 					else
-						hexfile.write_s19 (*outfile);
+						hexfile.write_s19 (*outfile, use_words);
 				}
 			}
 		}
@@ -160,7 +165,7 @@ int main (int argc, char **argv)
 	if (errors)
 	{
 		if (!outfilename.empty ())
-			unlink (outfilename.c_str ());
+			::unlink (outfilename.c_str ());
 	}
 
 	if (!outfilename.empty ())

@@ -27,6 +27,7 @@ Expr Expr::read (std::string const &input, bool allow_params, std::string::size_
 	std::stack <Expr> result;
 	Oper open (0, '(', "(", -3, NULL, NULL), close (0, ')', ")", -2, NULL, NULL);
 	Oper tri_start (0, '?', "?", -1, NULL, NULL);
+	dbg ("reading expression " + l.rest ());
 	while (true)
 	{
 		l (" ");
@@ -142,7 +143,10 @@ Expr Expr::read (std::string const &input, bool allow_params, std::string::size_
 					}
 					beforelast = last;
 					if (e.type == NUM && e.value.valid)
+					{
 						last = e.value.value;
+						valid = true;
+					}
 					else
 					{
 						last = 0;
@@ -161,12 +165,14 @@ Expr Expr::read (std::string const &input, bool allow_params, std::string::size_
 					return Expr ();
 				}
 				if (lst.size () < 2 || beforelast == 0 || !valid)
+				{
 					error ("invalid param in expression");
+				}
 				lst.pop_back ();
 				lst.pop_back ();
 				result.push (Expr (PARAM, valid_int ("#!#")));
-				result.top ().children.push_back (Expr (NUM, valid_int (beforelast)));
 				result.top ().children.push_back (Expr (NUM, valid_int (last)));
+				result.top ().children.push_back (Expr (NUM, valid_int (beforelast)));
 				result.top ().constraints = lst;
 				expect_number = false;
 				continue;
